@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <Description>Active health problems requiring attention</Description>
+  <Author>RVTools Data Warehouse</Author>
+  <DataSources>
+    <DataSource Name="RVToolsDW">
+      <ConnectionProperties>
+        <DataProvider>SQL</DataProvider>
+        <ConnectString>Data Source=localhost;Initial Catalog=RVToolsDW</ConnectString>
+        <IntegratedSecurity>true</IntegratedSecurity>
+      </ConnectionProperties>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="HealthIssues">
+      <Query>
+        <DataSourceName>RVToolsDW</DataSourceName>
+        <CommandText>
+SELECT ObjectName, IssueType, Message, VI_SDK_Server, DetectedDate
+FROM [Reporting].[vw_Health_Issues]
+ORDER BY IssueType, ObjectName
+        </CommandText>
+      </Query>
+      <Fields>
+        <Field Name="ObjectName"><DataField>ObjectName</DataField></Field>
+        <Field Name="IssueType"><DataField>IssueType</DataField></Field>
+        <Field Name="Message"><DataField>Message</DataField></Field>
+        <Field Name="VI_SDK_Server"><DataField>VI_SDK_Server</DataField></Field>
+        <Field Name="DetectedDate"><DataField>DetectedDate</DataField></Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+          <Tablix Name="HealthTable">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn><Width>1.5in</Width></TablixColumn>
+                <TablixColumn><Width>1in</Width></TablixColumn>
+                <TablixColumn><Width>4in</Width></TablixColumn>
+                <TablixColumn><Width>1in</Width></TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.25in</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents><Textbox Name="H1"><Paragraphs><Paragraph><TextRuns><TextRun><Value>Object</Value><Style><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="H2"><Paragraphs><Paragraph><TextRuns><TextRun><Value>Type</Value><Style><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="H3"><Paragraphs><Paragraph><TextRuns><TextRun><Value>Message</Value><Style><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="H4"><Paragraphs><Paragraph><TextRuns><TextRun><Value>Detected</Value><Style><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.25in</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents><Textbox Name="D1"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!ObjectName.Value</Value></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="D2"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!IssueType.Value</Value></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="D3"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!Message.Value</Value></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="D4"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!DetectedDate.Value</Value></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <DataSetName>HealthIssues</DataSetName>
+          </Tablix>
+        </ReportItems>
+        <Height>2in</Height>
+      </Body>
+      <Width>8in</Width>
+      <Page>
+        <PageHeader>
+          <Height>0.5in</Height>
+          <PrintOnFirstPage>true</PrintOnFirstPage>
+          <PrintOnLastPage>true</PrintOnLastPage>
+          <ReportItems>
+            <Textbox Name="ReportTitle">
+              <Paragraphs><Paragraph><TextRuns><TextRun><Value>Health Issues Report</Value><Style><FontSize>16pt</FontSize><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs>
+              <Top>0.1in</Top><Left>0.1in</Left><Height>0.3in</Height><Width>4in</Width>
+            </Textbox>
+          </ReportItems>
+        </PageHeader>
+      </Page>
+    </ReportSection>
+  </ReportSections>
+  <rd:ReportID>Health_Issues</rd:ReportID>
+</Report>

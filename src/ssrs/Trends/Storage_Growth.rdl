@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <Description>Datastore storage growth trends and projections</Description>
+  <Author>RVTools Data Warehouse</Author>
+  <DataSources>
+    <DataSource Name="RVToolsDW">
+      <ConnectionProperties>
+        <DataProvider>SQL</DataProvider>
+        <ConnectString>Data Source=localhost;Initial Catalog=RVToolsDW</ConnectString>
+        <IntegratedSecurity>true</IntegratedSecurity>
+      </ConnectionProperties>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="StorageGrowth">
+      <Query>
+        <DataSourceName>RVToolsDW</DataSourceName>
+        <CommandText>
+SELECT SnapshotDate, DatastoreName, VI_SDK_Server, Type,
+       Capacity_MiB / 1024.0 AS Capacity_GiB,
+       In_Use_MiB / 1024.0 AS In_Use_GiB,
+       Free_MiB / 1024.0 AS Free_GiB,
+       Free_Percent, DayNumber
+FROM [Reporting].[vw_Trends_Storage_Growth]
+WHERE (@VI_SDK_Server IS NULL OR VI_SDK_Server = @VI_SDK_Server)
+  AND SnapshotDate &gt;= DATEADD(DAY, -@LookbackDays, CAST(GETUTCDATE() AS DATE))
+ORDER BY DatastoreName, SnapshotDate
+        </CommandText>
+      </Query>
+      <Fields>
+        <Field Name="SnapshotDate"><DataField>SnapshotDate</DataField></Field>
+        <Field Name="DatastoreName"><DataField>DatastoreName</DataField></Field>
+        <Field Name="VI_SDK_Server"><DataField>VI_SDK_Server</DataField></Field>
+        <Field Name="Type"><DataField>Type</DataField></Field>
+        <Field Name="Capacity_GiB"><DataField>Capacity_GiB</DataField></Field>
+        <Field Name="In_Use_GiB"><DataField>In_Use_GiB</DataField></Field>
+        <Field Name="Free_GiB"><DataField>Free_GiB</DataField></Field>
+        <Field Name="Free_Percent"><DataField>Free_Percent</DataField></Field>
+        <Field Name="DayNumber"><DataField>DayNumber</DataField></Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportParameters>
+    <ReportParameter Name="LookbackDays">
+      <DataType>Integer</DataType>
+      <DefaultValue><Values><Value>90</Value></Values></DefaultValue>
+      <Prompt>Lookback Days</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="VI_SDK_Server">
+      <DataType>String</DataType>
+      <Nullable>true</Nullable>
+      <AllowBlank>true</AllowBlank>
+      <Prompt>vCenter Server (blank for all)</Prompt>
+    </ReportParameter>
+  </ReportParameters>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+          <Tablix Name="StorageTable">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn><Width>0.8in</Width></TablixColumn>
+                <TablixColumn><Width>1.5in</Width></TablixColumn>
+                <TablixColumn><Width>0.8in</Width></TablixColumn>
+                <TablixColumn><Width>0.8in</Width></TablixColumn>
+                <TablixColumn><Width>0.8in</Width></TablixColumn>
+                <TablixColumn><Width>0.6in</Width></TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.25in</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents><Textbox Name="H1"><Paragraphs><Paragraph><TextRuns><TextRun><Value>Date</Value><Style><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="H2"><Paragraphs><Paragraph><TextRuns><TextRun><Value>Datastore</Value><Style><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="H3"><Paragraphs><Paragraph><TextRuns><TextRun><Value>Capacity</Value><Style><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="H4"><Paragraphs><Paragraph><TextRuns><TextRun><Value>In Use</Value><Style><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="H5"><Paragraphs><Paragraph><TextRuns><TextRun><Value>Free</Value><Style><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="H6"><Paragraphs><Paragraph><TextRuns><TextRun><Value>Free %</Value><Style><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.25in</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents><Textbox Name="D1"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!SnapshotDate.Value</Value><Style><Format>d</Format></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="D2"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!DatastoreName.Value</Value></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="D3"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!Capacity_GiB.Value</Value><Style><Format>N0</Format></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="D4"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!In_Use_GiB.Value</Value><Style><Format>N0</Format></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="D5"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!Free_GiB.Value</Value><Style><Format>N0</Format></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="D6"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!Free_Percent.Value</Value><Style><Format>0.0</Format></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <DataSetName>StorageGrowth</DataSetName>
+          </Tablix>
+        </ReportItems>
+        <Height>2in</Height>
+      </Body>
+      <Width>6.5in</Width>
+      <Page>
+        <PageHeader>
+          <Height>0.5in</Height>
+          <PrintOnFirstPage>true</PrintOnFirstPage>
+          <PrintOnLastPage>true</PrintOnLastPage>
+          <ReportItems>
+            <Textbox Name="ReportTitle">
+              <Paragraphs><Paragraph><TextRuns><TextRun><Value>Storage Growth Projection Report</Value><Style><FontSize>16pt</FontSize><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs>
+              <Top>0.1in</Top><Left>0.1in</Left><Height>0.3in</Height><Width>4in</Width>
+            </Textbox>
+          </ReportItems>
+        </PageHeader>
+      </Page>
+    </ReportSection>
+  </ReportSections>
+  <rd:ReportID>Storage_Growth</rd:ReportID>
+</Report>

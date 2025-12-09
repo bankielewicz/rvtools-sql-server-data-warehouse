@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <Description>Complete listing of all virtual machines with specifications</Description>
+  <Author>RVTools Data Warehouse</Author>
+  <AutoRefresh>0</AutoRefresh>
+  <DataSources>
+    <DataSource Name="RVToolsDW">
+      <ConnectionProperties>
+        <DataProvider>SQL</DataProvider>
+        <ConnectString>Data Source=localhost;Initial Catalog=RVToolsDW</ConnectString>
+        <IntegratedSecurity>true</IntegratedSecurity>
+      </ConnectionProperties>
+      <rd:SecurityType>Integrated</rd:SecurityType>
+      <rd:DataSourceID>RVToolsDW</rd:DataSourceID>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="VMInventory">
+      <Query>
+        <DataSourceName>RVToolsDW</DataSourceName>
+        <CommandText>
+SELECT
+    VM,
+    VM_UUID,
+    Powerstate,
+    Template,
+    CPUs,
+    Memory,
+    Total_disk_capacity_MiB,
+    Primary_IP_Address,
+    Datacenter,
+    Cluster,
+    Host,
+    OS_according_to_the_VMware_Tools,
+    Creation_date,
+    VI_SDK_Server
+FROM [Reporting].[vw_VM_Inventory]
+WHERE (@Datacenter IS NULL OR Datacenter = @Datacenter)
+  AND (@Cluster IS NULL OR Cluster = @Cluster)
+  AND (@Powerstate IS NULL OR Powerstate = @Powerstate)
+ORDER BY Datacenter, Cluster, VM
+        </CommandText>
+      </Query>
+      <Fields>
+        <Field Name="VM"><DataField>VM</DataField></Field>
+        <Field Name="VM_UUID"><DataField>VM_UUID</DataField></Field>
+        <Field Name="Powerstate"><DataField>Powerstate</DataField></Field>
+        <Field Name="Template"><DataField>Template</DataField></Field>
+        <Field Name="CPUs"><DataField>CPUs</DataField></Field>
+        <Field Name="Memory"><DataField>Memory</DataField></Field>
+        <Field Name="Total_disk_capacity_MiB"><DataField>Total_disk_capacity_MiB</DataField></Field>
+        <Field Name="Primary_IP_Address"><DataField>Primary_IP_Address</DataField></Field>
+        <Field Name="Datacenter"><DataField>Datacenter</DataField></Field>
+        <Field Name="Cluster"><DataField>Cluster</DataField></Field>
+        <Field Name="Host"><DataField>Host</DataField></Field>
+        <Field Name="OS_according_to_the_VMware_Tools"><DataField>OS_according_to_the_VMware_Tools</DataField></Field>
+        <Field Name="Creation_date"><DataField>Creation_date</DataField></Field>
+        <Field Name="VI_SDK_Server"><DataField>VI_SDK_Server</DataField></Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportParameters>
+    <ReportParameter Name="Datacenter">
+      <DataType>String</DataType>
+      <Nullable>true</Nullable>
+      <AllowBlank>true</AllowBlank>
+      <Prompt>Datacenter</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="Cluster">
+      <DataType>String</DataType>
+      <Nullable>true</Nullable>
+      <AllowBlank>true</AllowBlank>
+      <Prompt>Cluster</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="Powerstate">
+      <DataType>String</DataType>
+      <Nullable>true</Nullable>
+      <AllowBlank>true</AllowBlank>
+      <Prompt>Power State</Prompt>
+      <ValidValues>
+        <ParameterValues>
+          <ParameterValue><Value></Value><Label>(All)</Label></ParameterValue>
+          <ParameterValue><Value>poweredOn</Value><Label>Powered On</Label></ParameterValue>
+          <ParameterValue><Value>poweredOff</Value><Label>Powered Off</Label></ParameterValue>
+          <ParameterValue><Value>suspended</Value><Label>Suspended</Label></ParameterValue>
+        </ParameterValues>
+      </ValidValues>
+    </ReportParameter>
+  </ReportParameters>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+          <Tablix Name="VMInventoryTable">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn><Width>1.5in</Width></TablixColumn>
+                <TablixColumn><Width>0.8in</Width></TablixColumn>
+                <TablixColumn><Width>0.5in</Width></TablixColumn>
+                <TablixColumn><Width>0.5in</Width></TablixColumn>
+                <TablixColumn><Width>1in</Width></TablixColumn>
+                <TablixColumn><Width>1in</Width></TablixColumn>
+                <TablixColumn><Width>1in</Width></TablixColumn>
+                <TablixColumn><Width>1.2in</Width></TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.25in</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents><Textbox Name="VM_Header"><Paragraphs><Paragraph><TextRuns><TextRun><Value>VM Name</Value><Style><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="State_Header"><Paragraphs><Paragraph><TextRuns><TextRun><Value>State</Value><Style><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="CPUs_Header"><Paragraphs><Paragraph><TextRuns><TextRun><Value>CPUs</Value><Style><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="Memory_Header"><Paragraphs><Paragraph><TextRuns><TextRun><Value>Memory</Value><Style><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="IP_Header"><Paragraphs><Paragraph><TextRuns><TextRun><Value>IP Address</Value><Style><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="Datacenter_Header"><Paragraphs><Paragraph><TextRuns><TextRun><Value>Datacenter</Value><Style><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="Cluster_Header"><Paragraphs><Paragraph><TextRuns><TextRun><Value>Cluster</Value><Style><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="OS_Header"><Paragraphs><Paragraph><TextRuns><TextRun><Value>OS</Value><Style><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.25in</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents><Textbox Name="VM_Data"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!VM.Value</Value></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="State_Data"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!Powerstate.Value</Value></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="CPUs_Data"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!CPUs.Value</Value></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="Memory_Data"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!Memory.Value</Value></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="IP_Data"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!Primary_IP_Address.Value</Value></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="Datacenter_Data"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!Datacenter.Value</Value></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="Cluster_Data"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!Cluster.Value</Value></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="OS_Data"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!OS_according_to_the_VMware_Tools.Value</Value></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <DataSetName>VMInventory</DataSetName>
+          </Tablix>
+        </ReportItems>
+        <Height>2in</Height>
+      </Body>
+      <Width>10in</Width>
+      <Page>
+        <PageHeader>
+          <Height>0.5in</Height>
+          <PrintOnFirstPage>true</PrintOnFirstPage>
+          <PrintOnLastPage>true</PrintOnLastPage>
+          <ReportItems>
+            <Textbox Name="ReportTitle">
+              <Paragraphs><Paragraph><TextRuns><TextRun><Value>VM Inventory Report</Value><Style><FontSize>16pt</FontSize><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs>
+              <Top>0.1in</Top>
+              <Left>0.1in</Left>
+              <Height>0.3in</Height>
+              <Width>4in</Width>
+            </Textbox>
+          </ReportItems>
+        </PageHeader>
+        <PageFooter>
+          <Height>0.3in</Height>
+          <PrintOnFirstPage>true</PrintOnFirstPage>
+          <PrintOnLastPage>true</PrintOnLastPage>
+          <ReportItems>
+            <Textbox Name="ExecutionTime">
+              <Paragraphs><Paragraph><TextRuns><TextRun><Value>=Globals!ExecutionTime</Value></TextRun></TextRuns></Paragraph></Paragraphs>
+              <Top>0.05in</Top>
+              <Left>0.1in</Left>
+              <Height>0.2in</Height>
+              <Width>2in</Width>
+            </Textbox>
+            <Textbox Name="PageNumber">
+              <Paragraphs><Paragraph><TextRuns><TextRun><Value>="Page " &amp; Globals!PageNumber &amp; " of " &amp; Globals!TotalPages</Value></TextRun></TextRuns></Paragraph></Paragraphs>
+              <Top>0.05in</Top>
+              <Left>8in</Left>
+              <Height>0.2in</Height>
+              <Width>2in</Width>
+            </Textbox>
+          </ReportItems>
+        </PageFooter>
+        <LeftMargin>0.5in</LeftMargin>
+        <RightMargin>0.5in</RightMargin>
+        <TopMargin>0.5in</TopMargin>
+        <BottomMargin>0.5in</BottomMargin>
+      </Page>
+    </ReportSection>
+  </ReportSections>
+  <rd:ReportUnitType>Inch</rd:ReportUnitType>
+  <rd:ReportID>VM_Inventory</rd:ReportID>
+</Report>

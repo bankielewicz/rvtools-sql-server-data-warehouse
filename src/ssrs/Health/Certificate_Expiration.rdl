@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <Description>ESXi host SSL certificate expiration tracking</Description>
+  <Author>RVTools Data Warehouse</Author>
+  <DataSources>
+    <DataSource Name="RVToolsDW">
+      <ConnectionProperties>
+        <DataProvider>SQL</DataProvider>
+        <ConnectString>Data Source=localhost;Initial Catalog=RVToolsDW</ConnectString>
+        <IntegratedSecurity>true</IntegratedSecurity>
+      </ConnectionProperties>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="CertificateStatus">
+      <Query>
+        <DataSourceName>RVToolsDW</DataSourceName>
+        <CommandText>
+SELECT HostName, VI_SDK_Server, Datacenter, Cluster,
+       Certificate_Issuer, Certificate_Subject,
+       Certificate_Start_Date, Certificate_Expiry_Date,
+       Days_Until_Expiration, Expiration_Status, ESX_Version
+FROM [Reporting].[vw_Health_Certificate_Expiration]
+WHERE (@VI_SDK_Server IS NULL OR VI_SDK_Server = @VI_SDK_Server)
+  AND (@IncludeValid = 1 OR Expiration_Status IN ('Expired', 'Expiring Soon', 'Expiring (90 days)'))
+ORDER BY CASE Expiration_Status WHEN 'Expired' THEN 1 WHEN 'Expiring Soon' THEN 2 WHEN 'Expiring (90 days)' THEN 3 ELSE 4 END, Days_Until_Expiration ASC
+        </CommandText>
+      </Query>
+      <Fields>
+        <Field Name="HostName"><DataField>HostName</DataField></Field>
+        <Field Name="VI_SDK_Server"><DataField>VI_SDK_Server</DataField></Field>
+        <Field Name="Cluster"><DataField>Cluster</DataField></Field>
+        <Field Name="Certificate_Expiry_Date"><DataField>Certificate_Expiry_Date</DataField></Field>
+        <Field Name="Days_Until_Expiration"><DataField>Days_Until_Expiration</DataField></Field>
+        <Field Name="Expiration_Status"><DataField>Expiration_Status</DataField></Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportParameters>
+    <ReportParameter Name="IncludeValid">
+      <DataType>Boolean</DataType>
+      <DefaultValue><Values><Value>false</Value></Values></DefaultValue>
+      <Prompt>Include Valid Certificates</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="VI_SDK_Server">
+      <DataType>String</DataType>
+      <Nullable>true</Nullable>
+      <AllowBlank>true</AllowBlank>
+      <Prompt>vCenter Server (blank for all)</Prompt>
+    </ReportParameter>
+  </ReportParameters>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+          <Tablix Name="CertTable">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn><Width>1.5in</Width></TablixColumn>
+                <TablixColumn><Width>1in</Width></TablixColumn>
+                <TablixColumn><Width>1in</Width></TablixColumn>
+                <TablixColumn><Width>1in</Width></TablixColumn>
+                <TablixColumn><Width>0.8in</Width></TablixColumn>
+                <TablixColumn><Width>1in</Width></TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.25in</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents><Textbox Name="H1"><Paragraphs><Paragraph><TextRuns><TextRun><Value>Host</Value><Style><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="H2"><Paragraphs><Paragraph><TextRuns><TextRun><Value>vCenter</Value><Style><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="H3"><Paragraphs><Paragraph><TextRuns><TextRun><Value>Cluster</Value><Style><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="H4"><Paragraphs><Paragraph><TextRuns><TextRun><Value>Expiry Date</Value><Style><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="H5"><Paragraphs><Paragraph><TextRuns><TextRun><Value>Days Left</Value><Style><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="H6"><Paragraphs><Paragraph><TextRuns><TextRun><Value>Status</Value><Style><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.25in</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents><Textbox Name="D1"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!HostName.Value</Value></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="D2"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!VI_SDK_Server.Value</Value></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="D3"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!Cluster.Value</Value></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="D4"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!Certificate_Expiry_Date.Value</Value><Style><Format>d</Format></Style></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="D5"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!Days_Until_Expiration.Value</Value></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="D6"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!Expiration_Status.Value</Value></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <DataSetName>CertificateStatus</DataSetName>
+          </Tablix>
+        </ReportItems>
+        <Height>2in</Height>
+      </Body>
+      <Width>7.5in</Width>
+      <Page>
+        <PageHeader>
+          <Height>0.5in</Height>
+          <PrintOnFirstPage>true</PrintOnFirstPage>
+          <PrintOnLastPage>true</PrintOnLastPage>
+          <ReportItems>
+            <Textbox Name="ReportTitle">
+              <Paragraphs><Paragraph><TextRuns><TextRun><Value>Certificate Expiration Report</Value><Style><FontSize>16pt</FontSize><FontWeight>Bold</FontWeight></Style></TextRun></TextRuns></Paragraph></Paragraphs>
+              <Top>0.1in</Top><Left>0.1in</Left><Height>0.3in</Height><Width>4in</Width>
+            </Textbox>
+          </ReportItems>
+        </PageHeader>
+      </Page>
+    </ReportSection>
+  </ReportSections>
+  <rd:ReportID>Certificate_Expiration</rd:ReportID>
+</Report>

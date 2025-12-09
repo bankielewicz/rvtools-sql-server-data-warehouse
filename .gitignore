@@ -1,0 +1,43 @@
+# Operational folders (contain data, not source)
+incoming/
+processed/
+errors/
+failed/
+logs/
+
+# Claude Code (development assistant context)
+.claude/
+CLAUDE.md
+
+# IDE/Editor
+.vscode/
+.idea/
+*.suo
+*.user
+*.sln.docstates
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+~$*
+*.bak
+
+# SQL Server
+*.mdf
+*.ldf
+*.ndf
+
+# PowerShell
+*.ps1xml
+
+# Build output
+bin/
+obj/
+
+# Research docs (integrated into reference)
+docs/research/
