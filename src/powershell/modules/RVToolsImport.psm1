@@ -114,13 +114,13 @@ function Connect-RVToolsDatabase {
         $connectionParams = @{
             ServerInstance = $ServerInstance
             Database       = $Database
+            TrustServerCertificate = $true
         }
 
         if ($Credential) {
             $connectionParams['Credential'] = $Credential
             Write-ImportLog -Message "Connecting to $ServerInstance/$Database with SQL authentication" -Level 'Info'
         } else {
-            $connectionParams['TrustServerCertificate'] = $true
             Write-ImportLog -Message "Connecting to $ServerInstance/$Database with Windows authentication" -Level 'Info'
         }
 
