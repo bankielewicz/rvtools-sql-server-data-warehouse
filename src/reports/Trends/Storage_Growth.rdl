@@ -92,7 +92,27 @@ ORDER BY DatastoreName, SnapshotDate
                 </TablixRow>
               </TablixRows>
             </TablixBody>
-            <DataSetName>StorageGrowth</DataSetName>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="Details" />
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            StorageGrowth</DataSetName>
           </Tablix>
         </ReportItems>
         <Height>2in</Height>

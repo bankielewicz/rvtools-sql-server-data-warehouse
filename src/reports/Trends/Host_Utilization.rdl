@@ -101,7 +101,28 @@ ORDER BY HostName, SnapshotDate DESC
                 </TablixRow>
               </TablixRows>
             </TablixBody>
-            <DataSetName>HostUtilization</DataSetName>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="Details" />
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            HostUtilization</DataSetName>
           </Tablix>
         </ReportItems>
         <Height>2in</Height>

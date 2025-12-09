@@ -74,7 +74,26 @@ ORDER BY SnapshotDate DESC, VI_SDK_Server
                 </TablixRow>
               </TablixRows>
             </TablixBody>
-            <DataSetName>VMTrend</DataSetName>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="Details" />
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            VMTrend</DataSetName>
           </Tablix>
         </ReportItems>
         <Height>2in</Height>

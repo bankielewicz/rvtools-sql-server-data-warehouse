@@ -88,7 +88,27 @@ ORDER BY CASE Expiration_Status WHEN 'Expired' THEN 1 WHEN 'Expiring Soon' THEN 
                 </TablixRow>
               </TablixRows>
             </TablixBody>
-            <DataSetName>CertificateStatus</DataSetName>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="Details" />
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            CertificateStatus</DataSetName>
           </Tablix>
         </ReportItems>
         <Height>2in</Height>

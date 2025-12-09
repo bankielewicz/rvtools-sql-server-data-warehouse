@@ -87,7 +87,27 @@ ORDER BY Overall_Compliance_Status DESC, VM
                 </TablixRow>
               </TablixRows>
             </TablixBody>
-            <DataSetName>ComplianceData</DataSetName>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="Details" />
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            ComplianceData</DataSetName>
           </Tablix>
         </ReportItems>
         <Height>2in</Height>

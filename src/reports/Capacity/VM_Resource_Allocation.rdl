@@ -76,7 +76,27 @@ ORDER BY Memory_Size_MiB DESC
                 </TablixRow>
               </TablixRows>
             </TablixBody>
-            <DataSetName>VMResources</DataSetName>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="Details" />
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            VMResources</DataSetName>
           </Tablix>
         </ReportItems>
         <Height>2in</Height>

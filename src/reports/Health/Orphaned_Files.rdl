@@ -82,7 +82,26 @@ ORDER BY IsOrphaned DESC, File_Size_GiB DESC
                 </TablixRow>
               </TablixRows>
             </TablixBody>
-            <DataSetName>OrphanedFiles</DataSetName>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="Details" />
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            OrphanedFiles</DataSetName>
             <NoRowsMessage>No file data available. Run RVTools with -GetFileInfo parameter.</NoRowsMessage>
           </Tablix>
         </ReportItems>

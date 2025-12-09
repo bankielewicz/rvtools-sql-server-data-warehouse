@@ -72,7 +72,27 @@ ORDER BY ClusterName
                 </TablixRow>
               </TablixRows>
             </TablixBody>
-            <DataSetName>ClusterSummary</DataSetName>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="Details" />
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            ClusterSummary</DataSetName>
           </Tablix>
         </ReportItems>
         <Height>2in</Height>

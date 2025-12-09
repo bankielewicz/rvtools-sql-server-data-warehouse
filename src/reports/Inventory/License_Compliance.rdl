@@ -86,7 +86,27 @@ ORDER BY CASE Compliance_Status WHEN 'Over-Allocated' THEN 1 WHEN 'Expired' THEN
                 </TablixRow>
               </TablixRows>
             </TablixBody>
-            <DataSetName>LicenseCompliance</DataSetName>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="Details" />
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            LicenseCompliance</DataSetName>
           </Tablix>
         </ReportItems>
         <Height>2in</Height>

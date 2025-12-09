@@ -90,7 +90,27 @@ ORDER BY VM, State_Start_Date DESC
                 </TablixRow>
               </TablixRows>
             </TablixBody>
-            <DataSetName>VMLifecycle</DataSetName>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="Details" />
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            VMLifecycle</DataSetName>
           </Tablix>
         </ReportItems>
         <Height>2in</Height>

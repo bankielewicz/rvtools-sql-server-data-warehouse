@@ -63,7 +63,25 @@ ORDER BY IssueType, ObjectName
                 </TablixRow>
               </TablixRows>
             </TablixBody>
-            <DataSetName>HealthIssues</DataSetName>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="Details" />
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            HealthIssues</DataSetName>
           </Tablix>
         </ReportItems>
         <Height>2in</Height>

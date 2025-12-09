@@ -81,7 +81,26 @@ ORDER BY DatastoreName, SnapshotDate DESC
                 </TablixRow>
               </TablixRows>
             </TablixBody>
-            <DataSetName>DSTrend</DataSetName>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="Details" />
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            DSTrend</DataSetName>
           </Tablix>
         </ReportItems>
         <Height>2in</Height>
