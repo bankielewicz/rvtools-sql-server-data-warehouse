@@ -492,11 +492,11 @@ function Import-RVToolsFile {
     $fileName = Split-Path $FilePath -Leaf
     $basePath = Split-Path $FilePath -Parent
 
-    # Set default folders relative to incoming
-    if (-not $ProcessedFolder) { $ProcessedFolder = Join-Path (Split-Path $basePath) 'processed' }
-    if (-not $ErrorFolder) { $ErrorFolder = Join-Path (Split-Path $basePath) 'errors' }
-    if (-not $FailedFolder) { $FailedFolder = Join-Path (Split-Path $basePath) 'failed' }
-    if (-not $LogFolder) { $LogFolder = Join-Path (Split-Path $basePath) 'logs' }
+    # Set default folders as siblings within the incoming folder
+    if (-not $ProcessedFolder) { $ProcessedFolder = Join-Path $basePath 'processed' }
+    if (-not $ErrorFolder) { $ErrorFolder = Join-Path $basePath 'errors' }
+    if (-not $FailedFolder) { $FailedFolder = Join-Path $basePath 'failed' }
+    if (-not $LogFolder) { $LogFolder = Join-Path $basePath 'logs' }
 
     # Initialize logging
     $logFile = Initialize-ImportLog -LogDirectory $LogFolder -LogLevel $LogLevel
