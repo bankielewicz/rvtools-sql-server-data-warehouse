@@ -41,3 +41,8 @@ obj/
 
 # Research docs (integrated into reference)
 docs/research/
+
+# Project-specific exclusions
+GITHUB_SETUP.md
+GITHUB_TOPICS.md
+src/tsql/Tables/rvtools-cleanup-script.sql
