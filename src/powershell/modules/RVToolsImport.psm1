@@ -114,7 +114,12 @@ function Connect-RVToolsDatabase {
         $connectionParams = @{
             ServerInstance = $ServerInstance
             Database       = $Database
-            TrustServerCertificate = $true
+        }
+
+        # TrustServerCertificate is only supported in SqlServer module 21.1.18+ (not in older versions or SQLPS)
+        $sqlcmdParams = (Get-Command Invoke-Sqlcmd).Parameters
+        if ($sqlcmdParams.ContainsKey('TrustServerCertificate')) {
+            $connectionParams['TrustServerCertificate'] = $true
         }
 
         if ($Credential) {
