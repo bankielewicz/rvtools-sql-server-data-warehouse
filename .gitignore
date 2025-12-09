@@ -46,3 +46,4 @@ docs/research/
 GITHUB_SETUP.md
 GITHUB_TOPICS.md
 src/tsql/Tables/rvtools-cleanup-script.sql
+fix_reports.py
