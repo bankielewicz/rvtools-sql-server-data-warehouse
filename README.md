@@ -1,16 +1,23 @@
-# RVTools Data Warehouse
+# RVTools SQL Server Data Warehouse
 
-[![SQL Server](https://img.shields.io/badge/SQL%20Server-2016+-blue.svg)](https://www.microsoft.com/sql-server)
-[![PowerShell](https://img.shields.io/badge/PowerShell-5.1+-blue.svg)](https://docs.microsoft.com/powershell)
+[![SQL Server](https://img.shields.io/badge/SQL%20Server-2016+-CC2927.svg?logo=microsoftsqlserver)](https://www.microsoft.com/sql-server)
+[![PowerShell](https://img.shields.io/badge/PowerShell-5.1+-5391FE.svg?logo=powershell)](https://docs.microsoft.com/powershell)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/bankielewicz/rvtools-sql-server-data-warehouse?style=social)](https://github.com/bankielewicz/rvtools-sql-server-data-warehouse/stargazers)
 
-> Import and warehouse RVTools VMware inventory exports for historical tracking, auditing, and reporting.
+> **SQL Server ETL solution that imports RVTools VMware inventory exports into a relational data warehouse with SCD Type 2 historical tracking, automated PowerShell ETL pipeline, and 24 pre-built SSRS reports.**
+
+**Keywords**: RVTools | SQL Server Data Warehouse | VMware Inventory | vCenter | ESXi | PowerShell ETL | SSRS Reports | Historical Tracking | VMware Analytics | Infrastructure Monitoring
+
+---
+
+⭐ **If you find this project useful, please star this repository!** It helps others discover this solution.
 
 ## Features
 
 - **Full RVTools Support** - Import all 27 RVTools tabs (~850 columns)
 - **SCD Type 2 History** - Track all changes with ValidFrom/ValidTo timestamps
-- **Pre-built Views** - 13 reporting views across Inventory, Health, Capacity, and Trends
+- **Pre-built Reports** - 13 core reports plus 11 specialized reports across Inventory, Health, Capacity, and Trends
 - **Audit Trail** - Complete import logging with batch tracking and failed record capture
 
 ## Quick Start
@@ -25,7 +32,12 @@ Install-Module -Name SqlServer -Scope CurrentUser
 
 # 3. Import RVTools exports
 cd src/powershell
+
+# Windows Authentication
 .\Import-RVToolsData.ps1 -ServerInstance "localhost" -LogLevel Verbose
+
+# SQL Authentication (will prompt for credentials)
+.\Import-RVToolsData.ps1 -ServerInstance "localhost" -UseSqlAuth -LogLevel Verbose
 ```
 
 See [Getting Started](docs/getting-started.md) for detailed setup instructions.
@@ -45,6 +57,7 @@ See [Getting Started](docs/getting-started.md) for detailed setup instructions.
 | [Importing Data](docs/usage/importing-data.md) | Running imports |
 | [Reports](docs/usage/reports.md) | Available reports and views |
 | [Querying Data](docs/usage/querying-data.md) | SQL query examples |
+| [SSRS Reports Guide](docs/SSRS_Reports_User_Guide.md) | Complete report reference |
 | **Development** | |
 | [Contributing](docs/development/contributing.md) | How to contribute |
 | [Extending Tables](docs/development/extending-tables.md) | Adding new RVTools tabs |
@@ -56,10 +69,11 @@ See [Getting Started](docs/getting-started.md) for detailed setup instructions.
 
 ## Requirements
 
-- **SQL Server** 2016 or later
+- **SQL Server** 2016 or later (Express, Standard, or Enterprise)
 - **PowerShell** 5.1 or later
-- **ImportExcel** module
-- **SqlServer** module
+- **ImportExcel** PowerShell module
+- **SqlServer** PowerShell module
+- **RVTools** 4.x (for generating VMware exports)
 
 ## Project Structure
 
@@ -74,6 +88,48 @@ src/
 └── reports/             # Report definitions
 ```
 
+## Use Cases
+
+This data warehouse solution is ideal for:
+
+- **VMware Infrastructure Auditing** - Track all changes to VMs, hosts, and datastores
+- **Capacity Planning** - Analyze historical trends in CPU, memory, and storage usage
+- **Compliance Reporting** - Generate audit-ready reports with complete change history
+- **Cost Optimization** - Identify oversized VMs and unused resources
+- **Disaster Recovery Planning** - Maintain historical snapshots of your VMware environment
+- **Multi-vCenter Management** - Consolidate data from multiple vCenter servers
+
+## Technology Stack
+
+- **Database**: SQL Server 2016+ with three-schema pattern (Staging, Current, History)
+- **ETL**: PowerShell 5.1+ with ImportExcel module for xlsx parsing
+- **Reporting**: SSRS reports and SQL views for analytics
+- **Architecture**: SCD Type 2 for historical tracking with ValidFrom/ValidTo timestamps
+
+## Contributing
+
+Contributions are welcome! Please see [Contributing Guide](docs/development/contributing.md) for details on:
+- Extending tables for new RVTools tabs
+- Adding custom views and reports
+- Code standards and naming conventions
+
+## Support
+
+- **Issues**: [Report bugs or request features](https://github.com/bankielewicz/rvtools-sql-server-data-warehouse/issues)
+- **Discussions**: [Ask questions and share ideas](https://github.com/bankielewicz/rvtools-sql-server-data-warehouse/discussions)
+- **Documentation**: Comprehensive guides in [/docs](docs/)
+
+## Related Projects
+
+- [RVTools](https://www.robware.net/rvtools/) - Official RVTools by Robware
+- See also: VMware PowerCLI, vRealize Operations, vCenter Server
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+**⭐ Star this repository** | **🔀 Fork it** | **📢 Share it**
+
+*Built for VMware administrators who need historical tracking and reporting on their virtual infrastructure.*

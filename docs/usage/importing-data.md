@@ -10,7 +10,12 @@
 
 ```powershell
 cd src/powershell
+
+# Windows Authentication (default)
 .\Import-RVToolsData.ps1 -ServerInstance "localhost" -LogLevel Verbose
+
+# SQL Authentication (will prompt for credentials)
+.\Import-RVToolsData.ps1 -ServerInstance "localhost" -UseSqlAuth -LogLevel Verbose
 ```
 
 This processes all xlsx files in the `incoming/` folder.
@@ -21,6 +26,7 @@ This processes all xlsx files in the `incoming/` folder.
 |-----------|------|---------|-------------|
 | `-ServerInstance` | string | localhost | SQL Server instance |
 | `-Database` | string | RVToolsDW | Database name |
+| `-UseSqlAuth` | switch | false | Use SQL Server authentication (prompts if credential not provided) |
 | `-Credential` | PSCredential | (none) | SQL auth credential |
 | `-IncomingFolder` | string | ../incoming | Source folder |
 | `-LogLevel` | string | Info | Logging verbosity |
@@ -37,8 +43,12 @@ This processes all xlsx files in the `incoming/` folder.
 ### SQL Server Authentication
 
 ```powershell
+# Will prompt for credentials
+.\Import-RVToolsData.ps1 -ServerInstance "sqlserver" -UseSqlAuth
+
+# With pre-defined credential
 $cred = Get-Credential
-.\Import-RVToolsData.ps1 -ServerInstance "sqlserver" -Credential $cred
+.\Import-RVToolsData.ps1 -ServerInstance "sqlserver" -UseSqlAuth -Credential $cred
 ```
 
 ### Single File Import

@@ -60,10 +60,13 @@ Login failed for user
    ```powershell
    .\Import-RVToolsData.ps1 -ServerInstance "localhost\SQLEXPRESS"
    ```
-3. For SQL auth, provide credentials:
+3. For SQL auth, use -UseSqlAuth (will prompt for credentials):
    ```powershell
+   .\Import-RVToolsData.ps1 -ServerInstance "server" -UseSqlAuth
+
+   # Or with pre-defined credential
    $cred = Get-Credential
-   .\Import-RVToolsData.ps1 -ServerInstance "server" -Credential $cred
+   .\Import-RVToolsData.ps1 -ServerInstance "server" -UseSqlAuth -Credential $cred
    ```
 4. Enable SQL Server remote connections
 

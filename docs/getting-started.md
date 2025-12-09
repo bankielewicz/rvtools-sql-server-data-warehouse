@@ -1,6 +1,6 @@
 # Getting Started
 
-> Get RVTools Data Warehouse running in 5 minutes.
+> Get RVTools SQL Server Data Warehouse running in 5 minutes.
 
 **Navigation**: [Home](../README.md) | [Installation](./installation.md) | [Configuration](./configuration.md)
 
@@ -44,9 +44,12 @@ src/tsql/Views/*/*.sql
 # Place your RVTools export in the incoming folder
 Copy-Item "path\to\export.xlsx" -Destination "incoming\"
 
-# Run the import
+# Run the import (Windows Authentication)
 cd src/powershell
 .\Import-RVToolsData.ps1 -ServerInstance "localhost" -LogLevel Verbose
+
+# Or with SQL Authentication (will prompt for credentials)
+.\Import-RVToolsData.ps1 -ServerInstance "localhost" -UseSqlAuth -LogLevel Verbose
 ```
 
 ## Step 4: Verify

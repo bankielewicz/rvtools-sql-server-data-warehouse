@@ -15,6 +15,9 @@
 .PARAMETER Credential
     SQL Server credential (optional, uses Windows auth if not specified)
 
+.PARAMETER UseSqlAuth
+    Use SQL Server authentication (will prompt for credentials if not provided)
+
 .PARAMETER IncomingFolder
     Folder containing xlsx files to import (default: ../incoming)
 
@@ -29,9 +32,13 @@
     .\Import-RVToolsData.ps1 -ServerInstance "localhost"
 
 .EXAMPLE
-    # Import with SQL auth
+    # Import with SQL auth (will prompt for credentials)
+    .\Import-RVToolsData.ps1 -ServerInstance "localhost" -UseSqlAuth
+
+.EXAMPLE
+    # Import with SQL auth using pre-defined credential
     $cred = Get-Credential
-    .\Import-RVToolsData.ps1 -ServerInstance "sqlserver.domain.com" -Credential $cred
+    .\Import-RVToolsData.ps1 -ServerInstance "sqlserver.domain.com" -UseSqlAuth -Credential $cred
 
 .EXAMPLE
     # Import single file with verbose logging
@@ -51,6 +58,9 @@ param(
 
     [Parameter()]
     [PSCredential]$Credential = $null,
+
+    [Parameter()]
+    [switch]$UseSqlAuth,
 
     [Parameter()]
     [string]$IncomingFolder = $null,
@@ -82,6 +92,19 @@ Import-Module $modulePath -Force
 # Set default incoming folder
 if (-not $IncomingFolder) {
     $IncomingFolder = Join-Path $projectRoot "incoming"
+}
+
+# Handle SQL authentication
+if ($UseSqlAuth) {
+    if (-not $Credential) {
+        Write-Host "SQL Authentication selected. Please enter credentials." -ForegroundColor Cyan
+        $Credential = Get-Credential -Message "Enter SQL Server credentials (username and password)"
+
+        if (-not $Credential) {
+            Write-Error "SQL Authentication requires credentials. Operation cancelled."
+            exit 1
+        }
+    }
 }
 
 # Validate dependencies
@@ -118,7 +141,7 @@ Write-Host "=============================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Server:    $ServerInstance" -ForegroundColor Gray
 Write-Host "Database:  $Database" -ForegroundColor Gray
-Write-Host "Auth:      $(if ($Credential) { 'SQL' } else { 'Windows' })" -ForegroundColor Gray
+Write-Host "Auth:      $(if ($UseSqlAuth -or $Credential) { 'SQL' } else { 'Windows' })" -ForegroundColor Gray
 Write-Host "LogLevel:  $LogLevel" -ForegroundColor Gray
 Write-Host ""
 

@@ -14,7 +14,8 @@ The `Import-RVToolsData.ps1` script accepts these parameters:
 |-----------|------|---------|-------------|
 | `-ServerInstance` | string | localhost | SQL Server instance name |
 | `-Database` | string | RVToolsDW | Target database name |
-| `-Credential` | PSCredential | (none) | SQL auth credential (uses Windows auth if omitted) |
+| `-UseSqlAuth` | switch | false | Use SQL Server authentication (prompts for credentials if not provided) |
+| `-Credential` | PSCredential | (none) | SQL auth credential (requires -UseSqlAuth or can be passed directly) |
 | `-IncomingFolder` | string | ../incoming | Folder containing xlsx files |
 | `-LogLevel` | string | Info | Verbose, Info, Warning, Error |
 | `-SingleFile` | string | (none) | Process only this specific file |
@@ -25,9 +26,12 @@ The `Import-RVToolsData.ps1` script accepts these parameters:
 # Basic import with Windows auth
 .\Import-RVToolsData.ps1 -ServerInstance "localhost"
 
-# SQL authentication
+# SQL authentication (will prompt for credentials)
+.\Import-RVToolsData.ps1 -ServerInstance "localhost" -UseSqlAuth
+
+# SQL authentication with pre-defined credential
 $cred = Get-Credential
-.\Import-RVToolsData.ps1 -ServerInstance "sql.domain.com" -Credential $cred
+.\Import-RVToolsData.ps1 -ServerInstance "sql.domain.com" -UseSqlAuth -Credential $cred
 
 # Verbose logging
 .\Import-RVToolsData.ps1 -LogLevel Verbose

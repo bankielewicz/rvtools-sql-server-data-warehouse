@@ -1,6 +1,6 @@
 # Installation Guide
 
-> Complete installation and deployment instructions.
+> Complete installation and deployment instructions for RVTools SQL Server Data Warehouse.
 
 **Navigation**: [Home](../README.md) | [Getting Started](./getting-started.md) | [Configuration](./configuration.md)
 
@@ -167,8 +167,12 @@ foreach ($folder in $folders) {
 ### SQL Server Authentication
 
 ```powershell
+# Will prompt for credentials
+.\Import-RVToolsData.ps1 -ServerInstance "localhost" -UseSqlAuth
+
+# With pre-defined credential
 $cred = Get-Credential
-.\Import-RVToolsData.ps1 -ServerInstance "sqlserver.domain.com" -Credential $cred
+.\Import-RVToolsData.ps1 -ServerInstance "sqlserver.domain.com" -UseSqlAuth -Credential $cred
 ```
 
 ---
