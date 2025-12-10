@@ -102,7 +102,7 @@ public class DatabaseStatusService : IDatabaseStatusService
 
             // Get total history records (approximation using sys.dm_db_partition_stats for performance)
             const string historyCountSql = @"
-                SELECT ISNULL(SUM(p.rows), 0) AS TotalRows
+                SELECT ISNULL(SUM(p.row_count), 0) AS TotalRows
                 FROM sys.tables t
                 INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
                 INNER JOIN sys.dm_db_partition_stats p ON t.object_id = p.object_id
