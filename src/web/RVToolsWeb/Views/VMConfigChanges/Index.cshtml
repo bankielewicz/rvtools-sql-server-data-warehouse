@@ -22,15 +22,8 @@
                 <input type="text" class="form-control form-control-sm" id="vmNameInput" name="VMName"
                        value="@Model.Filter.VMName" placeholder="Search...">
             </div>
-            <div class="col-md-2">
-                <label class="form-label" for="daysBackSelect">Time Range</label>
-                <select class="form-select form-select-sm" id="daysBackSelect" name="DaysBack">
-                    <option value="7" selected="@(Model.Filter.DaysBack == 7)">Last 7 Days</option>
-                    <option value="30" selected="@(Model.Filter.DaysBack == 30)">Last 30 Days</option>
-                    <option value="90" selected="@(Model.Filter.DaysBack == 90)">Last 90 Days</option>
-                    <option value="180" selected="@(Model.Filter.DaysBack == 180)">Last 6 Months</option>
-                    <option value="365" selected="@(Model.Filter.DaysBack == 365)">Last Year</option>
-                </select>
+            <div class="col-md-auto">
+                @await Html.PartialAsync("_DateRangePickerPartial", (Model.Filter.StartDate, Model.Filter.EndDate, 30))
             </div>
             <div class="col-md-4">
                 <button type="submit" class="btn btn-primary btn-sm">
@@ -94,11 +87,11 @@
         <span class="text-muted">@Model.Items.Count() changes recorded</span>
     </div>
     <div>
-        <a href="/api/Export/vm-config-changes/excel?VI_SDK_Server=@Model.Filter.VI_SDK_Server&VMName=@Model.Filter.VMName&DaysBack=@Model.Filter.DaysBack"
+        <a href="/api/Export/vm-config-changes/excel?VI_SDK_Server=@Model.Filter.VI_SDK_Server&VMName=@Model.Filter.VMName&StartDate=@Model.Filter.EffectiveStartDate.ToString("yyyy-MM-dd")&EndDate=@Model.Filter.EffectiveEndDate.ToString("yyyy-MM-dd")"
            class="btn btn-outline-success btn-sm btn-export">
             <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
         </a>
-        <a href="/api/Export/vm-config-changes/csv?VI_SDK_Server=@Model.Filter.VI_SDK_Server&VMName=@Model.Filter.VMName&DaysBack=@Model.Filter.DaysBack"
+        <a href="/api/Export/vm-config-changes/csv?VI_SDK_Server=@Model.Filter.VI_SDK_Server&VMName=@Model.Filter.VMName&StartDate=@Model.Filter.EffectiveStartDate.ToString("yyyy-MM-dd")&EndDate=@Model.Filter.EffectiveEndDate.ToString("yyyy-MM-dd")"
            class="btn btn-outline-secondary btn-sm btn-export">
             <i class="bi bi-filetype-csv me-1"></i>Export CSV
         </a>

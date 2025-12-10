@@ -41,7 +41,8 @@ public class VMLifecycleService
             WHERE (@VI_SDK_Server IS NULL OR VI_SDK_Server = @VI_SDK_Server)
               AND (@VMName IS NULL OR VM LIKE '%' + @VMName + '%')
               AND (@Powerstate IS NULL OR @Powerstate = '' OR Powerstate = @Powerstate)
-              AND State_Start_Date >= DATEADD(DAY, -@LookbackDays, CAST(GETUTCDATE() AS DATE))
+              AND State_Start_Date >= @StartDate
+              AND State_Start_Date <= @EndDate
             ORDER BY VM, State_Start_Date DESC";
 
         using var connection = _connectionFactory.CreateConnection();
@@ -50,7 +51,8 @@ public class VMLifecycleService
             filter.VI_SDK_Server,
             filter.VMName,
             filter.Powerstate,
-            filter.LookbackDays
+            StartDate = filter.EffectiveStartDate,
+            EndDate = filter.EffectiveEndDate
         });
     }
 }

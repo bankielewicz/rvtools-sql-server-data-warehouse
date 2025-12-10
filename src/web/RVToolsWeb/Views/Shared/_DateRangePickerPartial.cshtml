@@ -1,0 +1,34 @@
+@model (DateTime? StartDate, DateTime? EndDate, int DefaultDays)
+@{
+    var startDate = Model.StartDate ?? DateTime.UtcNow.Date.AddDays(-Model.DefaultDays);
+    var endDate = Model.EndDate ?? DateTime.UtcNow.Date;
+}
+
+<div class="date-range-picker-group">
+    <div class="row g-2 align-items-end">
+        <div class="col-auto">
+            <label class="form-label" for="startDate">From</label>
+            <input type="text" class="form-control form-control-sm flatpickr-date"
+                   id="startDate" name="StartDate"
+                   value="@startDate.ToString("yyyy-MM-dd")"
+                   readonly />
+        </div>
+        <div class="col-auto">
+            <label class="form-label" for="endDate">To</label>
+            <input type="text" class="form-control form-control-sm flatpickr-date"
+                   id="endDate" name="EndDate"
+                   value="@endDate.ToString("yyyy-MM-dd")"
+                   readonly />
+        </div>
+        <div class="col-auto">
+            <label class="form-label d-block">&nbsp;</label>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Quick date range selection">
+                <button type="button" class="btn btn-outline-secondary quick-range" data-days="7" title="Last 7 days">7D</button>
+                <button type="button" class="btn btn-outline-secondary quick-range" data-days="30" title="Last 30 days">30D</button>
+                <button type="button" class="btn btn-outline-secondary quick-range" data-days="90" title="Last 90 days">90D</button>
+                <button type="button" class="btn btn-outline-secondary quick-range" data-days="180" title="Last 6 months">6M</button>
+                <button type="button" class="btn btn-outline-secondary quick-range" data-days="365" title="Last year">1Y</button>
+            </div>
+        </div>
+    </div>
+</div>

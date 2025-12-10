@@ -1,4 +1,5 @@
 using RVToolsWeb.Models.DTOs;
+using RVToolsWeb.Models.ViewModels.Shared;
 
 namespace RVToolsWeb.Models.ViewModels.Trends;
 
@@ -22,12 +23,13 @@ public class VMLifecycleViewModel
 /// <summary>
 /// Filter parameters for the VM Lifecycle report.
 /// </summary>
-public class VMLifecycleFilter
+public class VMLifecycleFilter : DateRangeFilter
 {
     public string? VI_SDK_Server { get; set; }
     public string? VMName { get; set; }
     public string? Powerstate { get; set; }
-    public int LookbackDays { get; set; } = 90;
+
+    protected override int DefaultDaysBack => 90;
 }
 
 /// <summary>

@@ -191,6 +191,24 @@ table.dataTable thead th {
     font-size: 0.875rem;
 }
 
+/* Date Range Picker */
+.date-range-picker-group .flatpickr-date {
+    width: 120px;
+    background-color: #fff;
+    cursor: pointer;
+}
+
+.date-range-picker-group .quick-range {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.date-range-picker-group .quick-range.active {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: #fff;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     #sidebar-wrapper {

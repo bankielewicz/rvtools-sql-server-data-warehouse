@@ -1,4 +1,5 @@
 using RVToolsWeb.Models.DTOs;
+using RVToolsWeb.Models.ViewModels.Shared;
 
 namespace RVToolsWeb.Models.ViewModels.Trends;
 
@@ -22,11 +23,12 @@ public class VMConfigChangesViewModel
 /// <summary>
 /// Filter parameters for the VM Config Changes report.
 /// </summary>
-public class VMConfigChangesFilter
+public class VMConfigChangesFilter : DateRangeFilter
 {
     public string? VI_SDK_Server { get; set; }
     public string? VMName { get; set; }
-    public int DaysBack { get; set; } = 30;
+
+    protected override int DefaultDaysBack => 30;
 }
 
 /// <summary>
