@@ -126,12 +126,51 @@ dotnet run
 
 The application will start on `https://localhost:5001` (or the port configured in `launchSettings.json`).
 
-### Deployment Options
+### Deployment to IIS
 
-- **IIS** - Publish to IIS with ASP.NET Core hosting bundle
-- **Docker** - Container deployment with SQL Server connectivity
-- **Azure App Service** - Cloud deployment with Azure SQL Database
-- **Self-Contained** - Single-file executable for standalone deployment
+#### Prerequisites
+- Windows Server with IIS installed
+- [ASP.NET Core 8.0 Hosting Bundle](https://dotnet.microsoft.com/download/dotnet/8.0)
+
+#### Publish the Application
+
+```bash
+cd src/web/RVToolsWeb
+dotnet publish -c Release -o ./publish
+```
+
+#### Configure IIS
+
+1. Open IIS Manager
+2. Create a new Application Pool:
+   - Name: `RVToolsWeb`
+   - .NET CLR Version: `No Managed Code`
+   - Managed Pipeline Mode: `Integrated`
+3. Create a new Website or Application:
+   - Physical Path: Point to the `publish` folder
+   - Application Pool: `RVToolsWeb`
+   - Binding: Configure HTTP/HTTPS as needed
+
+#### Production Connection String
+
+Update `appsettings.json` in the publish folder with your production connection string:
+
+```json
+{
+  "ConnectionStrings": {
+    "RVToolsDW": "Server=SQLSERVER;Database=RVToolsDW;Trusted_Connection=True;TrustServerCertificate=True;"
+  }
+}
+```
+
+For SQL Authentication:
+```json
+{
+  "ConnectionStrings": {
+    "RVToolsDW": "Server=SQLSERVER;Database=RVToolsDW;User Id=username;Password=password;TrustServerCertificate=True;"
+  }
+}
+```
 
 ## Related Documentation
 

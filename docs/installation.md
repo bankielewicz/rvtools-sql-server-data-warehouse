@@ -152,7 +152,7 @@ dotnet restore
 dotnet run
 ```
 
-See [Web Reports](./web-reports.md) for detailed web dashboard deployment options including IIS, Docker, and Azure.
+See [Web Reports](./web-reports.md) for detailed IIS deployment instructions.
 
 ## Folder Setup
 
