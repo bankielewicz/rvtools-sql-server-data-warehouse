@@ -8,7 +8,12 @@
 
 ## Overview
 
-The RVTools Data Warehouse includes 24 reporting views organized into four categories. This page covers the **13 core reports**; for the complete set including 11 additional specialized reports, see the [SSRS Reports User Guide](../SSRS_Reports_User_Guide.md).
+The RVTools Data Warehouse includes 24 reporting views organized into four categories. Reports can be accessed via:
+
+- **[Web Dashboard](../web-reports.md)** - Modern browser-based interface with interactive charts and DataTables
+- **[SSRS Reports](../SSRS_Reports_User_Guide.md)** - Traditional SQL Server Reporting Services reports
+
+This page covers the **13 core reports**; for the complete set including 11 additional specialized reports, see the guides above.
 
 | Category | Core | Extended | Purpose |
 |----------|------|----------|---------|
@@ -339,6 +344,7 @@ See [SSRS Reports User Guide](../SSRS_Reports_User_Guide.md) for full details on
 
 ## Next Steps
 
+- [Web Reports](../web-reports.md) - Interactive web dashboard
 - [SSRS Reports User Guide](../SSRS_Reports_User_Guide.md) - Complete reference for all 24 reports
 - [Querying Data](./querying-data.md) - More query examples
 - [Extending Views](../development/extending-views.md) - Create custom views

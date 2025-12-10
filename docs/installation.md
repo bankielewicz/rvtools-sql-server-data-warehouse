@@ -25,6 +25,13 @@
 | Modules | ImportExcel, SqlServer |
 | Execution Policy | RemoteSigned or Unrestricted |
 
+### .NET (Optional - for Web Dashboard)
+
+| Component | Requirement |
+|-----------|-------------|
+| SDK | .NET 8.0 SDK |
+| Runtime | ASP.NET Core 8.0 |
+
 ## Installation Steps
 
 ### 1. Install PowerShell Modules
@@ -135,6 +142,18 @@ SELECT name FROM sys.procedures WHERE name LIKE 'usp_%';
 SELECT name FROM sys.views WHERE SCHEMA_NAME(schema_id) = 'Reporting';
 ```
 
+### 8. Deploy Web Application (Optional)
+
+If you want to use the web dashboard instead of or alongside SSRS reports:
+
+```bash
+cd src/web/RVToolsWeb
+dotnet restore
+dotnet run
+```
+
+See [Web Reports](./web-reports.md) for detailed web dashboard deployment options including IIS, Docker, and Azure.
+
 ## Folder Setup
 
 The import process uses these operational folders:
@@ -181,6 +200,7 @@ $cred = Get-Credential
 
 - [Configuration](./configuration.md) - Customize settings
 - [Importing Data](./usage/importing-data.md) - Run your first import
+- [Web Reports](./web-reports.md) - Web dashboard setup and deployment
 
 ## Need Help?
 

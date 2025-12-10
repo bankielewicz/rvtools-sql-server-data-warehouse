@@ -63,6 +63,17 @@ SELECT COUNT(*) AS HostCount FROM Current.vHost;
 SELECT * FROM Audit.ImportBatch ORDER BY StartTime DESC;
 ```
 
+## Step 5: Run Web Dashboard (Optional)
+
+If you have the .NET 8.0 SDK installed, you can run the web dashboard:
+
+```bash
+cd src/web/RVToolsWeb
+dotnet run
+```
+
+Navigate to `https://localhost:5001` to access the interactive web dashboard with all 24 reports.
+
 ## What Happens During Import
 
 1. **Read** - PowerShell reads all sheets from the xlsx file
@@ -78,6 +89,7 @@ SELECT * FROM Audit.ImportBatch ORDER BY StartTime DESC;
 - [Installation Guide](./installation.md) - Detailed setup instructions
 - [Configuration](./configuration.md) - Customize settings
 - [Importing Data](./usage/importing-data.md) - Advanced import options
+- [Web Reports](./web-reports.md) - Web dashboard setup and features
 
 ## Need Help?
 

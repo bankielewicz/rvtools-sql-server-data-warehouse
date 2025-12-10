@@ -30,8 +30,12 @@ graph TB
         AUD[Audit Tables]
     end
 
+    subgraph Web["Web Layer"]
+        WEB[ASP.NET Core 8.0<br/>Web Dashboard]
+    end
+
     subgraph Output
-        RPT[Reports]
+        RPT[SSRS Reports]
         SQL[Direct Queries]
     end
 
@@ -44,6 +48,7 @@ graph TB
     SP --> AUD
     CUR --> VW
     HIS --> VW
+    VW --> WEB
     VW --> RPT
     VW --> SQL
 ```
@@ -56,7 +61,8 @@ graph TB
 | ETL | PowerShell 5.1+ | Orchestration and file handling |
 | Excel Parsing | ImportExcel module | Read xlsx without Excel installed |
 | Database | SQL Server 2016+ | Data storage and processing |
-| Reporting | SQL Views | Pre-built analytical queries |
+| Web | ASP.NET Core 8.0 | Interactive browser-based dashboard |
+| Reporting | SQL Views + SSRS | Pre-built analytical queries and reports |
 
 ## Design Decisions
 
