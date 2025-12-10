@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RVToolsWeb.Models.DTOs;
 using RVToolsWeb.Models.ViewModels.Trends;
@@ -9,6 +10,7 @@ namespace RVToolsWeb.Controllers.Trends;
 /// <summary>
 /// Controller for the Datastore Capacity Trend report.
 /// </summary>
+[Authorize]
 public class DatastoreCapacityTrendController : Controller
 {
     private readonly DatastoreCapacityTrendService _reportService;

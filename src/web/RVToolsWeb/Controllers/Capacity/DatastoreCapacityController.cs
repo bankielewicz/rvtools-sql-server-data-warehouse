@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RVToolsWeb.Models.ViewModels.Capacity;
 using RVToolsWeb.Services.Capacity;
@@ -8,6 +9,7 @@ namespace RVToolsWeb.Controllers.Capacity;
 /// <summary>
 /// Controller for the Datastore Capacity report.
 /// </summary>
+[Authorize]
 public class DatastoreCapacityController : Controller
 {
     private readonly DatastoreCapacityService _reportService;

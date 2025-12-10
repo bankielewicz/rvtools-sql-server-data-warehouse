@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RVToolsWeb.Models.DTOs;
 using RVToolsWeb.Models.ViewModels.Trends;
@@ -9,6 +10,7 @@ namespace RVToolsWeb.Controllers.Trends;
 /// <summary>
 /// Controller for the Host Utilization Trend report.
 /// </summary>
+[Authorize]
 public class HostUtilizationController : Controller
 {
     private readonly HostUtilizationService _reportService;

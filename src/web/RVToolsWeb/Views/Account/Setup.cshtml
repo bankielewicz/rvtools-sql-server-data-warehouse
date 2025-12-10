@@ -1,0 +1,94 @@
+@model RVToolsWeb.Models.ViewModels.Account.SetupViewModel
+@{
+    ViewData["Title"] = "First-Time Setup";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Setup - RVTools Data Warehouse</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" />
+    <style>
+        body {
+            background-color: #212529;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .setup-card {
+            max-width: 500px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="setup-card">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white text-center py-3">
+                <h4 class="mb-0"><i class="bi bi-gear me-2"></i>First-Time Setup</h4>
+            </div>
+            <div class="card-body p-4">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Welcome! This wizard will configure authentication for the RVTools Data Warehouse.
+                </div>
+
+                <form asp-action="CompleteSetup" method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                    <h5 class="mb-3">Authentication Provider</h5>
+                    <div class="mb-3">
+                        <div class="form-check mb-2">
+                            <input type="radio" asp-for="AuthProvider" value="LocalDB" class="form-check-input" id="authLocalDB" checked />
+                            <label class="form-check-label" for="authLocalDB">
+                                <strong>Local Database</strong>
+                                <br><small class="text-muted">Users are stored in the RVToolsDW database</small>
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input type="radio" asp-for="AuthProvider" value="LDAP" class="form-check-input" id="authLDAP" disabled />
+                            <label class="form-check-label text-muted" for="authLDAP">
+                                <strong>LDAP/Active Directory</strong>
+                                <span class="badge bg-secondary ms-1">Coming Soon</span>
+                                <br><small>Authenticate against your corporate directory</small>
+                            </label>
+                        </div>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <h5 class="mb-3">Administrator Account</h5>
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        An administrator account will be created with:
+                        <ul class="mb-0 mt-2">
+                            <li>Username: <strong>admin</strong></li>
+                            <li>Password: <strong>admin</strong></li>
+                        </ul>
+                        <small class="d-block mt-2">You will be required to change this password on first login.</small>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="AdminEmail" class="form-label"></label>
+                        <input asp-for="AdminEmail" class="form-control" placeholder="admin@company.com" />
+                        <span asp-validation-for="AdminEmail" class="text-danger small"></span>
+                        <small class="text-muted">Optional. Used for notifications (future feature).</small>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-check-circle me-2"></i>Complete Setup
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+</body>
+</html>

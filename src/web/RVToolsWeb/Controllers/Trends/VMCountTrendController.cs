@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RVToolsWeb.Models.ViewModels.Trends;
 using RVToolsWeb.Services.Interfaces;
@@ -8,6 +9,7 @@ namespace RVToolsWeb.Controllers.Trends;
 /// <summary>
 /// Controller for the VM Count Trend report.
 /// </summary>
+[Authorize]
 public class VMCountTrendController : Controller
 {
     private readonly VMCountTrendService _reportService;

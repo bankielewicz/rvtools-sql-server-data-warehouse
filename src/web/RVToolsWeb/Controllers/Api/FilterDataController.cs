@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RVToolsWeb.Services.Interfaces;
 
@@ -7,6 +8,7 @@ namespace RVToolsWeb.Controllers.Api;
 /// API controller for AJAX filter dropdown requests.
 /// Used by cascading dropdowns in report filter panels.
 /// </summary>
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class FilterDataController : ControllerBase

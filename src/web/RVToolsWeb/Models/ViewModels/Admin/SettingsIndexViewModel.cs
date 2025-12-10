@@ -23,4 +23,10 @@ public class SettingsIndexViewModel
     // Tab 5: Metadata (read-only)
     public IEnumerable<TableMappingViewModel> TableMappings { get; set; } = Enumerable.Empty<TableMappingViewModel>();
     public int TotalColumnMappings { get; set; }
+
+    // Tab 6: Environment
+    public EnvironmentViewModel Environment { get; set; } = new();
+
+    // Tab 7: Security
+    public SecurityViewModel Security { get; set; } = new();
 }

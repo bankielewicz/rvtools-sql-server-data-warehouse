@@ -1,0 +1,108 @@
+@model RVToolsWeb.Models.ViewModels.Admin.EnvironmentViewModel
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-pc-display me-2"></i>Environment Configuration
+            </div>
+            <div class="card-body">
+                <div class="alert @(Model.IsDevelopment ? "alert-warning" : "alert-info")">
+                    <i class="bi @(Model.IsDevelopment ? "bi-exclamation-triangle" : "bi-info-circle") me-2"></i>
+                    Current Environment: <strong>@Model.CurrentEnvironment</strong>
+                    @if (Model.IsDevelopment)
+                    {
+                        <br><small>Development mode shows detailed error messages. Not recommended for production.</small>
+                    }
+                </div>
+
+                <dl class="row mb-4">
+                    <dt class="col-sm-4">Environment</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge @(Model.IsDevelopment ? "bg-warning text-dark" : "bg-success")">
+                            @Model.CurrentEnvironment
+                        </span>
+                    </dd>
+                    <dt class="col-sm-4">Content Root</dt>
+                    <dd class="col-sm-8"><code>@Model.ContentRootPath</code></dd>
+                    <dt class="col-sm-4">Web Root</dt>
+                    <dd class="col-sm-8"><code>@Model.WebRootPath</code></dd>
+                </dl>
+
+                <hr />
+
+                <h6>Switch Environment</h6>
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-octagon me-2"></i>
+                    <strong>Warning:</strong> Changing the environment will modify <code>web.config</code> and trigger an application restart.
+                    All users will be logged out.
+                </div>
+
+                <div class="d-flex gap-2">
+                    @if (Model.IsDevelopment)
+                    {
+                        <button type="button" class="btn btn-success" id="btnSwitchToProduction"
+                                data-environment="Production">
+                            <i class="bi bi-shield-check me-2"></i>Switch to Production
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-warning" id="btnSwitchToDevelopment"
+                                data-environment="Development">
+                            <i class="bi bi-bug me-2"></i>Switch to Development
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-question-circle me-2"></i>About Environments
+            </div>
+            <div class="card-body">
+                <h6 class="text-success"><i class="bi bi-shield-check me-1"></i>Production</h6>
+                <ul class="small">
+                    <li>Generic error messages</li>
+                    <li>Optimized performance</li>
+                    <li>Recommended for normal use</li>
+                </ul>
+
+                <h6 class="text-warning"><i class="bi bi-bug me-1"></i>Development</h6>
+                <ul class="small mb-0">
+                    <li>Detailed error stack traces</li>
+                    <li>Developer exception page</li>
+                    <li>Use only for debugging</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="environmentConfirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Confirm Environment Change</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>You are about to switch to <strong id="targetEnvironment"></strong> mode.</p>
+                <p class="text-danger mb-0">
+                    <i class="bi bi-exclamation-octagon me-1"></i>
+                    This will restart the application and log out all users.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" id="btnConfirmSwitch">
+                    <i class="bi bi-arrow-repeat me-2"></i>Switch & Restart
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

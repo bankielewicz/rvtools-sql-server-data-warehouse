@@ -109,7 +109,7 @@
                     if (result.success) {
                         showToast('Retention override added successfully');
                         // Reload page to show new entry
-                        setTimeout(() => location.reload(), 1000);
+                        setTimeout(() => location.href = '/Settings/Index?tab=retention', 1000);
                     } else {
                         showToast(result.error || 'Failed to add retention override', true);
                     }
@@ -266,6 +266,234 @@
     }
 
     // ============================================
+    // Security Tab - User Management
+    // ============================================
+    function initSecurity() {
+        // Add User
+        const btnSaveNewUser = document.getElementById('btnSaveNewUser');
+        if (btnSaveNewUser) {
+            btnSaveNewUser.addEventListener('click', async function () {
+                const form = document.getElementById('addUserForm');
+                const formData = new FormData(form);
+
+                const userData = {
+                    username: formData.get('username'),
+                    password: formData.get('password'),
+                    email: formData.get('email') || null,
+                    role: formData.get('role'),
+                    forcePasswordChange: formData.has('forcePasswordChange')
+                };
+
+                try {
+                    this.disabled = true;
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Creating...';
+
+                    const result = await postJson('/Settings/AddUser', userData);
+
+                    if (result.success) {
+                        showToast('User created successfully');
+                        setTimeout(() => location.href = '/Settings/Index?tab=security', 1000);
+                    } else {
+                        showToast(result.error || 'Failed to create user', true);
+                    }
+                } catch (error) {
+                    showToast('Error creating user: ' + error.message, true);
+                } finally {
+                    this.disabled = false;
+                    this.innerHTML = '<i class="bi bi-check-circle me-1"></i>Create User';
+                }
+            });
+        }
+
+        // Edit User - populate modal
+        document.querySelectorAll('.btn-edit-user').forEach(button => {
+            button.addEventListener('click', function () {
+                document.getElementById('editUserId').value = this.dataset.userId;
+                document.getElementById('editUsername').value = this.dataset.username;
+                document.getElementById('editEmail').value = this.dataset.email || '';
+                document.getElementById('editRole').value = this.dataset.role;
+                document.getElementById('editIsActive').checked = this.dataset.active === 'true';
+
+                const modal = new bootstrap.Modal(document.getElementById('editUserModal'));
+                modal.show();
+            });
+        });
+
+        // Edit User - save
+        const btnSaveEditUser = document.getElementById('btnSaveEditUser');
+        if (btnSaveEditUser) {
+            btnSaveEditUser.addEventListener('click', async function () {
+                const form = document.getElementById('editUserForm');
+                const formData = new FormData(form);
+
+                const userData = {
+                    userId: parseInt(formData.get('userId')),
+                    email: formData.get('email') || null,
+                    role: formData.get('role'),
+                    isActive: formData.has('isActive')
+                };
+
+                try {
+                    this.disabled = true;
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
+
+                    const result = await postJson('/Settings/UpdateUser', userData);
+
+                    if (result.success) {
+                        showToast('User updated successfully');
+                        setTimeout(() => location.href = '/Settings/Index?tab=security', 1000);
+                    } else {
+                        showToast(result.error || 'Failed to update user', true);
+                    }
+                } catch (error) {
+                    showToast('Error updating user: ' + error.message, true);
+                } finally {
+                    this.disabled = false;
+                    this.innerHTML = '<i class="bi bi-check-circle me-1"></i>Save Changes';
+                }
+            });
+        }
+
+        // Reset Password - populate modal
+        document.querySelectorAll('.btn-reset-password').forEach(button => {
+            button.addEventListener('click', function () {
+                document.getElementById('resetPasswordUserId').value = this.dataset.userId;
+                document.getElementById('resetPasswordUsername').textContent = this.dataset.username;
+
+                const modal = new bootstrap.Modal(document.getElementById('resetPasswordModal'));
+                modal.show();
+            });
+        });
+
+        // Reset Password - save
+        const btnConfirmResetPassword = document.getElementById('btnConfirmResetPassword');
+        if (btnConfirmResetPassword) {
+            btnConfirmResetPassword.addEventListener('click', async function () {
+                const form = document.getElementById('resetPasswordForm');
+                const formData = new FormData(form);
+
+                const resetData = {
+                    userId: parseInt(formData.get('userId')),
+                    newPassword: formData.get('newPassword'),
+                    forceChange: formData.has('forceChange')
+                };
+
+                try {
+                    this.disabled = true;
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Resetting...';
+
+                    const result = await postJson('/Settings/ResetPassword', resetData);
+
+                    if (result.success) {
+                        showToast('Password reset successfully');
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('resetPasswordModal'));
+                        modal.hide();
+                        setTimeout(() => location.href = '/Settings/Index?tab=security', 1000);
+                    } else {
+                        showToast(result.error || 'Failed to reset password', true);
+                    }
+                } catch (error) {
+                    showToast('Error resetting password: ' + error.message, true);
+                } finally {
+                    this.disabled = false;
+                    this.innerHTML = '<i class="bi bi-key me-1"></i>Reset Password';
+                }
+            });
+        }
+
+        // Delete User - populate modal
+        document.querySelectorAll('.btn-delete-user').forEach(button => {
+            button.addEventListener('click', function () {
+                document.getElementById('deleteUserId').value = this.dataset.userId;
+                document.getElementById('deleteUsername').textContent = this.dataset.username;
+
+                const modal = new bootstrap.Modal(document.getElementById('deleteUserModal'));
+                modal.show();
+            });
+        });
+
+        // Delete User - confirm
+        const btnConfirmDeleteUser = document.getElementById('btnConfirmDeleteUser');
+        if (btnConfirmDeleteUser) {
+            btnConfirmDeleteUser.addEventListener('click', async function () {
+                const userId = parseInt(document.getElementById('deleteUserId').value);
+
+                try {
+                    this.disabled = true;
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Deleting...';
+
+                    const result = await postJson('/Settings/DeleteUser', {
+                        userId: userId
+                    });
+
+                    if (result.success) {
+                        showToast('User deleted successfully');
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('deleteUserModal'));
+                        modal.hide();
+                        setTimeout(() => location.href = '/Settings/Index?tab=security', 1000);
+                    } else {
+                        showToast(result.error || 'Failed to delete user', true);
+                    }
+                } catch (error) {
+                    showToast('Error deleting user: ' + error.message, true);
+                } finally {
+                    this.disabled = false;
+                    this.innerHTML = '<i class="bi bi-trash me-1"></i>Delete User';
+                }
+            });
+        }
+    }
+
+    // ============================================
+    // Environment Tab
+    // ============================================
+    function initEnvironment() {
+        const btnSwitchToDevelopment = document.getElementById('btnSwitchToDevelopment');
+        const btnSwitchToProduction = document.getElementById('btnSwitchToProduction');
+
+        [btnSwitchToDevelopment, btnSwitchToProduction].forEach(btn => {
+            if (btn) {
+                btn.addEventListener('click', function () {
+                    const targetEnv = this.dataset.environment;
+                    document.getElementById('targetEnvironment').textContent = targetEnv;
+
+                    const modal = new bootstrap.Modal(document.getElementById('environmentConfirmModal'));
+                    modal.show();
+                });
+            }
+        });
+
+        const btnConfirmSwitch = document.getElementById('btnConfirmSwitch');
+        if (btnConfirmSwitch) {
+            btnConfirmSwitch.addEventListener('click', async function () {
+                const targetEnv = document.getElementById('targetEnvironment').textContent;
+
+                try {
+                    this.disabled = true;
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Switching...';
+
+                    const result = await postJson('/Settings/SwitchEnvironment', {
+                        environment: targetEnv
+                    });
+
+                    if (result.success) {
+                        showToast('Environment switched. Application is restarting...');
+                        // Wait a moment then reload (app will restart)
+                        setTimeout(() => location.href = '/Settings/Index?tab=environment', 2000);
+                    } else {
+                        showToast(result.error || 'Failed to switch environment', true);
+                    }
+                } catch (error) {
+                    showToast('Error switching environment: ' + error.message, true);
+                } finally {
+                    this.disabled = false;
+                    this.innerHTML = '<i class="bi bi-arrow-repeat me-2"></i>Switch & Restart';
+                }
+            });
+        }
+    }
+
+    // ============================================
     // Initialize all handlers on page load
     // ============================================
     document.addEventListener('DOMContentLoaded', function () {
@@ -273,6 +501,8 @@
         initTableRetention();
         initAppSettings();
         initDatabaseStatus();
+        initSecurity();
+        initEnvironment();
 
         // Initialize Bootstrap tooltips
         const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
