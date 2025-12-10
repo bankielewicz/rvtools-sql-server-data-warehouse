@@ -2,12 +2,15 @@
 
 [![SQL Server](https://img.shields.io/badge/SQL%20Server-2016+-CC2927.svg?logo=microsoftsqlserver)](https://www.microsoft.com/sql-server)
 [![PowerShell](https://img.shields.io/badge/PowerShell-5.1+-5391FE.svg?logo=powershell)](https://docs.microsoft.com/powershell)
+[![ASP.NET Core](https://img.shields.io/badge/ASP.NET%20Core-8.0-512BD4.svg?logo=dotnet)](https://dotnet.microsoft.com/apps/aspnet)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/bankielewicz/rvtools-sql-server-data-warehouse?style=social)](https://github.com/bankielewicz/rvtools-sql-server-data-warehouse/stargazers)
 
-> **SQL Server ETL solution that imports RVTools VMware inventory exports into a relational data warehouse with SCD Type 2 historical tracking, automated PowerShell ETL pipeline, and 24 pre-built SSRS reports.**
+> **SQL Server ETL solution that imports RVTools VMware inventory exports into a relational data warehouse with SCD Type 2 historical tracking, automated PowerShell ETL pipeline, and 24 pre-built reports via web dashboard or SSRS.**
 
-**Keywords**: RVTools | SQL Server Data Warehouse | VMware Inventory | vCenter | ESXi | PowerShell ETL | SSRS Reports | Historical Tracking | VMware Analytics | Infrastructure Monitoring
+![Web Dashboard](docs/images/web-dashboard.png)
+
+**Keywords**: RVTools | SQL Server Data Warehouse | VMware Inventory | vCenter | ESXi | PowerShell ETL | ASP.NET Core | Web Dashboard | SSRS Reports | Historical Tracking | VMware Analytics | Infrastructure Monitoring
 
 ---
 
@@ -17,7 +20,8 @@
 
 - **Full RVTools Support** - Import all 27 RVTools tabs (~850 columns)
 - **SCD Type 2 History** - Track all changes with ValidFrom/ValidTo timestamps
-- **Pre-built Reports** - 13 core reports plus 11 specialized reports across Inventory, Health, Capacity, and Trends
+- **Web Dashboard** - Modern ASP.NET Core 8.0 browser-based reporting with interactive charts and real-time data
+- **Pre-built Reports** - 24 reports across Inventory, Health, Capacity, and Trends via web interface or SSRS
 - **Audit Trail** - Complete import logging with batch tracking and failed record capture
 
 ## Quick Start
@@ -55,9 +59,10 @@ See [Getting Started](docs/getting-started.md) for detailed setup instructions.
 | [Data Flow](docs/architecture/data-flow.md) | ETL process details |
 | **Usage** | |
 | [Importing Data](docs/usage/importing-data.md) | Running imports |
+| [Web Reports](docs/web-reports.md) | Web dashboard and browser-based reports |
 | [Reports](docs/usage/reports.md) | Available reports and views |
 | [Querying Data](docs/usage/querying-data.md) | SQL query examples |
-| [SSRS Reports Guide](docs/SSRS_Reports_User_Guide.md) | Complete report reference |
+| [SSRS Reports Guide](docs/SSRS_Reports_User_Guide.md) | Complete SSRS report reference |
 | **Development** | |
 | [Contributing](docs/development/contributing.md) | How to contribute |
 | [Extending Tables](docs/development/extending-tables.md) | Adding new RVTools tabs |
@@ -74,6 +79,7 @@ See [Getting Started](docs/getting-started.md) for detailed setup instructions.
 - **ImportExcel** PowerShell module
 - **SqlServer** PowerShell module
 - **RVTools** 4.x (for generating VMware exports)
+- **.NET 8.0 SDK** (for web application, optional)
 
 ## Project Structure
 
@@ -85,7 +91,9 @@ src/
 │   ├── Tables/          # Staging, Current, History tables
 │   ├── StoredProcedures/# Import processing logic
 │   └── Views/           # Reporting views
-└── reports/             # Report definitions
+├── reports/             # SSRS report definitions (.rdl)
+└── web/                 # ASP.NET Core web application
+    └── RVToolsWeb/      # Web dashboard and reports
 ```
 
 ## Use Cases
@@ -103,7 +111,8 @@ This data warehouse solution is ideal for:
 
 - **Database**: SQL Server 2016+ with three-schema pattern (Staging, Current, History)
 - **ETL**: PowerShell 5.1+ with ImportExcel module for xlsx parsing
-- **Reporting**: SSRS reports and SQL views for analytics
+- **Web Reporting**: ASP.NET Core 8.0 with Bootstrap 5, Chart.js, and DataTables
+- **SSRS Reporting**: SQL Server Reporting Services with RDL report definitions
 - **Architecture**: SCD Type 2 for historical tracking with ValidFrom/ValidTo timestamps
 
 ## Contributing
