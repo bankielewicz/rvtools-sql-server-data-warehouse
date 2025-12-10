@@ -13,9 +13,16 @@ public interface IUserService
     Task<int> GetUserCountAsync();
 
     /// <summary>
-    /// Validate credentials and return user if valid, null if invalid
+    /// Validate credentials and return user if valid, null if invalid.
+    /// Uses configured authentication provider (LocalDB or LDAP with fallback).
     /// </summary>
     Task<UserDto?> ValidateCredentialsAsync(string username, string password);
+
+    /// <summary>
+    /// Create or update a local user record for LDAP-authenticated users.
+    /// Used to track session info for LDAP users.
+    /// </summary>
+    Task<UserDto?> GetOrCreateLdapUserAsync(string username, string? email, string role);
 
     /// <summary>
     /// Create a new user account

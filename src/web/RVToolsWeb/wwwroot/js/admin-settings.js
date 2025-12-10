@@ -442,6 +442,123 @@
                 }
             });
         }
+
+        // Auth Provider Toggle
+        document.querySelectorAll('input[name="authProvider"]').forEach(radio => {
+            radio.addEventListener('change', async function () {
+                const provider = this.value;
+
+                try {
+                    const result = await postJson('/Settings/SwitchAuthProvider', {
+                        authProvider: provider
+                    });
+
+                    if (result.success) {
+                        showToast(`Authentication provider switched to ${provider}`);
+                        setTimeout(() => location.href = '/Settings/Index?tab=security', 1000);
+                    } else {
+                        showToast(result.error || 'Failed to switch provider', true);
+                        // Revert radio button
+                        document.getElementById(provider === 'LocalDB' ? 'authLDAP' : 'authLocalDB').checked = true;
+                    }
+                } catch (error) {
+                    showToast('Error switching provider: ' + error.message, true);
+                }
+            });
+        });
+
+        // LDAP Test Connection
+        const btnTestLdap = document.getElementById('btnTestLdap');
+        if (btnTestLdap) {
+            btnTestLdap.addEventListener('click', async function () {
+                const resultDiv = document.getElementById('ldapTestResult');
+
+                const ldapData = {
+                    ldapServer: document.getElementById('ldapServer').value,
+                    ldapPort: parseInt(document.getElementById('ldapPort').value) || 389,
+                    ldapUseSsl: document.getElementById('ldapUseSsl').checked,
+                    ldapBaseDN: document.getElementById('ldapBaseDN').value,
+                    ldapBindDN: document.getElementById('ldapBindDN').value || null,
+                    ldapBindPassword: document.getElementById('ldapBindPassword').value || null
+                };
+
+                if (!ldapData.ldapServer || !ldapData.ldapBaseDN) {
+                    resultDiv.className = 'alert alert-warning mt-3';
+                    resultDiv.textContent = 'LDAP Server and Base DN are required for testing.';
+                    resultDiv.classList.remove('d-none');
+                    return;
+                }
+
+                try {
+                    this.disabled = true;
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Testing...';
+                    resultDiv.className = 'alert alert-info mt-3';
+                    resultDiv.textContent = 'Testing connection...';
+                    resultDiv.classList.remove('d-none');
+
+                    const result = await postJson('/Settings/TestLdapConnection', ldapData);
+
+                    if (result.success) {
+                        resultDiv.className = 'alert alert-success mt-3';
+                        resultDiv.innerHTML = '<i class="bi bi-check-circle me-1"></i>' + result.message;
+                    } else {
+                        resultDiv.className = 'alert alert-danger mt-3';
+                        resultDiv.innerHTML = '<i class="bi bi-x-circle me-1"></i>' + result.message;
+                    }
+                } catch (error) {
+                    resultDiv.className = 'alert alert-danger mt-3';
+                    resultDiv.innerHTML = '<i class="bi bi-x-circle me-1"></i>Error: ' + error.message;
+                } finally {
+                    this.disabled = false;
+                    this.innerHTML = '<i class="bi bi-plug me-1"></i>Test Connection';
+                }
+            });
+        }
+
+        // LDAP Save Configuration
+        const btnSaveLdapConfig = document.getElementById('btnSaveLdapConfig');
+        if (btnSaveLdapConfig) {
+            btnSaveLdapConfig.addEventListener('click', async function () {
+                const ldapData = {
+                    ldapServer: document.getElementById('ldapServer').value,
+                    ldapDomain: document.getElementById('ldapDomain').value || null,
+                    ldapBaseDN: document.getElementById('ldapBaseDN').value,
+                    ldapPort: parseInt(document.getElementById('ldapPort').value) || 389,
+                    ldapUseSsl: document.getElementById('ldapUseSsl').checked,
+                    ldapBindDN: document.getElementById('ldapBindDN').value || null,
+                    ldapBindPassword: document.getElementById('ldapBindPassword').value || null,
+                    ldapAdminGroup: document.getElementById('ldapAdminGroup').value || null,
+                    ldapUserGroup: document.getElementById('ldapUserGroup').value || null,
+                    ldapFallbackToLocal: document.getElementById('ldapFallbackToLocal').checked
+                };
+
+                if (!ldapData.ldapServer || !ldapData.ldapBaseDN) {
+                    showToast('LDAP Server and Base DN are required', true);
+                    return;
+                }
+
+                try {
+                    this.disabled = true;
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
+
+                    const result = await postJson('/Settings/UpdateLdapSettings', ldapData);
+
+                    if (result.success) {
+                        showToast('LDAP configuration saved successfully');
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('ldapConfigModal'));
+                        modal.hide();
+                        setTimeout(() => location.href = '/Settings/Index?tab=security', 1000);
+                    } else {
+                        showToast(result.error || 'Failed to save LDAP configuration', true);
+                    }
+                } catch (error) {
+                    showToast('Error saving LDAP configuration: ' + error.message, true);
+                } finally {
+                    this.disabled = false;
+                    this.innerHTML = '<i class="bi bi-check-circle me-1"></i>Save Configuration';
+                }
+            });
+        }
     }
 
     // ============================================

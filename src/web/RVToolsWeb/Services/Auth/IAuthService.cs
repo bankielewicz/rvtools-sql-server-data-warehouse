@@ -28,4 +28,19 @@ public interface IAuthService
     /// </summary>
     Task<bool> UpdateAuthSettingsAsync(string authProvider, string? ldapServer = null,
         string? ldapDomain = null, string? ldapBaseDN = null);
+
+    /// <summary>
+    /// Update full LDAP settings including port, SSL, bind credentials, and group mappings
+    /// </summary>
+    Task<bool> UpdateLdapSettingsAsync(
+        string ldapServer,
+        string? ldapDomain,
+        string ldapBaseDN,
+        int ldapPort,
+        bool ldapUseSsl,
+        string? ldapBindDN,
+        string? ldapBindPassword,
+        string? ldapAdminGroup,
+        string? ldapUserGroup,
+        bool ldapFallbackToLocal);
 }

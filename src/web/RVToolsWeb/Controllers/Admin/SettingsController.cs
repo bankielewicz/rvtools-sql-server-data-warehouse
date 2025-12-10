@@ -18,6 +18,7 @@ public class SettingsController : Controller
     private readonly IDatabaseStatusService _statusService;
     private readonly IAuthService _authService;
     private readonly IUserService _userService;
+    private readonly ILdapService _ldapService;
     private readonly IWebHostEnvironment _environment;
     private readonly ILogger<SettingsController> _logger;
 
@@ -28,6 +29,7 @@ public class SettingsController : Controller
         IDatabaseStatusService statusService,
         IAuthService authService,
         IUserService userService,
+        ILdapService ldapService,
         IWebHostEnvironment environment,
         ILogger<SettingsController> logger)
     {
@@ -37,6 +39,7 @@ public class SettingsController : Controller
         _statusService = statusService;
         _authService = authService;
         _userService = userService;
+        _ldapService = ldapService;
         _environment = environment;
         _logger = logger;
     }
@@ -77,6 +80,12 @@ public class SettingsController : Controller
                     LdapServer = authSettings?.LdapServer,
                     LdapDomain = authSettings?.LdapDomain,
                     LdapBaseDN = authSettings?.LdapBaseDN,
+                    LdapPort = authSettings?.LdapPort ?? 389,
+                    LdapUseSsl = authSettings?.LdapUseSsl ?? false,
+                    LdapBindDN = authSettings?.LdapBindDN,
+                    LdapAdminGroup = authSettings?.LdapAdminGroup,
+                    LdapUserGroup = authSettings?.LdapUserGroup,
+                    LdapFallbackToLocal = authSettings?.LdapFallbackToLocal ?? true,
                     IsConfigured = authSettings?.IsConfigured ?? false
                 },
                 Users = users.Select(u => new UserViewModel
@@ -364,6 +373,92 @@ public class SettingsController : Controller
     }
 
     #endregion
+
+    #region LDAP Configuration
+
+    /// <summary>
+    /// Test LDAP connection with provided settings.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> TestLdapConnection([FromBody] TestLdapRequest request)
+    {
+        if (request == null || string.IsNullOrWhiteSpace(request.LdapServer) || string.IsNullOrWhiteSpace(request.LdapBaseDN))
+        {
+            return BadRequest(new { success = false, error = "LDAP server and Base DN are required" });
+        }
+
+        var (success, message) = await _ldapService.TestConnectionAsync(
+            request.LdapServer,
+            request.LdapPort,
+            request.LdapUseSsl,
+            request.LdapBaseDN,
+            request.LdapBindDN,
+            request.LdapBindPassword);
+
+        return Json(new { success, message });
+    }
+
+    /// <summary>
+    /// Update LDAP configuration settings.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateLdapSettings([FromBody] UpdateLdapSettingsRequest request)
+    {
+        if (request == null || string.IsNullOrWhiteSpace(request.LdapServer) || string.IsNullOrWhiteSpace(request.LdapBaseDN))
+        {
+            return BadRequest(new { success = false, error = "LDAP server and Base DN are required" });
+        }
+
+        var success = await _authService.UpdateLdapSettingsAsync(
+            request.LdapServer,
+            request.LdapDomain,
+            request.LdapBaseDN,
+            request.LdapPort,
+            request.LdapUseSsl,
+            request.LdapBindDN,
+            request.LdapBindPassword,
+            request.LdapAdminGroup,
+            request.LdapUserGroup,
+            request.LdapFallbackToLocal);
+
+        if (success)
+        {
+            _logger.LogInformation("LDAP settings updated by admin");
+        }
+
+        return Json(new { success });
+    }
+
+    /// <summary>
+    /// Switch authentication provider between LocalDB and LDAP.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SwitchAuthProvider([FromBody] SwitchAuthProviderRequest request)
+    {
+        if (request == null || string.IsNullOrWhiteSpace(request.AuthProvider))
+        {
+            return BadRequest(new { success = false, error = "Auth provider is required" });
+        }
+
+        if (request.AuthProvider != "LocalDB" && request.AuthProvider != "LDAP")
+        {
+            return BadRequest(new { success = false, error = "Invalid auth provider. Must be 'LocalDB' or 'LDAP'" });
+        }
+
+        var success = await _authService.UpdateAuthSettingsAsync(request.AuthProvider);
+
+        if (success)
+        {
+            _logger.LogWarning("Authentication provider switched to {Provider} by admin", request.AuthProvider);
+        }
+
+        return Json(new { success });
+    }
+
+    #endregion
 }
 
 // Request DTOs for AJAX operations
@@ -422,4 +517,33 @@ public class DeleteUserRequest
 public class SwitchEnvironmentRequest
 {
     public string? Environment { get; set; }
+}
+
+public class TestLdapRequest
+{
+    public string? LdapServer { get; set; }
+    public int LdapPort { get; set; } = 389;
+    public bool LdapUseSsl { get; set; }
+    public string? LdapBaseDN { get; set; }
+    public string? LdapBindDN { get; set; }
+    public string? LdapBindPassword { get; set; }
+}
+
+public class UpdateLdapSettingsRequest
+{
+    public string? LdapServer { get; set; }
+    public string? LdapDomain { get; set; }
+    public string? LdapBaseDN { get; set; }
+    public int LdapPort { get; set; } = 389;
+    public bool LdapUseSsl { get; set; }
+    public string? LdapBindDN { get; set; }
+    public string? LdapBindPassword { get; set; }
+    public string? LdapAdminGroup { get; set; }
+    public string? LdapUserGroup { get; set; }
+    public bool LdapFallbackToLocal { get; set; } = true;
+}
+
+public class SwitchAuthProviderRequest
+{
+    public string? AuthProvider { get; set; }
 }

@@ -18,6 +18,11 @@ public class UserDto
     public DateTime? LockoutEnd { get; set; }
     public DateTime CreatedDate { get; set; }
     public DateTime ModifiedDate { get; set; }
+
+    /// <summary>
+    /// Authentication source: "LocalDB" or "LDAP" (not persisted, set at runtime)
+    /// </summary>
+    public string AuthSource { get; set; } = "LocalDB";
 }
 
 /// <summary>
@@ -31,6 +36,13 @@ public class AuthSettingsDto
     public string? LdapDomain { get; set; }
     public string? LdapBaseDN { get; set; }
     public string? LdapSearchFilter { get; set; }
+    public int LdapPort { get; set; } = 389;
+    public bool LdapUseSsl { get; set; }
+    public string? LdapBindDN { get; set; }
+    public string? LdapBindPassword { get; set; }
+    public string? LdapAdminGroup { get; set; }
+    public string? LdapUserGroup { get; set; }
+    public bool LdapFallbackToLocal { get; set; } = true;
     public bool IsConfigured { get; set; }
     public DateTime CreatedDate { get; set; }
     public DateTime ModifiedDate { get; set; }

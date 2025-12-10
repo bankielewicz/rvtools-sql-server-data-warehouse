@@ -18,6 +18,12 @@ public class AuthSettingsViewModel
     public string? LdapServer { get; set; }
     public string? LdapDomain { get; set; }
     public string? LdapBaseDN { get; set; }
+    public int LdapPort { get; set; } = 389;
+    public bool LdapUseSsl { get; set; }
+    public string? LdapBindDN { get; set; }
+    public string? LdapAdminGroup { get; set; }
+    public string? LdapUserGroup { get; set; }
+    public bool LdapFallbackToLocal { get; set; } = true;
     public bool IsConfigured { get; set; }
 }
 

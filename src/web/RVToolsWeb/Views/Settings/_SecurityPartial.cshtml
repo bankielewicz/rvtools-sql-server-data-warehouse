@@ -4,15 +4,29 @@
     <!-- Auth Provider Settings -->
     <div class="col-lg-4 mb-4">
         <div class="card h-100">
-            <div class="card-header">
-                <i class="bi bi-shield me-2"></i>Authentication Provider
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-shield me-2"></i>Authentication Provider</span>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#ldapConfigModal">
+                    <i class="bi bi-gear me-1"></i>Configure
+                </button>
             </div>
             <div class="card-body">
-                <dl class="row mb-0">
-                    <dt class="col-sm-5">Provider</dt>
-                    <dd class="col-sm-7">
-                        <span class="badge bg-primary">@Model.AuthSettings.AuthProvider</span>
-                    </dd>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Active Provider</label>
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="authProvider" id="authLocalDB" value="LocalDB"
+                               @(Model.AuthSettings.AuthProvider == "LocalDB" ? "checked" : "") />
+                        <label class="btn btn-outline-primary" for="authLocalDB">
+                            <i class="bi bi-database me-1"></i>Local Database
+                        </label>
+                        <input type="radio" class="btn-check" name="authProvider" id="authLDAP" value="LDAP"
+                               @(Model.AuthSettings.AuthProvider == "LDAP" ? "checked" : "") />
+                        <label class="btn btn-outline-primary" for="authLDAP">
+                            <i class="bi bi-building me-1"></i>Active Directory
+                        </label>
+                    </div>
+                </div>
+                <dl class="row mb-0 small">
                     <dt class="col-sm-5">Status</dt>
                     <dd class="col-sm-7">
                         @if (Model.AuthSettings.IsConfigured)
@@ -24,17 +38,27 @@
                             <span class="badge bg-warning">Not Configured</span>
                         }
                     </dd>
-                </dl>
-                @if (Model.AuthSettings.AuthProvider == "LDAP")
-                {
-                    <hr />
-                    <dl class="row mb-0 small">
+                    @if (Model.AuthSettings.AuthProvider == "LDAP")
+                    {
                         <dt class="col-sm-5">Server</dt>
                         <dd class="col-sm-7">@(Model.AuthSettings.LdapServer ?? "-")</dd>
+                        <dt class="col-sm-5">Port</dt>
+                        <dd class="col-sm-7">@Model.AuthSettings.LdapPort @(Model.AuthSettings.LdapUseSsl ? "(SSL)" : "")</dd>
                         <dt class="col-sm-5">Domain</dt>
                         <dd class="col-sm-7">@(Model.AuthSettings.LdapDomain ?? "-")</dd>
-                    </dl>
-                }
+                        <dt class="col-sm-5">Fallback</dt>
+                        <dd class="col-sm-7">
+                            @if (Model.AuthSettings.LdapFallbackToLocal)
+                            {
+                                <span class="badge bg-info">Enabled</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Disabled</span>
+                            }
+                        </dd>
+                    }
+                </dl>
             </div>
         </div>
     </div>
@@ -296,6 +320,131 @@
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-danger" id="btnConfirmDeleteUser">
                     <i class="bi bi-trash me-1"></i>Delete User
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- LDAP Configuration Modal -->
+<div class="modal fade" id="ldapConfigModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-building me-2"></i>Active Directory / LDAP Configuration</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="ldapConfigForm">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label class="form-label">LDAP Server <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="ldapServer" id="ldapServer"
+                                       value="@Model.AuthSettings.LdapServer" placeholder="ldap.company.com or dc01.company.com" />
+                                <small class="text-muted">Hostname or IP address of AD/LDAP server</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Port</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" name="ldapPort" id="ldapPort"
+                                           value="@Model.AuthSettings.LdapPort" min="1" max="65535" />
+                                    <div class="input-group-text">
+                                        <input type="checkbox" class="form-check-input me-1" name="ldapUseSsl" id="ldapUseSsl"
+                                               @(Model.AuthSettings.LdapUseSsl ? "checked" : "") />
+                                        <label class="form-check-label small" for="ldapUseSsl">SSL</label>
+                                    </div>
+                                </div>
+                                <small class="text-muted">389 (LDAP) or 636 (LDAPS)</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Domain</label>
+                                <input type="text" class="form-control" name="ldapDomain" id="ldapDomain"
+                                       value="@Model.AuthSettings.LdapDomain" placeholder="company.com" />
+                                <small class="text-muted">AD domain name (for UPN login: user@company.com)</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Base DN <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="ldapBaseDN" id="ldapBaseDN"
+                                       value="@Model.AuthSettings.LdapBaseDN" placeholder="DC=company,DC=com" />
+                                <small class="text-muted">Base Distinguished Name for user searches</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr />
+                    <h6 class="text-muted mb-3"><i class="bi bi-key me-1"></i>Service Account (Optional)</h6>
+                    <p class="small text-muted">For querying user group memberships. Leave blank for simple bind authentication.</p>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Bind DN</label>
+                                <input type="text" class="form-control" name="ldapBindDN" id="ldapBindDN"
+                                       value="@Model.AuthSettings.LdapBindDN" placeholder="CN=ServiceAccount,OU=Service,DC=company,DC=com" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Bind Password</label>
+                                <input type="password" class="form-control" name="ldapBindPassword" id="ldapBindPassword"
+                                       placeholder="Enter to change" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr />
+                    <h6 class="text-muted mb-3"><i class="bi bi-people me-1"></i>Role Mapping</h6>
+                    <p class="small text-muted">Map AD groups to application roles. Leave blank to assign all AD users the "User" role.</p>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Admin Group</label>
+                                <input type="text" class="form-control" name="ldapAdminGroup" id="ldapAdminGroup"
+                                       value="@Model.AuthSettings.LdapAdminGroup" placeholder="CN=RVTools-Admins,OU=Groups,DC=company,DC=com" />
+                                <small class="text-muted">AD group for Admin role</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">User Group</label>
+                                <input type="text" class="form-control" name="ldapUserGroup" id="ldapUserGroup"
+                                       value="@Model.AuthSettings.LdapUserGroup" placeholder="CN=RVTools-Users,OU=Groups,DC=company,DC=com" />
+                                <small class="text-muted">AD group for User role (leave blank for all)</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr />
+                    <div class="form-check form-switch">
+                        <input type="checkbox" class="form-check-input" name="ldapFallbackToLocal" id="ldapFallbackToLocal"
+                               @(Model.AuthSettings.LdapFallbackToLocal ? "checked" : "") />
+                        <label class="form-check-label" for="ldapFallbackToLocal">
+                            <strong>Enable fallback to local database</strong>
+                        </label>
+                        <p class="small text-muted mb-0">If LDAP authentication fails, try authenticating against local users</p>
+                    </div>
+                </form>
+
+                <div id="ldapTestResult" class="alert mt-3 d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" id="btnTestLdap">
+                    <i class="bi bi-plug me-1"></i>Test Connection
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="btnSaveLdapConfig">
+                    <i class="bi bi-check-circle me-1"></i>Save Configuration
                 </button>
             </div>
         </div>

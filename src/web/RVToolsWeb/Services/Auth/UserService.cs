@@ -15,6 +15,8 @@ public class UserService : IUserService
     private readonly ISqlConnectionFactory _connectionFactory;
     private readonly ILogger<UserService> _logger;
     private readonly AuthenticationConfig _authConfig;
+    private readonly ILdapService _ldapService;
+    private readonly IAuthService _authService;
 
     // PBKDF2 parameters (OWASP recommended)
     private const int Iterations = 100000;
@@ -24,11 +26,15 @@ public class UserService : IUserService
     public UserService(
         ISqlConnectionFactory connectionFactory,
         ILogger<UserService> logger,
-        IOptions<AppSettings> settings)
+        IOptions<AppSettings> settings,
+        ILdapService ldapService,
+        IAuthService authService)
     {
         _connectionFactory = connectionFactory;
         _logger = logger;
         _authConfig = settings.Value.Authentication;
+        _ldapService = ldapService;
+        _authService = authService;
     }
 
     public async Task<UserDto?> GetUserByIdAsync(int userId)
@@ -61,6 +67,56 @@ public class UserService : IUserService
 
     public async Task<UserDto?> ValidateCredentialsAsync(string username, string password)
     {
+        // Get auth settings to determine which provider to use
+        var authSettings = await _authService.GetAuthSettingsAsync();
+        var useLocalDb = authSettings?.AuthProvider != "LDAP";
+        var fallbackToLocal = authSettings?.LdapFallbackToLocal ?? true;
+
+        // Try LDAP first if configured
+        if (!useLocalDb)
+        {
+            _logger.LogDebug("Attempting LDAP authentication for user: {Username}", username);
+            var ldapResult = await _ldapService.AuthenticateAsync(username, password);
+
+            if (ldapResult.Success)
+            {
+                _logger.LogInformation("LDAP authentication successful for user: {Username}", username);
+
+                // Check if role is "None" (user not in required groups)
+                if (ldapResult.Role == "None")
+                {
+                    _logger.LogWarning("LDAP user {Username} not in required AD groups", username);
+                    return null;
+                }
+
+                // Get or create local user record for session tracking
+                var ldapUser = await GetOrCreateLdapUserAsync(username, ldapResult.Email, ldapResult.Role);
+                if (ldapUser != null)
+                {
+                    ldapUser.AuthSource = "LDAP";
+                    await RecordLoginAttemptAsync(ldapUser.UserId, true);
+                }
+                return ldapUser;
+            }
+
+            // LDAP failed - try fallback to local if enabled
+            if (fallbackToLocal)
+            {
+                _logger.LogDebug("LDAP authentication failed for {Username}, trying local auth fallback", username);
+            }
+            else
+            {
+                _logger.LogWarning("LDAP authentication failed for {Username}: {Error}", username, ldapResult.ErrorMessage);
+                return null;
+            }
+        }
+
+        // Local database authentication
+        return await ValidateLocalCredentialsAsync(username, password);
+    }
+
+    private async Task<UserDto?> ValidateLocalCredentialsAsync(string username, string password)
+    {
         var user = await GetUserByUsernameAsync(username);
 
         if (user == null)
@@ -92,8 +148,51 @@ public class UserService : IUserService
         }
 
         // Success
+        user.AuthSource = "LocalDB";
         await RecordLoginAttemptAsync(user.UserId, true);
         return user;
+    }
+
+    public async Task<UserDto?> GetOrCreateLdapUserAsync(string username, string? email, string role)
+    {
+        var user = await GetUserByUsernameAsync(username);
+
+        if (user != null)
+        {
+            // Update role if changed in AD
+            if (user.Role != role || user.Email != email)
+            {
+                await UpdateUserAsync(user.UserId, email, role, true);
+                user.Role = role;
+                user.Email = email;
+            }
+            return user;
+        }
+
+        // Create new local record for LDAP user (no password - can't login locally)
+        const string sql = @"
+            INSERT INTO Web.Users (Username, PasswordHash, Salt, Email, Role, ForcePasswordChange, IsActive)
+            VALUES (@Username, 'LDAP_USER_NO_PASSWORD', 'LDAP_USER_NO_SALT', @Email, @Role, 0, 1);
+            SELECT * FROM Web.Users WHERE UserId = SCOPE_IDENTITY()";
+
+        try
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            var newUser = await connection.QuerySingleOrDefaultAsync<UserDto>(sql, new
+            {
+                Username = username,
+                Email = email,
+                Role = role
+            });
+
+            _logger.LogInformation("Created local record for LDAP user {Username} with role {Role}", username, role);
+            return newUser;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create local record for LDAP user {Username}", username);
+            return null;
+        }
     }
 
     public async Task<bool> CreateUserAsync(string username, string password, string role,

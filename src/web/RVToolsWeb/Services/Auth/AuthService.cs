@@ -115,4 +115,58 @@ public class AuthService : IAuthService
             return false;
         }
     }
+
+    public async Task<bool> UpdateLdapSettingsAsync(
+        string ldapServer,
+        string? ldapDomain,
+        string ldapBaseDN,
+        int ldapPort,
+        bool ldapUseSsl,
+        string? ldapBindDN,
+        string? ldapBindPassword,
+        string? ldapAdminGroup,
+        string? ldapUserGroup,
+        bool ldapFallbackToLocal)
+    {
+        const string sql = @"
+            UPDATE Web.AuthSettings
+            SET AuthProvider = 'LDAP',
+                LdapServer = @LdapServer,
+                LdapDomain = @LdapDomain,
+                LdapBaseDN = @LdapBaseDN,
+                LdapPort = @LdapPort,
+                LdapUseSsl = @LdapUseSsl,
+                LdapBindDN = @LdapBindDN,
+                LdapBindPassword = @LdapBindPassword,
+                LdapAdminGroup = @LdapAdminGroup,
+                LdapUserGroup = @LdapUserGroup,
+                LdapFallbackToLocal = @LdapFallbackToLocal,
+                ModifiedDate = GETUTCDATE()";
+
+        try
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            var rows = await connection.ExecuteAsync(sql, new
+            {
+                LdapServer = ldapServer,
+                LdapDomain = ldapDomain,
+                LdapBaseDN = ldapBaseDN,
+                LdapPort = ldapPort,
+                LdapUseSsl = ldapUseSsl,
+                LdapBindDN = ldapBindDN,
+                LdapBindPassword = ldapBindPassword,
+                LdapAdminGroup = ldapAdminGroup,
+                LdapUserGroup = ldapUserGroup,
+                LdapFallbackToLocal = ldapFallbackToLocal
+            });
+
+            _logger.LogInformation("LDAP settings updated for server: {Server}", ldapServer);
+            return rows > 0;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update LDAP settings");
+            return false;
+        }
+    }
 }

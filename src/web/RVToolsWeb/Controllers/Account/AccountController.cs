@@ -315,7 +315,8 @@ public class AccountController : Controller
         {
             new(ClaimTypes.NameIdentifier, user.UserId.ToString()),
             new(ClaimTypes.Name, user.Username),
-            new(ClaimTypes.Role, user.Role)
+            new(ClaimTypes.Role, user.Role),
+            new("AuthSource", user.AuthSource)
         };
 
         if (!string.IsNullOrEmpty(user.Email))

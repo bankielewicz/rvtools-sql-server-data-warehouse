@@ -78,6 +78,7 @@ builder.Services.AddScoped<IDatabaseStatusService, DatabaseStatusService>();
 
 // Authentication Services
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ILdapService, LdapService>();
 builder.Services.AddScoped<IUserService, UserService>();
 
 // Cookie Authentication
