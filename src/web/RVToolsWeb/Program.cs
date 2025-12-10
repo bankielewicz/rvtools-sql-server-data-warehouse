@@ -10,6 +10,7 @@ using RVToolsWeb.Services.Interfaces;
 using RVToolsWeb.Services.Inventory;
 using RVToolsWeb.Services.Logging;
 using RVToolsWeb.Services.Trends;
+using RVToolsWeb.Services.Admin;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -66,6 +67,12 @@ builder.Services.AddScoped<DatastoreCapacityTrendService>();
 builder.Services.AddScoped<HostUtilizationService>();
 builder.Services.AddScoped<VMConfigChangesService>();
 builder.Services.AddScoped<VMLifecycleService>();
+
+// Admin Services
+builder.Services.AddScoped<ISettingsService, SettingsService>();
+builder.Services.AddScoped<ITableRetentionService, TableRetentionService>();
+builder.Services.AddScoped<IAppSettingsService, AppSettingsService>();
+builder.Services.AddScoped<IDatabaseStatusService, DatabaseStatusService>();
 
 // MVC
 builder.Services.AddControllersWithViews();
