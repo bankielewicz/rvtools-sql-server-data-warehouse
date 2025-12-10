@@ -78,27 +78,27 @@ Use `Import-RVToolsHistoricalData.ps1` when you have historical RVTools exports 
 ### When to Use
 
 - Bulk importing historical data (e.g., hundreds of files spanning months/years)
-- Files have dates in filename pattern: `{vcenter-name}_{d_mm_yyyy}.{domain.tld}.xlsx`
+- Files have dates in filename pattern: `{vcenter-name}_{m_d_yyyy}.{domain.tld}.xlsx`
 - You need accurate `ValidFrom` dates in History tables (not import timestamp)
 
 ### Filename Pattern
 
 ```
-{vcenter-name}_{d_mm_yyyy}.{domain.tld}.xlsx
+{vcenter-name}_{m_d_yyyy}.{domain.tld}.xlsx
 ```
 
 **Pattern Components:**
 - `{vcenter-name}`: Alphanumeric + hyphens (e.g., `vCenter01`, `prod-vcenter`, `vc-east-01`)
-- `{d_mm_yyyy}`: Day, month, year (flexible: `5_06_2024` or `05_06_2024`)
+- `{m_d_yyyy}`: US date format month_day_year (flexible: `3_20_2024` or `03_20_2024`)
 - `{domain.tld}`: Must contain at least one dot (e.g., `domain.com`, `corp.domain.com`)
 
 | Example | Parsed Date | VIServer |
 |---------|-------------|----------|
-| `vCenter01_5_06_2024.domain.com.xlsx` | June 5, 2024 | vCenter01 |
-| `prod-vcenter_15_12_2023.corp.domain.com.xlsx` | December 15, 2023 | prod-vcenter |
+| `vCenter01_6_15_2024.domain.com.xlsx` | June 15, 2024 | vCenter01 |
+| `prod-vcenter_12_25_2023.corp.domain.com.xlsx` | December 25, 2023 | prod-vcenter |
 | `vc-east-01_1_1_2025.local.net.xlsx` | January 1, 2025 | vc-east-01 |
 
-Flexible parsing handles both single-digit (5_06_2024) and double-digit (05_06_2024) formats.
+Flexible parsing handles both single-digit (3_20_2024) and double-digit (03_20_2024) formats.
 
 ### Historical Import Parameters
 

@@ -117,8 +117,9 @@ This ensures proper handling of:
 
 For bulk importing historical data with dates embedded in filenames:
 
-- `Import-RVToolsHistoricalData.ps1` parses dates from filename pattern `{vcenter-name}_{d_mm_yyyy}.{domain.tld}.xlsx`
+- `Import-RVToolsHistoricalData.ps1` parses dates from filename pattern `{vcenter-name}_{m_d_yyyy}.{domain.tld}.xlsx`
   - `{vcenter-name}`: Alphanumeric + hyphens (e.g., `vCenter01`, `prod-vcenter`)
+  - `{m_d_yyyy}`: US date format month_day_year (e.g., `3_20_2024`)
   - `{domain.tld}`: Must contain at least one dot (e.g., `domain.com`)
 - `RVToolsExportDate` stored in `Audit.ImportBatch`
 - Parsed date used as `ValidFrom` in History tables (not import timestamp)

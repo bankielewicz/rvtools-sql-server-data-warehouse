@@ -153,12 +153,13 @@ function Get-RVToolsExportInfo {
 
     .DESCRIPTION
         Extracts date and vCenter identifier from filenames matching pattern:
-        {vcenter-name}_{d_mm_yyyy}.{domain.tld}.xlsx
+        {vcenter-name}_{m_d_yyyy}.{domain.tld}.xlsx
 
         - vcenter-name: Alphanumeric + hyphens (e.g., vCenter01, prod-vcenter, vc-east-01)
+        - m_d_yyyy: US date format month_day_year (e.g., 3_20_2024 or 03_20_2024)
         - domain.tld: Must contain at least one dot (e.g., domain.com, corp.domain.com)
 
-        Handles both single-digit (5_06_2024) and double-digit (05_06_2024) formats.
+        Handles both single-digit (3_20_2024) and double-digit (03_20_2024) formats.
 
     .PARAMETER FileName
         The filename to parse (not full path).
@@ -167,12 +168,12 @@ function Get-RVToolsExportInfo {
         Hashtable with keys: VIServer, ExportDate, Parsed
 
     .EXAMPLE
-        Get-RVToolsExportInfo -FileName "vCenter01_5_06_2024.domain.com.xlsx"
-        # Returns: @{ VIServer = 'vCenter01'; ExportDate = [DateTime]; Parsed = $true }
+        Get-RVToolsExportInfo -FileName "vCenter01_6_15_2024.domain.com.xlsx"
+        # Returns: @{ VIServer = 'vCenter01'; ExportDate = June 15, 2024; Parsed = $true }
 
     .EXAMPLE
-        Get-RVToolsExportInfo -FileName "prod-vcenter_15_12_2023.corp.domain.com.xlsx"
-        # Returns: @{ VIServer = 'prod-vcenter'; ExportDate = [DateTime]; Parsed = $true }
+        Get-RVToolsExportInfo -FileName "prod-vcenter_12_25_2023.corp.domain.com.xlsx"
+        # Returns: @{ VIServer = 'prod-vcenter'; ExportDate = December 25, 2023; Parsed = $true }
     #>
     [CmdletBinding()]
     param(
@@ -180,16 +181,16 @@ function Get-RVToolsExportInfo {
         [string]$FileName
     )
 
-    # Pattern: {vcenter-name}_{d_mm_yyyy}.{domain.tld}.xlsx
+    # Pattern: {vcenter-name}_{m_d_yyyy}.{domain.tld}.xlsx
     # - vcenter-name: alphanumeric + hyphens (e.g., vCenter01, prod-vcenter, vc-east-01)
-    # - d_mm_yyyy: flexible day/month (1_12_2024 or 01_12_2024)
+    # - m_d_yyyy: US date format month_day_year (3_20_2024 or 03_20_2024)
     # - domain.tld: must contain at least one dot (e.g., domain.com, corp.domain.com)
     $pattern = '^([a-zA-Z0-9-]+)_(\d{1,2})_(\d{1,2})_(\d{4})\.[^.]+\.[^.]+.*\.xlsx$'
 
     if ($FileName -match $pattern) {
         $viServer = $Matches[1]
-        $day = [int]$Matches[2]
-        $month = [int]$Matches[3]
+        $month = [int]$Matches[2]
+        $day = [int]$Matches[3]
         $year = [int]$Matches[4]
 
         try {
