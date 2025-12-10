@@ -96,6 +96,7 @@ Execute in order:
 
 ```
 src/tsql/Tables/Staging/001_AllStagingTables.sql
+src/tsql/Tables/Staging/002_AddDatacenter2Column.sql
 src/tsql/Tables/Current/001_AllCurrentTables.sql
 src/tsql/Tables/History/001_AllHistoryTables.sql
 ```
