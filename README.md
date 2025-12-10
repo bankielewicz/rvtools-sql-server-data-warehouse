@@ -44,6 +44,20 @@ cd src/powershell
 .\Import-RVToolsData.ps1 -ServerInstance "localhost" -UseSqlAuth -LogLevel Verbose
 ```
 
+### Historical Import (for bulk historical data)
+
+If you have historical RVTools exports with dates in filenames:
+
+```powershell
+# Preview files without importing
+.\Import-RVToolsHistoricalData.ps1 -WhatIf
+
+# Import historical files (processes oldest first)
+.\Import-RVToolsHistoricalData.ps1 -ServerInstance "localhost"
+```
+
+Filename pattern: `vCenter{xx}_{d_mm_yyyy}.domain.com.xlsx`
+
 See [Getting Started](docs/getting-started.md) for detailed setup instructions.
 
 ## Documentation
@@ -59,6 +73,7 @@ See [Getting Started](docs/getting-started.md) for detailed setup instructions.
 | [Data Flow](docs/architecture/data-flow.md) | ETL process details |
 | **Usage** | |
 | [Importing Data](docs/usage/importing-data.md) | Running imports |
+| [Historical Import](docs/usage/importing-data.md#historical-import) | Import bulk historical data |
 | [Web Reports](docs/web-reports.md) | Web dashboard and browser-based reports |
 | [Reports](docs/usage/reports.md) | Available reports and views |
 | [Querying Data](docs/usage/querying-data.md) | SQL query examples |

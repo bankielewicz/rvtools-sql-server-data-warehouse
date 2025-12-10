@@ -99,6 +99,7 @@ src/tsql/Tables/Staging/001_AllStagingTables.sql
 src/tsql/Tables/Staging/002_AddDatacenter2Column.sql
 src/tsql/Tables/Current/001_AllCurrentTables.sql
 src/tsql/Tables/History/001_AllHistoryTables.sql
+src/tsql/Database/004_AddRVToolsExportDate.sql  (historical import support)
 ```
 
 ### 5. Create Stored Procedures

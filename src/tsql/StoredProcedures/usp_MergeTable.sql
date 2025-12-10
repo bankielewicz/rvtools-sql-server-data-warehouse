@@ -48,6 +48,7 @@ CREATE PROCEDURE dbo.usp_MergeTable
     @ImportBatchId INT,
     @TableName NVARCHAR(100),
     @SourceFile NVARCHAR(500) = NULL,
+    @EffectiveDate DATETIME2 = NULL,  -- Override for ValidFrom (historical imports)
     @MergedCount INT = 0 OUTPUT
 AS
 BEGIN
@@ -55,7 +56,7 @@ BEGIN
     -- NOTE: Removed XACT_ABORT to allow proper error logging
 
     DECLARE @StartTime DATETIME2 = GETUTCDATE();
-    DECLARE @Now DATETIME2 = @StartTime;
+    DECLARE @Now DATETIME2 = ISNULL(@EffectiveDate, @StartTime);  -- Use effective date if provided (historical imports)
     DECLARE @SQL NVARCHAR(MAX);
     DECLARE @CurrentSQL NVARCHAR(MAX);  -- Track current SQL being executed
     DECLARE @CurrentOperation NVARCHAR(50);  -- Track current operation

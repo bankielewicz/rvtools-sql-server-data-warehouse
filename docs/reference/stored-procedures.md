@@ -33,14 +33,23 @@ Main stored procedure that orchestrates the entire import process with **per-tab
 |-----------|------|---------|-------------|
 | `@ImportBatchId` | INT | Required | Batch ID from PowerShell |
 | `@SourceFile` | NVARCHAR(500) | NULL | Source xlsx file name |
+| `@RVToolsExportDate` | DATETIME2 | NULL | Override for ValidFrom (historical imports) |
+
+> **Note**: The `@RVToolsExportDate` parameter defaults to NULL, maintaining backward compatibility. When NULL, the procedure uses `GETUTCDATE()`. Historical imports pass the date parsed from the filename.
 
 ### Usage
 
 ```sql
--- Called by PowerShell after loading staging tables
+-- Called by PowerShell after loading staging tables (standard import)
 EXEC [dbo].[usp_ProcessImport]
     @ImportBatchId = 1,
     @SourceFile = 'export.xlsx';
+
+-- Historical import with explicit date
+EXEC [dbo].[usp_ProcessImport]
+    @ImportBatchId = 1,
+    @SourceFile = 'vCenter01_5_06_2024.domain.com.xlsx',
+    @RVToolsExportDate = '2024-06-05';
 ```
 
 ### Process Flow
@@ -99,16 +108,29 @@ Dynamic MERGE procedure that uses metadata from `Config.ColumnMapping` to build 
 | `@ImportBatchId` | INT | Required | Current import batch |
 | `@TableName` | NVARCHAR(100) | Required | Table to merge (e.g., 'vInfo') |
 | `@SourceFile` | NVARCHAR(500) | NULL | Source file name for history |
+| `@EffectiveDate` | DATETIME2 | NULL | Override for ValidFrom (historical imports) |
 | `@MergedCount` | INT | OUTPUT | Number of rows merged |
+
+> **Note**: The `@EffectiveDate` parameter defaults to NULL, maintaining backward compatibility. When NULL, the procedure uses `GETUTCDATE()` for `ValidFrom`. Historical imports pass the date from `usp_ProcessImport`.
 
 ### Usage
 
 ```sql
 DECLARE @Count INT;
+
+-- Standard import (uses current timestamp)
 EXEC [dbo].[usp_MergeTable]
     @ImportBatchId = 1,
     @TableName = 'vInfo',
     @SourceFile = 'export.xlsx',
+    @MergedCount = @Count OUTPUT;
+
+-- Historical import (uses explicit date for ValidFrom)
+EXEC [dbo].[usp_MergeTable]
+    @ImportBatchId = 1,
+    @TableName = 'vInfo',
+    @SourceFile = 'vCenter01_5_06_2024.domain.com.xlsx',
+    @EffectiveDate = '2024-06-05',
     @MergedCount = @Count OUTPUT;
 
 SELECT @Count AS RowsMerged;

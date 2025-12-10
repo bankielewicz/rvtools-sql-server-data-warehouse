@@ -12,10 +12,12 @@
 graph TB
     subgraph Sources
         RV[RVTools Export<br/>xlsx files]
+        HRV[Historical Exports<br/>with dates in filenames]
     end
 
     subgraph ETL["ETL Layer"]
         PS[PowerShell<br/>Import-RVToolsData.ps1]
+        HPS[PowerShell<br/>Import-RVToolsHistoricalData.ps1]
         IE[ImportExcel<br/>Module]
     end
 
@@ -40,7 +42,9 @@ graph TB
     end
 
     RV --> PS
+    HRV --> HPS
     PS --> IE
+    HPS --> IE
     IE --> STG
     STG --> SP
     SP --> CUR
@@ -108,6 +112,17 @@ Each RVTools tab has natural keys used for MERGE operations:
 This ensures proper handling of:
 - Multi-vCenter environments
 - Entities with the same name across different sources
+
+### Historical Import Support
+
+For bulk importing historical data with dates embedded in filenames:
+
+- `Import-RVToolsHistoricalData.ps1` parses dates from filename pattern `vCenter{xx}_{d_mm_yyyy}.domain.com.xlsx`
+- `RVToolsExportDate` stored in `Audit.ImportBatch`
+- Parsed date used as `ValidFrom` in History tables (not import timestamp)
+- Files processed in chronological order (oldest first) to maintain timeline integrity
+
+See [Data Flow](./data-flow.md#historical-import-flow) for details.
 
 ---
 

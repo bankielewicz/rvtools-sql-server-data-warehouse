@@ -179,6 +179,58 @@ sequenceDiagram
     end
 ```
 
+---
+
+## Historical Import Flow
+
+For bulk importing historical data with dates in filenames, use `Import-RVToolsHistoricalData.ps1`:
+
+```mermaid
+flowchart TD
+    subgraph Input
+        A[Historical xlsx files<br/>vCenter01_5_06_2024.domain.com.xlsx]
+    end
+
+    subgraph Parse["Parse & Sort"]
+        B[Parse filename for date<br/>d_mm_yyyy pattern]
+        C[Extract VIServer<br/>vCenter01, vCenter02, etc.]
+        D[Sort by date<br/>oldest first]
+    end
+
+    subgraph Import["Import with Historical Date"]
+        E[Create ImportBatch<br/>RVToolsExportDate = parsed date]
+        F[Load to Staging]
+        G[Call usp_ProcessImport<br/>@RVToolsExportDate = parsed date]
+        H[MERGE to Current]
+        I[History.ValidFrom = parsed date<br/>NOT import timestamp]
+    end
+
+    subgraph Result["Result"]
+        J[Accurate point-in-time<br/>history queries]
+    end
+
+    A --> B --> C --> D
+    D --> E --> F --> G --> H --> I --> J
+```
+
+### Key Differences from Standard Import
+
+| Aspect | Standard Import | Historical Import |
+|--------|-----------------|-------------------|
+| Script | `Import-RVToolsData.ps1` | `Import-RVToolsHistoricalData.ps1` |
+| Date Source | `GETUTCDATE()` | Parsed from filename |
+| Processing Order | As found | Chronological (oldest first) |
+| ValidFrom | Import timestamp | RVTools export date |
+| Use Case | Daily/scheduled imports | Bulk historical data |
+
+### Why Chronological Order?
+
+Files must be processed oldest-first because:
+
+1. **ValidTo Setting**: When a record changes, the previous version gets `ValidTo = @Now`
+2. **Timeline Integrity**: Processing out-of-order would create incorrect overlapping ranges
+3. **Query Accuracy**: Point-in-time queries like `WHERE ValidFrom <= '2024-06-15'` require accurate dates
+
 ## Error Handling
 
 | Error Type | Handling |

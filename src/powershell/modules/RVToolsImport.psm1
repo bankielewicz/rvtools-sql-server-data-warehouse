@@ -143,6 +143,70 @@ function Connect-RVToolsDatabase {
 }
 
 # ============================================================================
+# Filename Parsing Functions
+# ============================================================================
+
+function Get-RVToolsExportInfo {
+    <#
+    .SYNOPSIS
+        Parses RVTools export date and VIServer from filename.
+
+    .DESCRIPTION
+        Extracts date and vCenter identifier from filenames matching pattern:
+        vCenter{xx}_{d_mm_yyyy}.domain.com.xlsx
+
+        Handles both single-digit (5_06_2024) and double-digit (05_06_2024) formats.
+
+    .PARAMETER FileName
+        The filename to parse (not full path).
+
+    .OUTPUTS
+        Hashtable with keys: VIServer, ExportDate, Parsed
+
+    .EXAMPLE
+        Get-RVToolsExportInfo -FileName "vCenter01_5_06_2024.domain.com.xlsx"
+        # Returns: @{ VIServer = 'vCenter01'; ExportDate = [DateTime]; Parsed = $true }
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$FileName
+    )
+
+    # Pattern: vCenter{xx}_{d_mm_yyyy}.domain.com.xlsx
+    # Flexible: handles 1_12_2024 or 01_12_2024
+    $pattern = '^vCenter(\d+)_(\d{1,2})_(\d{1,2})_(\d{4})\..*\.xlsx$'
+
+    if ($FileName -match $pattern) {
+        $viServer = "vCenter$($Matches[1])"
+        $day = [int]$Matches[2]
+        $month = [int]$Matches[3]
+        $year = [int]$Matches[4]
+
+        try {
+            $exportDate = [DateTime]::new($year, $month, $day)
+            return @{
+                VIServer   = $viServer
+                ExportDate = $exportDate
+                Parsed     = $true
+            }
+        }
+        catch {
+            # Invalid date (e.g., month 13 or day 32)
+            if ($Script:LogLevel) {
+                Write-ImportLog -Message "Invalid date in filename: $FileName" -Level 'Warning'
+            }
+        }
+    }
+
+    return @{
+        VIServer   = $null
+        ExportDate = $null
+        Parsed     = $false
+    }
+}
+
+# ============================================================================
 # Import Batch Functions
 # ============================================================================
 
@@ -152,17 +216,26 @@ function New-ImportBatch {
         [Parameter(Mandatory)]
         [string]$SourceFile,
 
-        [string]$VIServer = $null
+        [string]$VIServer = $null,
+
+        [DateTime]$RVToolsExportDate = [DateTime]::MinValue
     )
 
     # Escape single quotes for SQL
     $escapedSourceFile = $SourceFile -replace "'", "''"
     $escapedVIServer = if ($VIServer) { "'" + ($VIServer -replace "'", "''") + "'" } else { "NULL" }
 
+    # Handle RVToolsExportDate - use GETUTCDATE() if not provided
+    $dateValue = if ($RVToolsExportDate -ne [DateTime]::MinValue) {
+        "'" + $RVToolsExportDate.ToString('yyyy-MM-dd HH:mm:ss') + "'"
+    } else {
+        "GETUTCDATE()"
+    }
+
     $query = @"
-INSERT INTO [Audit].[ImportBatch] (SourceFile, VIServer, ImportStartTime, Status)
+INSERT INTO [Audit].[ImportBatch] (SourceFile, VIServer, ImportStartTime, RVToolsExportDate, Status)
 OUTPUT INSERTED.ImportBatchId
-VALUES (N'$escapedSourceFile', $escapedVIServer, GETUTCDATE(), 'Running')
+VALUES (N'$escapedSourceFile', $escapedVIServer, GETUTCDATE(), $dateValue, 'Running')
 "@
 
     try {
@@ -490,7 +563,11 @@ function Import-RVToolsFile {
         [string]$ProcessedFolder = $null,
         [string]$ErrorFolder = $null,
         [string]$FailedFolder = $null,
-        [string]$LogFolder = $null
+        [string]$LogFolder = $null,
+
+        # Parameters for historical import (parsed from filename by Import-RVToolsHistoricalData.ps1)
+        [string]$VIServer = $null,
+        [DateTime]$RVToolsExportDate = [DateTime]::MinValue
     )
 
     $startTime = Get-Date
@@ -516,8 +593,8 @@ function Import-RVToolsFile {
         # Connect to database
         Connect-RVToolsDatabase -ServerInstance $ServerInstance -Database $Database -Credential $Credential
 
-        # Create import batch
-        $batchId = New-ImportBatch -SourceFile $fileName
+        # Create import batch (with optional VIServer and RVToolsExportDate for historical imports)
+        $batchId = New-ImportBatch -SourceFile $fileName -VIServer $VIServer -RVToolsExportDate $RVToolsExportDate
 
         # Get sheet names from Excel file
         $excelPackage = Open-ExcelPackage -Path $FilePath
@@ -561,10 +638,17 @@ function Import-RVToolsFile {
         if ($totalStagedRows -gt 0) {
             Write-ImportLog -Message "Processing staged data to Current/History tables..." -Level 'Info'
 
+            # Build export date parameter if provided (for historical imports)
+            $exportDateParam = if ($RVToolsExportDate -ne [DateTime]::MinValue) {
+                ", @RVToolsExportDate = '" + $RVToolsExportDate.ToString('yyyy-MM-dd HH:mm:ss') + "'"
+            } else {
+                ""
+            }
+
             $mergeQuery = @"
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
-EXEC dbo.usp_ProcessImport @ImportBatchId = $batchId, @SourceFile = N'$($fileName -replace "'", "''")'
+EXEC dbo.usp_ProcessImport @ImportBatchId = $batchId, @SourceFile = N'$($fileName -replace "'", "''")'$exportDateParam
 "@
 
             try {
@@ -659,5 +743,6 @@ Export-ModuleMember -Function @(
     'Import-RVToolsFile',
     'Connect-RVToolsDatabase',
     'Write-ImportLog',
-    'Initialize-ImportLog'
+    'Initialize-ImportLog',
+    'Get-RVToolsExportInfo'
 )
