@@ -1,0 +1,17 @@
+# Language detection for GitHub statistics
+
+# Primary languages
+*.ps1 linguist-language=PowerShell
+*.psm1 linguist-language=PowerShell
+*.sql linguist-language=TSQL
+*.cs linguist-language=C#
+*.cshtml linguist-language=C#
+
+# Exclude vendor libraries from stats
+src/web/RVToolsWeb/wwwroot/lib/** linguist-vendored
+*.min.js linguist-vendored
+*.min.css linguist-vendored
+
+# Exclude documentation from language stats
+docs/** linguist-documentation
+*.md linguist-documentation
