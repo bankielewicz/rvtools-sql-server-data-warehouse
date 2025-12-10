@@ -1,0 +1,64 @@
+@*
+    Status Badge Partial View
+    Renders a colored badge based on status value.
+
+    Usage:
+    <partial name="_StatusBadgePartial" model="@item.CapacityStatus" />
+    <partial name="_StatusBadgePartial" model='new { Status = item.Status, Size = "lg" }' />
+*@
+
+@model dynamic
+
+@{
+    // Support both simple string model and anonymous object with Size property
+    string status;
+    string size = "";
+
+    if (Model is string)
+    {
+        status = Model?.ToString() ?? "";
+    }
+    else
+    {
+        status = Model?.Status?.ToString() ?? "";
+        size = Model?.Size?.ToString() ?? "";
+    }
+
+    // Normalize status for CSS class matching
+    var normalizedStatus = status?.ToLowerInvariant()?.Replace(" ", "-") ?? "unknown";
+
+    // Map status to CSS class
+    var badgeClass = normalizedStatus switch
+    {
+        "critical" => "badge-status-critical",
+        "warning" => "badge-status-warning",
+        "normal" => "badge-status-normal",
+        "healthy" => "badge-status-normal",
+        "compliant" => "badge-status-compliant",
+        "non-compliant" => "badge-status-critical",
+        "noncompliant" => "badge-status-critical",
+        "expired" => "badge-status-critical",
+        "expiring" => "badge-status-warning",
+        "valid" => "badge-status-normal",
+        "poweredon" => "badge-poweredon",
+        "poweredoff" => "badge-poweredoff",
+        "suspended" => "badge-suspended",
+        "running" => "badge-status-normal",
+        "not-running" => "badge-status-warning",
+        "outdated" => "badge-status-warning",
+        "not-installed" => "badge-status-critical",
+        "ok" => "badge-status-normal",
+        "error" => "badge-status-critical",
+        _ => "badge-status-unknown"
+    };
+
+    // Size class
+    var sizeClass = size?.ToLowerInvariant() switch
+    {
+        "lg" => "fs-6",
+        "sm" => "fs-8",
+        _ => ""
+    };
+}
+
+<span class="badge @badgeClass @sizeClass">@status</span>

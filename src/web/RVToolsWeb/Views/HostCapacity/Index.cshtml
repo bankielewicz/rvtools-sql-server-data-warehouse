@@ -1,0 +1,255 @@
+@model RVToolsWeb.Models.ViewModels.Capacity.HostCapacityViewModel
+@{
+    ViewData["Title"] = "Host Capacity";
+}
+
+<!-- Filter Panel -->
+<div class="filter-panel">
+    <form method="get" asp-action="Index">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-2">
+                <label class="form-label" for="viSdkServerSelect">vCenter Server</label>
+                <select class="form-select form-select-sm" id="viSdkServerSelect" name="VI_SDK_Server">
+                    <option value="">(All)</option>
+                    @foreach (var item in Model.VISdkServers)
+                    {
+                        <option value="@item.Value" selected="@(Model.Filter.VI_SDK_Server == item.Value)">@item.Label</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="datacenterSelect">Datacenter</label>
+                <select class="form-select form-select-sm" id="datacenterSelect" name="Datacenter">
+                    <option value="">(All)</option>
+                    @foreach (var item in Model.Datacenters)
+                    {
+                        <option value="@item.Value" selected="@(Model.Filter.Datacenter == item.Value)">@item.Label</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="clusterSelect">Cluster</label>
+                <select class="form-select form-select-sm" id="clusterSelect" name="Cluster">
+                    <option value="">(All)</option>
+                    @foreach (var item in Model.Clusters)
+                    {
+                        <option value="@item.Value" selected="@(Model.Filter.Cluster == item.Value)">@item.Label</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="bi bi-funnel me-1"></i>Apply Filter
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-x-circle me-1"></i>Clear
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-3">
+    <div class="col">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <h6 class="card-title text-muted mb-0">Total Hosts</h6>
+                <h4 class="mb-0">@Model.TotalHosts</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <h6 class="card-title text-muted mb-0">CPU Critical</h6>
+                <h4 class="mb-0 text-danger">@Model.CPUCriticalCount</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <h6 class="card-title text-muted mb-0">CPU Warning</h6>
+                <h4 class="mb-0 text-warning">@Model.CPUWarningCount</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <h6 class="card-title text-muted mb-0">Memory Critical</h6>
+                <h4 class="mb-0 text-danger">@Model.MemoryCriticalCount</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <h6 class="card-title text-muted mb-0">Memory Warning</h6>
+                <h4 class="mb-0 text-warning">@Model.MemoryWarningCount</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <h6 class="card-title text-muted mb-0">Maintenance Mode</h6>
+                <h4 class="mb-0 text-info">@Model.MaintenanceModeCount</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Results Summary -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <span class="text-muted">@Model.Items.Count() hosts | @Model.TotalVMs total VMs</span>
+    </div>
+    <div>
+        <a href="/api/Export/host-capacity/excel?VI_SDK_Server=@Model.Filter.VI_SDK_Server&Datacenter=@Model.Filter.Datacenter&Cluster=@Model.Filter.Cluster"
+           class="btn btn-outline-success btn-sm btn-export">
+            <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+        </a>
+        <a href="/api/Export/host-capacity/csv?VI_SDK_Server=@Model.Filter.VI_SDK_Server&Datacenter=@Model.Filter.Datacenter&Cluster=@Model.Filter.Cluster"
+           class="btn btn-outline-secondary btn-sm btn-export">
+            <i class="bi bi-filetype-csv me-1"></i>Export CSV
+        </a>
+    </div>
+</div>
+
+<!-- Data Table -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover mb-0 data-table">
+                <thead class="table-light">
+                    <tr>
+                        <th>Host</th>
+                        <th class="text-center">CPU Status</th>
+                        <th class="text-end">CPU %</th>
+                        <th class="text-end">Cores</th>
+                        <th class="text-center">Memory Status</th>
+                        <th class="text-end">Memory %</th>
+                        <th class="text-end">Memory (GB)</th>
+                        <th class="text-end">VMs</th>
+                        <th class="text-end">vCPUs/Core</th>
+                        <th>Datacenter</th>
+                        <th>Cluster</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var host in Model.Items)
+                    {
+                        string cpuStatusClass;
+                        switch (host.CPUStatus)
+                        {
+                            case "Critical": cpuStatusClass = "badge-status-critical"; break;
+                            case "Warning": cpuStatusClass = "badge-status-warning"; break;
+                            default: cpuStatusClass = "badge-status-normal"; break;
+                        }
+
+                        string memStatusClass;
+                        switch (host.MemoryStatus)
+                        {
+                            case "Critical": memStatusClass = "badge-status-critical"; break;
+                            case "Warning": memStatusClass = "badge-status-warning"; break;
+                            default: memStatusClass = "badge-status-normal"; break;
+                        }
+
+                        var memoryGiB = host.Memory_MB.HasValue ? host.Memory_MB.Value / 1024.0 : 0;
+                        <tr>
+                            <td>
+                                <span class="fw-medium">@(host.Host ?? "-")</span>
+                                @if (host.in_Maintenance_Mode == true)
+                                {
+                                    <span class="badge bg-info ms-1">Maintenance</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                <span class="badge @cpuStatusClass">@(host.CPUStatus ?? "-")</span>
+                            </td>
+                            <td class="text-end">
+                                @if (host.CPU_Usage_Percent.HasValue)
+                                {
+                                    <span class="@(host.CPU_Usage_Percent >= 85 ? "text-danger fw-bold" : host.CPU_Usage_Percent >= 70 ? "text-warning" : "")">
+                                        @host.CPU_Usage_Percent.Value.ToString("N1")%
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span>-</span>
+                                }
+                            </td>
+                            <td class="text-end">@(host.Num_Cores?.ToString() ?? "-")</td>
+                            <td class="text-center">
+                                <span class="badge @memStatusClass">@(host.MemoryStatus ?? "-")</span>
+                            </td>
+                            <td class="text-end">
+                                @if (host.Memory_Usage_Percent.HasValue)
+                                {
+                                    <span class="@(host.Memory_Usage_Percent >= 85 ? "text-danger fw-bold" : host.Memory_Usage_Percent >= 70 ? "text-warning" : "")">
+                                        @host.Memory_Usage_Percent.Value.ToString("N1")%
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span>-</span>
+                                }
+                            </td>
+                            <td class="text-end">@memoryGiB.ToString("N0")</td>
+                            <td class="text-end">@(host.Num_VMs?.ToString() ?? "-")</td>
+                            <td class="text-end">
+                                @if (host.vCPUs_per_Core.HasValue)
+                                {
+                                    <span class="@(host.vCPUs_per_Core > 4 ? "text-warning" : "")">
+                                        @host.vCPUs_per_Core.Value.ToString("N1")
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span>-</span>
+                                }
+                            </td>
+                            <td>@(host.Datacenter ?? "-")</td>
+                            <td>@(host.Cluster ?? "-")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Cascading dropdown: vCenter Server -> Datacenter
+            $('#viSdkServerSelect').change(function () {
+                var viServer = $(this).val();
+                $.get('/api/FilterData/datacenters', { viSdkServer: viServer }, function (data) {
+                    var $datacenter = $('#datacenterSelect');
+                    $datacenter.empty().append('<option value="">(All)</option>');
+                    $.each(data, function (i, item) {
+                        $datacenter.append($('<option>').val(item.value).text(item.label));
+                    });
+                    // Clear cluster dropdown as well
+                    $('#clusterSelect').empty().append('<option value="">(All)</option>');
+                });
+            });
+
+            // Cascading dropdown: Datacenter -> Cluster
+            $('#datacenterSelect').change(function () {
+                var datacenter = $(this).val();
+                var viServer = $('#viSdkServerSelect').val();
+                $.get('/api/FilterData/clusters', { datacenter: datacenter, viSdkServer: viServer }, function (data) {
+                    var $cluster = $('#clusterSelect');
+                    $cluster.empty().append('<option value="">(All)</option>');
+                    $.each(data, function (i, item) {
+                        $cluster.append($('<option>').val(item.value).text(item.label));
+                    });
+                });
+            });
+        });
+    </script>
+}

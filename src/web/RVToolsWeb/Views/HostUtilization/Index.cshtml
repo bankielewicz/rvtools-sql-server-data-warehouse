@@ -1,0 +1,230 @@
+@model RVToolsWeb.Models.ViewModels.Trends.HostUtilizationViewModel
+@using RVToolsWeb.Models.ViewModels.Shared
+@{
+    ViewData["Title"] = "Host Utilization Trend";
+}
+
+<!-- Filter Panel -->
+<div class="filter-panel">
+    <form method="get" asp-action="Index">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-2">
+                <label class="form-label" for="viSdkServerSelect">vCenter Server</label>
+                <select class="form-select form-select-sm" id="viSdkServerSelect" name="VI_SDK_Server">
+                    <option value="">(All)</option>
+                    @foreach (var item in Model.VISdkServers)
+                    {
+                        <option value="@item.Value" selected="@(Model.Filter.VI_SDK_Server == item.Value)">@item.Label</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="clusterSelect">Cluster</label>
+                <select class="form-select form-select-sm" id="clusterSelect" name="Cluster">
+                    <option value="">(All)</option>
+                    @foreach (var item in Model.Clusters)
+                    {
+                        <option value="@item.Value" selected="@(Model.Filter.Cluster == item.Value)">@item.Label</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="hostSelect">Host</label>
+                <select class="form-select form-select-sm" id="hostSelect" name="HostName">
+                    <option value="">(All - Aggregated)</option>
+                    @foreach (var item in Model.Hosts)
+                    {
+                        <option value="@item.Value" selected="@(Model.Filter.HostName == item.Value)">@item.Label</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="daysBackSelect">Time Range</label>
+                <select class="form-select form-select-sm" id="daysBackSelect" name="DaysBack">
+                    <option value="7" selected="@(Model.Filter.DaysBack == 7)">Last 7 Days</option>
+                    <option value="30" selected="@(Model.Filter.DaysBack == 30)">Last 30 Days</option>
+                    <option value="90" selected="@(Model.Filter.DaysBack == 90)">Last 90 Days</option>
+                    <option value="180" selected="@(Model.Filter.DaysBack == 180)">Last 6 Months</option>
+                    <option value="365" selected="@(Model.Filter.DaysBack == 365)">Last Year</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="bi bi-funnel me-1"></i>Apply Filter
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-x-circle me-1"></i>Clear
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-3">
+    <div class="col">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <h6 class="card-title text-muted mb-0">Hosts</h6>
+                <h4 class="mb-0">@Model.UniqueHostCount</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <h6 class="card-title text-muted mb-0">Data Points</h6>
+                <h4 class="mb-0">@Model.DataPointCount</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <h6 class="card-title text-muted mb-0">Avg CPU %</h6>
+                <h4 class="mb-0 @(Model.AvgCPUPercent >= 85 ? "text-danger" : Model.AvgCPUPercent >= 70 ? "text-warning" : "text-success")">
+                    @Model.AvgCPUPercent.ToString("N1")%
+                </h4>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <h6 class="card-title text-muted mb-0">Avg Memory %</h6>
+                <h4 class="mb-0 @(Model.AvgMemoryPercent >= 85 ? "text-danger" : Model.AvgMemoryPercent >= 70 ? "text-warning" : "text-success")">
+                    @Model.AvgMemoryPercent.ToString("N1")%
+                </h4>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <h6 class="card-title text-muted mb-0">Total VMs</h6>
+                <h4 class="mb-0 text-info">@Model.TotalVMs</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart -->
+@if (Model.ChartData.Labels.Any())
+{
+    <div class="card mb-3">
+        <div class="card-header">
+            <h6 class="mb-0"><i class="bi bi-graph-up me-2"></i>Utilization Over Time</h6>
+        </div>
+        <div class="card-body">
+            @await Html.PartialAsync("_ChartPartial", (Model.ChartData, Model.ChartOptions, "hostUtilizationChart"))
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>No trend data available for the selected time range.
+    </div>
+}
+
+<!-- Results Summary -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <span class="text-muted">@Model.Items.Count() data points</span>
+    </div>
+    <div>
+        <a href="/api/Export/host-utilization/excel?VI_SDK_Server=@Model.Filter.VI_SDK_Server&HostName=@Model.Filter.HostName&Cluster=@Model.Filter.Cluster&DaysBack=@Model.Filter.DaysBack"
+           class="btn btn-outline-success btn-sm btn-export">
+            <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+        </a>
+        <a href="/api/Export/host-utilization/csv?VI_SDK_Server=@Model.Filter.VI_SDK_Server&HostName=@Model.Filter.HostName&Cluster=@Model.Filter.Cluster&DaysBack=@Model.Filter.DaysBack"
+           class="btn btn-outline-secondary btn-sm btn-export">
+            <i class="bi bi-filetype-csv me-1"></i>Export CSV
+        </a>
+    </div>
+</div>
+
+<!-- Data Table -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover mb-0 data-table">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Host</th>
+                        <th class="text-end">CPU %</th>
+                        <th class="text-end">Memory %</th>
+                        <th class="text-end">Cores</th>
+                        <th class="text-end">vCPUs</th>
+                        <th class="text-end">vCPU/Core</th>
+                        <th class="text-end">VMs</th>
+                        <th>Cluster</th>
+                        <th>vCenter</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Items.OrderByDescending(x => x.SnapshotDate).ThenBy(x => x.HostName))
+                    {
+                        <tr>
+                            <td>@item.SnapshotDate.ToString("yyyy-MM-dd")</td>
+                            <td class="fw-medium text-truncate" style="max-width: 200px;" title="@item.HostName">
+                                @(item.HostName ?? "-")
+                                @if (item.in_Maintenance_Mode == true)
+                                {
+                                    <span class="badge bg-info ms-1">Maint</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                @if (item.CPU_Usage_Percent.HasValue)
+                                {
+                                    <span class="@(item.CPU_Usage_Percent >= 85 ? "text-danger fw-bold" : item.CPU_Usage_Percent >= 70 ? "text-warning" : "")">
+                                        @item.CPU_Usage_Percent.Value.ToString("N1")%
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span>-</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                @if (item.Memory_Usage_Percent.HasValue)
+                                {
+                                    <span class="@(item.Memory_Usage_Percent >= 85 ? "text-danger fw-bold" : item.Memory_Usage_Percent >= 70 ? "text-warning" : "")">
+                                        @item.Memory_Usage_Percent.Value.ToString("N1")%
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span>-</span>
+                                }
+                            </td>
+                            <td class="text-end">@(item.Total_Cores?.ToString() ?? "-")</td>
+                            <td class="text-end">@(item.Total_vCPUs?.ToString() ?? "-")</td>
+                            <td class="text-end">
+                                @if (item.vCPU_to_Core_Ratio.HasValue)
+                                {
+                                    <span class="@(item.vCPU_to_Core_Ratio > 4 ? "text-warning" : "")">
+                                        @item.vCPU_to_Core_Ratio.Value.ToString("N1")
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span>-</span>
+                                }
+                            </td>
+                            <td class="text-end">@(item.VM_Count?.ToString() ?? "-")</td>
+                            <td>@(item.Cluster ?? "-")</td>
+                            <td>@(item.VI_SDK_Server ?? "-")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/chartjs/chart.min.js"></script>
+    <script src="~/js/chart-config.js"></script>
+}

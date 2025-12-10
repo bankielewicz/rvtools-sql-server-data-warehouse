@@ -1,0 +1,142 @@
+@model RVToolsWeb.Models.ViewModels.Health.SnapshotAgingViewModel
+@{
+    ViewData["Title"] = "Snapshot Aging";
+}
+
+<!-- Filter Panel -->
+<div class="filter-panel">
+    <form method="get" asp-action="Index">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-2">
+                <label class="form-label" for="viSdkServerSelect">vCenter Server</label>
+                <select class="form-select form-select-sm" id="viSdkServerSelect" name="VI_SDK_Server">
+                    <option value="">(All)</option>
+                    @foreach (var item in Model.VISdkServers)
+                    {
+                        <option value="@item.Value" selected="@(Model.Filter.VI_SDK_Server == item.Value)">@item.Label</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="minAgeDays">Minimum Age (days)</label>
+                <input type="number" class="form-control form-control-sm" id="minAgeDays" name="MinAgeDays"
+                       value="@Model.Filter.MinAgeDays" min="0" max="365" />
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="bi bi-funnel me-1"></i>Apply Filter
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-x-circle me-1"></i>Clear
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-3">
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <h6 class="card-title text-muted mb-0">Snapshots Found</h6>
+                <h4 class="mb-0">@Model.Items.Count()</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <h6 class="card-title text-muted mb-0">Total Size</h6>
+                <h4 class="mb-0">@Model.TotalSnapshotSizeGiB.ToString("N1") GiB</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <h6 class="card-title text-muted mb-0">Older than 7 days</h6>
+                <h4 class="mb-0 text-warning">@Model.OldSnapshotCount</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Results Summary -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <span class="text-muted">Showing snapshots @Model.Filter.MinAgeDays+ days old</span>
+    </div>
+    <div>
+        <a href="/api/Export/snapshot-aging/excel?VI_SDK_Server=@Model.Filter.VI_SDK_Server&MinAgeDays=@Model.Filter.MinAgeDays"
+           class="btn btn-outline-success btn-sm btn-export">
+            <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+        </a>
+        <a href="/api/Export/snapshot-aging/csv?VI_SDK_Server=@Model.Filter.VI_SDK_Server&MinAgeDays=@Model.Filter.MinAgeDays"
+           class="btn btn-outline-secondary btn-sm btn-export">
+            <i class="bi bi-filetype-csv me-1"></i>Export CSV
+        </a>
+    </div>
+</div>
+
+<!-- Data Table -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover mb-0 data-table">
+                <thead class="table-light">
+                    <tr>
+                        <th>VM</th>
+                        <th>Snapshot Name</th>
+                        <th>Age (days)</th>
+                        <th>Size (GiB)</th>
+                        <th>Created</th>
+                        <th>Power State</th>
+                        <th>Datacenter</th>
+                        <th>Cluster</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var snap in Model.Items)
+                    {
+                        var sizeGiB = snap.Size_MiB_total.HasValue ? (snap.Size_MiB_total.Value / 1024).ToString("N2") : "-";
+
+                        string ageClass;
+                        if (snap.AgeDays >= 30)
+                            ageClass = "badge-status-critical";
+                        else if (snap.AgeDays >= 14)
+                            ageClass = "badge-status-warning";
+                        else
+                            ageClass = "badge-status-normal";
+
+                        var powerClass = snap.Powerstate?.ToLower() == "poweredon" ? "badge-poweredon" : "badge-poweredoff";
+                        <tr>
+                            <td><span class="fw-medium">@(snap.VM ?? "-")</span></td>
+                            <td class="text-truncate" style="max-width: 200px;" title="@snap.SnapshotName">
+                                @(snap.SnapshotName ?? "-")
+                            </td>
+                            <td>
+                                <span class="badge @ageClass">@(snap.AgeDays?.ToString() ?? "-") days</span>
+                            </td>
+                            <td>@sizeGiB</td>
+                            <td>@(snap.SnapshotDate?.ToString("yyyy-MM-dd HH:mm") ?? "-")</td>
+                            <td>
+                                <span class="badge @powerClass">@(snap.Powerstate ?? "-")</span>
+                            </td>
+                            <td>@(snap.Datacenter ?? "-")</td>
+                            <td>@(snap.Cluster ?? "-")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // No cascading filters needed
+        });
+    </script>
+}

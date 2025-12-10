@@ -1,0 +1,131 @@
+@model RVToolsWeb.Models.ViewModels.Inventory.HostInventoryViewModel
+@{
+    ViewData["Title"] = "Host Inventory";
+}
+
+<!-- Filter Panel -->
+<div class="filter-panel">
+    <form method="get" asp-action="Index">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-2">
+                <label class="form-label" for="viSdkServerSelect">vCenter Server</label>
+                <select class="form-select form-select-sm" id="viSdkServerSelect" name="VI_SDK_Server">
+                    <option value="">(All)</option>
+                    @foreach (var item in Model.VISdkServers)
+                    {
+                        <option value="@item.Value" selected="@(Model.Filter.VI_SDK_Server == item.Value)">@item.Label</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="datacenterSelect">Datacenter</label>
+                <select class="form-select form-select-sm" id="datacenterSelect" name="Datacenter">
+                    <option value="">(All)</option>
+                    @foreach (var item in Model.Datacenters)
+                    {
+                        <option value="@item.Value" selected="@(Model.Filter.Datacenter == item.Value)">@item.Label</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="clusterSelect">Cluster</label>
+                <select class="form-select form-select-sm" id="clusterSelect" name="Cluster">
+                    <option value="">(All)</option>
+                    @foreach (var item in Model.Clusters)
+                    {
+                        <option value="@item.Value" selected="@(Model.Filter.Cluster == item.Value)">@item.Label</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="bi bi-funnel me-1"></i>Apply Filter
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-x-circle me-1"></i>Clear
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Results Summary -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <span class="text-muted">@Model.Items.Count() hosts</span>
+    </div>
+    <div>
+        <a href="/api/Export/host-inventory/excel?Datacenter=@Model.Filter.Datacenter&Cluster=@Model.Filter.Cluster&VI_SDK_Server=@Model.Filter.VI_SDK_Server"
+           class="btn btn-outline-success btn-sm btn-export">
+            <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+        </a>
+        <a href="/api/Export/host-inventory/csv?Datacenter=@Model.Filter.Datacenter&Cluster=@Model.Filter.Cluster&VI_SDK_Server=@Model.Filter.VI_SDK_Server"
+           class="btn btn-outline-secondary btn-sm btn-export">
+            <i class="bi bi-filetype-csv me-1"></i>Export CSV
+        </a>
+    </div>
+</div>
+
+<!-- Data Table -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover mb-0 data-table">
+                <thead class="table-light">
+                    <tr>
+                        <th>Host</th>
+                        <th>Status</th>
+                        <th>ESX Version</th>
+                        <th>CPU Model</th>
+                        <th>Sockets</th>
+                        <th>Cores</th>
+                        <th>Memory (GB)</th>
+                        <th>VMs</th>
+                        <th>vCPUs/Core</th>
+                        <th>Datacenter</th>
+                        <th>Cluster</th>
+                        <th>Vendor/Model</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var host in Model.Items)
+                    {
+                        var statusClass = host.in_Maintenance_Mode == true ? "badge-suspended" : "badge-poweredon";
+                        var statusText = host.in_Maintenance_Mode == true ? "Maintenance" : "Active";
+                        var memoryGb = host.Num_Memory.HasValue ? (host.Num_Memory.Value / 1024.0).ToString("N0") : "-";
+                        <tr>
+                            <td>
+                                <span class="fw-medium">@host.Host</span>
+                            </td>
+                            <td>
+                                <span class="badge @statusClass">@statusText</span>
+                            </td>
+                            <td>@(host.ESX_Version ?? "-")</td>
+                            <td class="text-truncate" style="max-width: 180px;" title="@host.CPU_Model">
+                                @(host.CPU_Model ?? "-")
+                            </td>
+                            <td>@(host.Num_CPU?.ToString() ?? "-")</td>
+                            <td>@(host.Num_Cores?.ToString() ?? "-")</td>
+                            <td>@memoryGb</td>
+                            <td>@(host.Num_VMs?.ToString() ?? "-")</td>
+                            <td>@(host.vCPUs_per_Core?.ToString("N1") ?? "-")</td>
+                            <td>@(host.Datacenter ?? "-")</td>
+                            <td>@(host.Cluster ?? "-")</td>
+                            <td class="text-truncate" style="max-width: 150px;" title="@host.Vendor @host.Model">
+                                @(host.Vendor ?? "") @(host.Model ?? "-")
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            RVTools.setupCascadingFilters();
+        });
+    </script>
+}

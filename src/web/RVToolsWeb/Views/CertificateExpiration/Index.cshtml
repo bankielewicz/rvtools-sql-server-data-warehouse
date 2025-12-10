@@ -1,0 +1,145 @@
+@model RVToolsWeb.Models.ViewModels.Health.CertificateExpirationViewModel
+@{
+    ViewData["Title"] = "Certificate Expiration";
+}
+
+<!-- Filter Panel -->
+<div class="filter-panel">
+    <form method="get" asp-action="Index">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label" for="viSdkServerSelect">vCenter Server</label>
+                <select class="form-select form-select-sm" id="viSdkServerSelect" name="VI_SDK_Server">
+                    <option value="">(All)</option>
+                    @foreach (var item in Model.VISdkServers)
+                    {
+                        <option value="@item.Value" selected="@(Model.Filter.VI_SDK_Server == item.Value)">@item.Label</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="includeValid" name="IncludeValid" value="true"
+                           @(Model.Filter.IncludeValid ? "checked" : "") />
+                    <label class="form-check-label" for="includeValid">
+                        Include Valid Certificates
+                    </label>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="bi bi-funnel me-1"></i>Apply Filter
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-x-circle me-1"></i>Clear
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Results Summary -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <span class="text-muted">@Model.Items.Count() certificates</span>
+        @{
+            var expiredCount = Model.Items.Count(x => x.Expiration_Status == "Expired");
+            var expiringSoonCount = Model.Items.Count(x => x.Expiration_Status == "Expiring Soon");
+            if (expiredCount > 0)
+            {
+                <span class="badge bg-danger ms-2">@expiredCount expired</span>
+            }
+            if (expiringSoonCount > 0)
+            {
+                <span class="badge bg-warning ms-2">@expiringSoonCount expiring soon</span>
+            }
+        }
+    </div>
+    <div>
+        <a href="/api/Export/certificate-expiration/excel?VI_SDK_Server=@Model.Filter.VI_SDK_Server&IncludeValid=@Model.Filter.IncludeValid"
+           class="btn btn-outline-success btn-sm btn-export">
+            <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+        </a>
+        <a href="/api/Export/certificate-expiration/csv?VI_SDK_Server=@Model.Filter.VI_SDK_Server&IncludeValid=@Model.Filter.IncludeValid"
+           class="btn btn-outline-secondary btn-sm btn-export">
+            <i class="bi bi-filetype-csv me-1"></i>Export CSV
+        </a>
+    </div>
+</div>
+
+<!-- Data Table -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover mb-0 data-table">
+                <thead class="table-light">
+                    <tr>
+                        <th>Host</th>
+                        <th>Status</th>
+                        <th>Days Left</th>
+                        <th>Expiry Date</th>
+                        <th>ESX Version</th>
+                        <th>Datacenter</th>
+                        <th>Cluster</th>
+                        <th>vCenter</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var cert in Model.Items)
+                    {
+                        string statusClass;
+                        switch (cert.Expiration_Status)
+                        {
+                            case "Expired": statusClass = "badge-status-critical"; break;
+                            case "Expiring Soon": statusClass = "badge-status-warning"; break;
+                            case "Expiring (90 days)": statusClass = "badge-status-warning"; break;
+                            case "Valid": statusClass = "badge-status-normal"; break;
+                            default: statusClass = "badge-status-unknown"; break;
+                        }
+
+                        string daysClass;
+                        if (cert.Days_Until_Expiration < 0)
+                            daysClass = "badge-status-critical";
+                        else if (cert.Days_Until_Expiration < 30)
+                            daysClass = "badge-status-warning";
+                        else if (cert.Days_Until_Expiration < 90)
+                            daysClass = "badge-status-warning";
+                        else
+                            daysClass = "badge-status-normal";
+                        <tr>
+                            <td><span class="fw-medium">@(cert.HostName ?? "-")</span></td>
+                            <td>
+                                <span class="badge @statusClass">@(cert.Expiration_Status ?? "-")</span>
+                            </td>
+                            <td>
+                                @if (cert.Days_Until_Expiration.HasValue)
+                                {
+                                    <span class="badge @daysClass">@cert.Days_Until_Expiration days</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">N/A</span>
+                                }
+                            </td>
+                            <td>@(cert.Certificate_Expiry_Date?.ToString("yyyy-MM-dd") ?? "-")</td>
+                            <td>@(cert.ESX_Version ?? "-")</td>
+                            <td>@(cert.Datacenter ?? "-")</td>
+                            <td>@(cert.Cluster ?? "-")</td>
+                            <td class="text-truncate" style="max-width: 150px;" title="@cert.VI_SDK_Server">
+                                @(cert.VI_SDK_Server ?? "-")
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // No cascading filters needed
+        });
+    </script>
+}

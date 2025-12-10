@@ -1,0 +1,32 @@
+@using Microsoft.AspNetCore.Mvc.ViewFeatures
+@inject ITempDataDictionaryFactory TempDataFactory
+
+@{
+    var tempData = TempDataFactory.GetTempData(Context);
+    var showToast = tempData["ShowErrorToast"] as bool? ?? false;
+    var errorMessage = tempData["ErrorMessage"] as string;
+    var requestId = tempData["ErrorRequestId"] as string;
+}
+
+@if (showToast && !string.IsNullOrEmpty(errorMessage))
+{
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+        <div id="errorToast" class="toast show border-danger" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">
+            <div class="toast-header bg-danger text-white">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <strong class="me-auto">Error</strong>
+                <small class="text-white-50">Just now</small>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                <p class="mb-2">@errorMessage</p>
+                @if (!string.IsNullOrEmpty(requestId))
+                {
+                    <p class="mb-0 small text-muted">
+                        <strong>Reference ID:</strong> <code>@requestId</code>
+                    </p>
+                }
+            </div>
+        </div>
+    </div>
+}

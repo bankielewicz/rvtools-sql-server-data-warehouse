@@ -1,0 +1,163 @@
+@model RVToolsWeb.Models.ViewModels.Inventory.NetworkTopologyViewModel
+@{
+    ViewData["Title"] = "Network Topology";
+}
+
+<!-- Filter Panel -->
+<div class="filter-panel">
+    <form method="get" asp-action="Index">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label" for="viSdkServerSelect">vCenter Server</label>
+                <select class="form-select form-select-sm" id="viSdkServerSelect" name="VI_SDK_Server">
+                    <option value="">(All)</option>
+                    @foreach (var item in Model.VISdkServers)
+                    {
+                        <option value="@item.Value" selected="@(Model.Filter.VI_SDK_Server == item.Value)">@item.Label</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="showOrphanedOnly" name="ShowOrphanedOnly" value="true"
+                           @(Model.Filter.ShowOrphanedOnly ? "checked" : "") />
+                    <label class="form-check-label" for="showOrphanedOnly">
+                        Show Orphaned Only
+                    </label>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="bi bi-funnel me-1"></i>Apply Filter
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-x-circle me-1"></i>Clear
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Results Summary -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <span class="text-muted">@Model.Items.Count() port groups</span>
+        @{
+            var orphanedCount = Model.Items.Count(x => x.Is_Orphaned);
+            if (orphanedCount > 0)
+            {
+                <span class="badge bg-warning ms-2">@orphanedCount orphaned</span>
+            }
+        }
+    </div>
+    <div>
+        <a href="/api/Export/network-topology/excel?VI_SDK_Server=@Model.Filter.VI_SDK_Server&ShowOrphanedOnly=@Model.Filter.ShowOrphanedOnly"
+           class="btn btn-outline-success btn-sm btn-export">
+            <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+        </a>
+        <a href="/api/Export/network-topology/csv?VI_SDK_Server=@Model.Filter.VI_SDK_Server&ShowOrphanedOnly=@Model.Filter.ShowOrphanedOnly"
+           class="btn btn-outline-secondary btn-sm btn-export">
+            <i class="bi bi-filetype-csv me-1"></i>Export CSV
+        </a>
+    </div>
+</div>
+
+<!-- Data Table -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover mb-0 data-table">
+                <thead class="table-light">
+                    <tr>
+                        <th>Port Group</th>
+                        <th>VLAN</th>
+                        <th>Switch</th>
+                        <th>Type</th>
+                        <th>VMs</th>
+                        <th>Status</th>
+                        <th>Promiscuous</th>
+                        <th>MAC Changes</th>
+                        <th>Forged TX</th>
+                        <th>Datacenter</th>
+                        <th>Cluster</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var pg in Model.Items)
+                    {
+                        <tr class="@(pg.Is_Orphaned ? "table-warning" : "")">
+                            <td><span class="fw-medium">@(pg.Port_Group ?? "-")</span></td>
+                            <td>@(pg.VLAN ?? "-")</td>
+                            <td>@(pg.Switch_Name ?? "-")</td>
+                            <td>
+                                @if (pg.Switch_Type == "Distributed")
+                                {
+                                    <span class="badge bg-primary">Distributed</span>
+                                }
+                                else if (pg.Switch_Type == "Standard")
+                                {
+                                    <span class="badge bg-secondary">Standard</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">@(pg.Switch_Type ?? "-")</span>
+                                }
+                            </td>
+                            <td>@(pg.VM_Count?.ToString() ?? "0")</td>
+                            <td>
+                                @if (pg.Is_Orphaned)
+                                {
+                                    <span class="badge bg-warning text-dark">Orphaned</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">In Use</span>
+                                }
+                            </td>
+                            <td>
+                                @if (pg.Promiscuous_Mode == true)
+                                {
+                                    <span class="badge bg-danger">Accept</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Reject</span>
+                                }
+                            </td>
+                            <td>
+                                @if (pg.Mac_Changes == true)
+                                {
+                                    <span class="badge bg-warning text-dark">Accept</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Reject</span>
+                                }
+                            </td>
+                            <td>
+                                @if (pg.Forged_Transmits == true)
+                                {
+                                    <span class="badge bg-warning text-dark">Accept</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Reject</span>
+                                }
+                            </td>
+                            <td>@(pg.Datacenter ?? "-")</td>
+                            <td>@(pg.Cluster ?? "-")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // No cascading filters needed for this report
+        });
+    </script>
+}

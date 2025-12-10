@@ -1,0 +1,64 @@
+@using Microsoft.Extensions.Options
+@using RVToolsWeb.Configuration
+@inject IOptions<AppSettings> AppSettings
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - @AppSettings.Value.Ui.ApplicationTitle</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/lib/datatables-bs5/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <partial name="_ErrorToastPartial" />
+    <div class="d-flex" id="wrapper">
+        <!-- Sidebar -->
+        <div class="bg-dark" id="sidebar-wrapper">
+            <div class="sidebar-heading d-flex align-items-center px-3 py-3 border-bottom border-secondary">
+                <img src="@AppSettings.Value.Ui.LogoPath" alt="Logo" class="sidebar-logo me-2" onerror="this.style.display='none'" />
+                <span class="text-white fw-bold sidebar-title">@AppSettings.Value.Ui.ApplicationTitle</span>
+            </div>
+            <partial name="_SidebarPartial" />
+        </div>
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper" class="w-100">
+            <!-- Top Navigation -->
+            <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+                <div class="container-fluid">
+                    <button class="btn btn-outline-secondary btn-sm" id="sidebarToggle" type="button">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <span class="navbar-text ms-3 fw-semibold">
+                        @ViewData["Title"]
+                    </span>
+                    <div class="ms-auto d-flex align-items-center">
+                        <span class="text-muted small">
+                            <i class="bi bi-person-circle me-1"></i>
+                            @User.Identity?.Name
+                        </span>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <div class="container-fluid p-4">
+                <main role="main">
+                    @RenderBody()
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/datatables/dataTables.min.js"></script>
+    <script src="~/lib/datatables-bs5/dataTables.bootstrap5.min.js"></script>
+    <script src="~/lib/chartjs/chart.umd.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

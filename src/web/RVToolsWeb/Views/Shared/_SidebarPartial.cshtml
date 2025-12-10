@@ -1,0 +1,105 @@
+@{
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+
+    // Define which controllers belong to which menu section
+    var inventoryControllers = new[] { "VMInventory", "HostInventory", "ClusterSummary", "DatastoreInventory", "EnterpriseSummary", "NetworkTopology", "LicenseCompliance", "ResourcePool" };
+    var healthControllers = new[] { "HealthIssues", "CertificateExpiration", "SnapshotAging", "ConfigurationCompliance", "OrphanedFiles", "ToolsStatus" };
+    var capacityControllers = new[] { "DatastoreCapacity", "HostCapacity", "VMResourceAllocation", "VMRightSizing" };
+    var trendsControllers = new[] { "VMCountTrend", "StorageGrowth", "DatastoreCapacityTrend", "HostUtilization", "VMConfigChanges", "VMLifecycle" };
+
+    // Determine which section is active
+    var isInventoryActive = inventoryControllers.Contains(controller);
+    var isHealthActive = healthControllers.Contains(controller);
+    var isCapacityActive = capacityControllers.Contains(controller);
+    var isTrendsActive = trendsControllers.Contains(controller);
+    var isHomeActive = controller == "Home";
+}
+
+<nav class="sidebar-nav">
+    <!-- Home -->
+    <div class="nav-section">
+        <a href="/" class="nav-link text-white @(isHomeActive ? "active" : "")">
+            <i class="bi bi-house-door me-2"></i>Dashboard
+        </a>
+    </div>
+
+    <!-- Inventory Reports -->
+    <div class="nav-section">
+        <a class="nav-link text-white d-flex justify-content-between align-items-center"
+           data-bs-toggle="collapse" href="#inventoryMenu" role="button"
+           aria-expanded="@(isInventoryActive ? "true" : "false")">
+            <span><i class="bi bi-server me-2"></i>Inventory</span>
+            <i class="bi bi-chevron-down nav-chevron"></i>
+        </a>
+        <div class="collapse @(isInventoryActive ? "show" : "")" id="inventoryMenu">
+            <div class="nav-submenu">
+                <a asp-controller="VMInventory" asp-action="Index" class="nav-link @(controller == "VMInventory" ? "active text-white" : "text-white-50")">VM Inventory</a>
+                <a asp-controller="HostInventory" asp-action="Index" class="nav-link @(controller == "HostInventory" ? "active text-white" : "text-white-50")">Host Inventory</a>
+                <a asp-controller="ClusterSummary" asp-action="Index" class="nav-link @(controller == "ClusterSummary" ? "active text-white" : "text-white-50")">Cluster Summary</a>
+                <a asp-controller="DatastoreInventory" asp-action="Index" class="nav-link @(controller == "DatastoreInventory" ? "active text-white" : "text-white-50")">Datastore Inventory</a>
+                <a asp-controller="EnterpriseSummary" asp-action="Index" class="nav-link @(controller == "EnterpriseSummary" ? "active text-white" : "text-white-50")">Enterprise Summary</a>
+                <a asp-controller="NetworkTopology" asp-action="Index" class="nav-link @(controller == "NetworkTopology" ? "active text-white" : "text-white-50")">Network Topology</a>
+                <a asp-controller="LicenseCompliance" asp-action="Index" class="nav-link @(controller == "LicenseCompliance" ? "active text-white" : "text-white-50")">License Compliance</a>
+                <a asp-controller="ResourcePool" asp-action="Index" class="nav-link @(controller == "ResourcePool" ? "active text-white" : "text-white-50")">Resource Pools</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Health Reports -->
+    <div class="nav-section">
+        <a class="nav-link text-white d-flex justify-content-between align-items-center"
+           data-bs-toggle="collapse" href="#healthMenu" role="button"
+           aria-expanded="@(isHealthActive ? "true" : "false")">
+            <span><i class="bi bi-heart-pulse me-2"></i>Health</span>
+            <i class="bi bi-chevron-down nav-chevron"></i>
+        </a>
+        <div class="collapse @(isHealthActive ? "show" : "")" id="healthMenu">
+            <div class="nav-submenu">
+                <a asp-controller="HealthIssues" asp-action="Index" class="nav-link @(controller == "HealthIssues" ? "active text-white" : "text-white-50")">Health Issues</a>
+                <a asp-controller="CertificateExpiration" asp-action="Index" class="nav-link @(controller == "CertificateExpiration" ? "active text-white" : "text-white-50")">Certificate Expiration</a>
+                <a asp-controller="SnapshotAging" asp-action="Index" class="nav-link @(controller == "SnapshotAging" ? "active text-white" : "text-white-50")">Snapshot Aging</a>
+                <a asp-controller="ConfigurationCompliance" asp-action="Index" class="nav-link @(controller == "ConfigurationCompliance" ? "active text-white" : "text-white-50")">Configuration Compliance</a>
+                <a asp-controller="OrphanedFiles" asp-action="Index" class="nav-link @(controller == "OrphanedFiles" ? "active text-white" : "text-white-50")">Orphaned Files</a>
+                <a asp-controller="ToolsStatus" asp-action="Index" class="nav-link @(controller == "ToolsStatus" ? "active text-white" : "text-white-50")">Tools Status</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Capacity Reports -->
+    <div class="nav-section">
+        <a class="nav-link text-white d-flex justify-content-between align-items-center"
+           data-bs-toggle="collapse" href="#capacityMenu" role="button"
+           aria-expanded="@(isCapacityActive ? "true" : "false")">
+            <span><i class="bi bi-hdd-stack me-2"></i>Capacity</span>
+            <i class="bi bi-chevron-down nav-chevron"></i>
+        </a>
+        <div class="collapse @(isCapacityActive ? "show" : "")" id="capacityMenu">
+            <div class="nav-submenu">
+                <a asp-controller="DatastoreCapacity" asp-action="Index" class="nav-link @(controller == "DatastoreCapacity" ? "active text-white" : "text-white-50")">Datastore Capacity</a>
+                <a asp-controller="HostCapacity" asp-action="Index" class="nav-link @(controller == "HostCapacity" ? "active text-white" : "text-white-50")">Host Capacity</a>
+                <a asp-controller="VMResourceAllocation" asp-action="Index" class="nav-link @(controller == "VMResourceAllocation" ? "active text-white" : "text-white-50")">VM Resource Allocation</a>
+                <a asp-controller="VMRightSizing" asp-action="Index" class="nav-link @(controller == "VMRightSizing" ? "active text-white" : "text-white-50")">VM Right-Sizing</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trends Reports -->
+    <div class="nav-section">
+        <a class="nav-link text-white d-flex justify-content-between align-items-center"
+           data-bs-toggle="collapse" href="#trendsMenu" role="button"
+           aria-expanded="@(isTrendsActive ? "true" : "false")">
+            <span><i class="bi bi-graph-up me-2"></i>Trends</span>
+            <i class="bi bi-chevron-down nav-chevron"></i>
+        </a>
+        <div class="collapse @(isTrendsActive ? "show" : "")" id="trendsMenu">
+            <div class="nav-submenu">
+                <a asp-controller="VMCountTrend" asp-action="Index" class="nav-link @(controller == "VMCountTrend" ? "active text-white" : "text-white-50")">VM Count Trend</a>
+                <a asp-controller="StorageGrowth" asp-action="Index" class="nav-link @(controller == "StorageGrowth" ? "active text-white" : "text-white-50")">Storage Growth</a>
+                <a asp-controller="DatastoreCapacityTrend" asp-action="Index" class="nav-link @(controller == "DatastoreCapacityTrend" ? "active text-white" : "text-white-50")">Datastore Capacity Trend</a>
+                <a asp-controller="HostUtilization" asp-action="Index" class="nav-link @(controller == "HostUtilization" ? "active text-white" : "text-white-50")">Host Utilization</a>
+                <a asp-controller="VMConfigChanges" asp-action="Index" class="nav-link @(controller == "VMConfigChanges" ? "active text-white" : "text-white-50")">VM Config Changes</a>
+                <a asp-controller="VMLifecycle" asp-action="Index" class="nav-link @(controller == "VMLifecycle" ? "active text-white" : "text-white-50")">VM Lifecycle</a>
+            </div>
+        </div>
+    </div>
+</nav>

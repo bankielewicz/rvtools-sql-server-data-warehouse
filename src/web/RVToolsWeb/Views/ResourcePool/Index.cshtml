@@ -1,0 +1,120 @@
+@model RVToolsWeb.Models.ViewModels.Inventory.ResourcePoolViewModel
+@{
+    ViewData["Title"] = "Resource Pool Utilization";
+}
+
+<!-- Filter Panel -->
+<div class="filter-panel">
+    <form method="get" asp-action="Index">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label" for="viSdkServerSelect">vCenter Server</label>
+                <select class="form-select form-select-sm" id="viSdkServerSelect" name="VI_SDK_Server">
+                    <option value="">(All)</option>
+                    @foreach (var item in Model.VISdkServers)
+                    {
+                        <option value="@item.Value" selected="@(Model.Filter.VI_SDK_Server == item.Value)">@item.Label</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="bi bi-funnel me-1"></i>Apply Filter
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-x-circle me-1"></i>Clear
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Results Summary -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <span class="text-muted">@Model.Items.Count() resource pools</span>
+    </div>
+    <div>
+        <a href="/api/Export/resource-pool/excel?VI_SDK_Server=@Model.Filter.VI_SDK_Server"
+           class="btn btn-outline-success btn-sm btn-export">
+            <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+        </a>
+        <a href="/api/Export/resource-pool/csv?VI_SDK_Server=@Model.Filter.VI_SDK_Server"
+           class="btn btn-outline-secondary btn-sm btn-export">
+            <i class="bi bi-filetype-csv me-1"></i>Export CSV
+        </a>
+    </div>
+</div>
+
+<!-- Data Table -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover mb-0 data-table">
+                <thead class="table-light">
+                    <tr>
+                        <th>Resource Pool</th>
+                        <th>Cluster</th>
+                        <th>VMs (On/Total)</th>
+                        <th>vCPUs</th>
+                        <th>Memory (GiB)</th>
+                        <th>Active Mem %</th>
+                        <th>CPU Resv (MHz)</th>
+                        <th>Mem Resv (GiB)</th>
+                        <th>Datacenter</th>
+                        <th>vCenter</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var rp in Model.Items)
+                    {
+                        var memoryGiB = rp.Total_Memory_MiB.HasValue ? (rp.Total_Memory_MiB.Value / 1024.0).ToString("N0") : "-";
+                        var memResvGiB = rp.Total_Memory_Reservation_MiB.HasValue ? (rp.Total_Memory_Reservation_MiB.Value / 1024.0).ToString("N0") : "-";
+
+                        string activeMemClass;
+                        if (rp.Avg_Memory_Active_Percent > 90)
+                            activeMemClass = "badge-status-critical";
+                        else if (rp.Avg_Memory_Active_Percent > 70)
+                            activeMemClass = "badge-status-warning";
+                        else
+                            activeMemClass = "badge-status-normal";
+                        <tr>
+                            <td><span class="fw-medium">@rp.ResourcePool</span></td>
+                            <td>@(rp.Cluster ?? "-")</td>
+                            <td>
+                                <span class="text-success">@(rp.VMs_PoweredOn?.ToString() ?? "0")</span>
+                                <span class="text-muted">/ @(rp.Total_VMs?.ToString() ?? "0")</span>
+                            </td>
+                            <td>@(rp.Total_vCPUs?.ToString("N0") ?? "-")</td>
+                            <td>@memoryGiB</td>
+                            <td>
+                                @if (rp.Avg_Memory_Active_Percent.HasValue)
+                                {
+                                    <span class="badge @activeMemClass">@rp.Avg_Memory_Active_Percent.Value.ToString("N1")%</span>
+                                }
+                                else
+                                {
+                                    <span>-</span>
+                                }
+                            </td>
+                            <td>@(rp.Total_CPU_Reservation_MHz?.ToString("N0") ?? "-")</td>
+                            <td>@memResvGiB</td>
+                            <td>@(rp.Datacenter ?? "-")</td>
+                            <td class="text-truncate" style="max-width: 150px;" title="@rp.VI_SDK_Server">
+                                @(rp.VI_SDK_Server ?? "-")
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // No cascading filters needed for this report
+        });
+    </script>
+}

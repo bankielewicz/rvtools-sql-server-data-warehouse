@@ -1,0 +1,195 @@
+@model RVToolsWeb.Models.ViewModels.Trends.VMLifecycleViewModel
+@{
+    ViewData["Title"] = "VM Lifecycle";
+}
+
+<!-- Filter Panel -->
+<div class="filter-panel">
+    <form method="get" asp-action="Index">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-2">
+                <label class="form-label" for="viSdkServerSelect">vCenter Server</label>
+                <select class="form-select form-select-sm" id="viSdkServerSelect" name="VI_SDK_Server">
+                    <option value="">(All)</option>
+                    @foreach (var item in Model.VISdkServers)
+                    {
+                        <option value="@item.Value" selected="@(Model.Filter.VI_SDK_Server == item.Value)">@item.Label</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="vmNameInput">VM Name</label>
+                <input type="text" class="form-control form-control-sm" id="vmNameInput" name="VMName"
+                       value="@Model.Filter.VMName" placeholder="Search...">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="powerstateSelect">Power State</label>
+                <select class="form-select form-select-sm" id="powerstateSelect" name="Powerstate">
+                    <option value="">(All)</option>
+                    <option value="poweredOn" selected="@(Model.Filter.Powerstate == "poweredOn")">Powered On</option>
+                    <option value="poweredOff" selected="@(Model.Filter.Powerstate == "poweredOff")">Powered Off</option>
+                    <option value="suspended" selected="@(Model.Filter.Powerstate == "suspended")">Suspended</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="lookbackDaysSelect">Time Range</label>
+                <select class="form-select form-select-sm" id="lookbackDaysSelect" name="LookbackDays">
+                    <option value="30" selected="@(Model.Filter.LookbackDays == 30)">Last 30 Days</option>
+                    <option value="90" selected="@(Model.Filter.LookbackDays == 90)">Last 90 Days</option>
+                    <option value="180" selected="@(Model.Filter.LookbackDays == 180)">Last 6 Months</option>
+                    <option value="365" selected="@(Model.Filter.LookbackDays == 365)">Last Year</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="bi bi-funnel me-1"></i>Apply Filter
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-x-circle me-1"></i>Clear
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-3">
+    <div class="col">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <h6 class="card-title text-muted mb-0">Total Records</h6>
+                <h4 class="mb-0">@Model.TotalRecords</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <h6 class="card-title text-muted mb-0">Unique VMs</h6>
+                <h4 class="mb-0 text-info">@Model.UniqueVMCount</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <h6 class="card-title text-muted mb-0">Powered On States</h6>
+                <h4 class="mb-0 text-success">@Model.PoweredOnCount</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <h6 class="card-title text-muted mb-0">Powered Off States</h6>
+                <h4 class="mb-0 text-secondary">@Model.PoweredOffCount</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <h6 class="card-title text-muted mb-0">Total Days Tracked</h6>
+                <h4 class="mb-0">@Model.TotalDaysTracked</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Results Summary -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <span class="text-muted">@Model.Items.Count() lifecycle records</span>
+    </div>
+    <div>
+        <a href="/api/Export/vm-lifecycle/excel?VI_SDK_Server=@Model.Filter.VI_SDK_Server&VMName=@Model.Filter.VMName&Powerstate=@Model.Filter.Powerstate&LookbackDays=@Model.Filter.LookbackDays"
+           class="btn btn-outline-success btn-sm btn-export">
+            <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+        </a>
+        <a href="/api/Export/vm-lifecycle/csv?VI_SDK_Server=@Model.Filter.VI_SDK_Server&VMName=@Model.Filter.VMName&Powerstate=@Model.Filter.Powerstate&LookbackDays=@Model.Filter.LookbackDays"
+           class="btn btn-outline-secondary btn-sm btn-export">
+            <i class="bi bi-filetype-csv me-1"></i>Export CSV
+        </a>
+    </div>
+</div>
+
+<!-- Data Table -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover mb-0 data-table">
+                <thead class="table-light">
+                    <tr>
+                        <th>VM</th>
+                        <th>Power State</th>
+                        <th>State Start</th>
+                        <th>State End</th>
+                        <th class="text-end">Days</th>
+                        <th>Last Power On</th>
+                        <th>Host</th>
+                        <th>Cluster</th>
+                        <th>vCenter</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Items)
+                    {
+                        var powerClass = item.Powerstate?.ToLower() == "poweredon" ? "badge-poweredon" : "badge-poweredoff";
+                        var isCurrentState = item.ValidTo == null;
+                        <tr>
+                            <td>
+                                <span class="fw-medium">@(item.VM ?? "-")</span>
+                                @if (isCurrentState)
+                                {
+                                    <span class="badge bg-primary ms-1">Current</span>
+                                }
+                            </td>
+                            <td>
+                                <span class="badge @powerClass">@(item.Powerstate ?? "-")</span>
+                            </td>
+                            <td>@item.State_Start_Date.ToString("yyyy-MM-dd")</td>
+                            <td>
+                                @if (isCurrentState)
+                                {
+                                    <span class="text-muted">Ongoing</span>
+                                }
+                                else
+                                {
+                                    @item.State_End_Date.ToString("yyyy-MM-dd")
+                                }
+                            </td>
+                            <td class="text-end">
+                                <span class="@(item.Days_In_State > 30 ? "fw-bold" : "")">
+                                    @item.Days_In_State
+                                </span>
+                            </td>
+                            <td>
+                                @if (item.Last_PowerOn_Time.HasValue)
+                                {
+                                    @item.Last_PowerOn_Time.Value.ToString("yyyy-MM-dd HH:mm")
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                            <td class="text-truncate" style="max-width: 150px;" title="@item.Host">
+                                @(item.Host ?? "-")
+                            </td>
+                            <td>@(item.Cluster ?? "-")</td>
+                            <td>@(item.VI_SDK_Server ?? "-")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // No cascading filters needed
+        });
+    </script>
+}

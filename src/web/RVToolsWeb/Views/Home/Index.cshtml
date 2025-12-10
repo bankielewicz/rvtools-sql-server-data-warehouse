@@ -1,0 +1,328 @@
+@model RVToolsWeb.Models.ViewModels.Home.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<!-- Welcome Banner -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-primary d-flex align-items-center">
+            <i class="bi bi-speedometer2 fs-4 me-3"></i>
+            <div>
+                <strong>VMware Infrastructure Dashboard</strong>
+                <span class="text-muted ms-2">
+                    @if (Model.LastImportDate.HasValue)
+                    {
+                        <text>Last import: @Model.LastImportDate.Value.ToString("g")</text>
+                    }
+                    else
+                    {
+                        <text>No data imported yet</text>
+                    }
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Infrastructure Summary Row -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h5 class="text-muted mb-3"><i class="bi bi-server me-2"></i>Infrastructure Summary</h5>
+    </div>
+
+    <!-- vCenters -->
+    <div class="col-6 col-md-4 col-lg-2 mb-3">
+        <div class="card h-100 border-0 bg-light">
+            <div class="card-body text-center py-3">
+                <div class="fs-2 fw-bold text-primary">@Model.TotalVCenters</div>
+                <div class="text-muted small">vCenters</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Datacenters -->
+    <div class="col-6 col-md-4 col-lg-2 mb-3">
+        <div class="card h-100 border-0 bg-light">
+            <div class="card-body text-center py-3">
+                <div class="fs-2 fw-bold text-primary">@Model.TotalDatacenters</div>
+                <div class="text-muted small">Datacenters</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clusters -->
+    <div class="col-6 col-md-4 col-lg-2 mb-3">
+        <div class="card h-100 border-0 bg-light">
+            <div class="card-body text-center py-3">
+                <div class="fs-2 fw-bold text-primary">@Model.TotalClusters</div>
+                <div class="text-muted small">Clusters</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hosts -->
+    <div class="col-6 col-md-4 col-lg-2 mb-3">
+        <div class="card h-100 border-0 bg-light">
+            <div class="card-body text-center py-3">
+                <div class="fs-2 fw-bold text-primary">@Model.TotalHosts</div>
+                <div class="text-muted small">ESXi Hosts</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Datastores -->
+    <div class="col-6 col-md-4 col-lg-2 mb-3">
+        <div class="card h-100 border-0 bg-light">
+            <div class="card-body text-center py-3">
+                <div class="fs-2 fw-bold text-primary">@Model.TotalDatastores</div>
+                <div class="text-muted small">Datastores</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VMs -->
+    <div class="col-6 col-md-4 col-lg-2 mb-3">
+        <div class="card h-100 border-0 bg-light">
+            <div class="card-body text-center py-3">
+                <div class="fs-2 fw-bold text-primary">@Model.TotalVMs</div>
+                <div class="text-muted small">Virtual Machines</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- VM & Resource Summary Row -->
+<div class="row mb-4">
+    <!-- VM Power State Card -->
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-pc-display me-2"></i>VM Power State
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span><span class="badge badge-poweredon me-1">On</span> Powered On</span>
+                    <strong>@Model.VMsPoweredOn.ToString("N0")</strong>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span><span class="badge badge-poweredoff me-1">Off</span> Powered Off</span>
+                    <strong>@Model.VMsPoweredOff.ToString("N0")</strong>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span><span class="badge bg-secondary me-1">T</span> Templates</span>
+                    <strong>@Model.Templates.ToString("N0")</strong>
+                </div>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar bg-success" style="width: @Model.PoweredOnPercent%"></div>
+                    <div class="progress-bar bg-secondary" style="width: @(100 - Model.PoweredOnPercent)%"></div>
+                </div>
+                <div class="text-muted small text-center mt-1">@Model.PoweredOnPercent% powered on</div>
+            </div>
+            <div class="card-footer bg-transparent border-0 pt-0">
+                <a asp-controller="VMInventory" asp-action="Index" class="btn btn-sm btn-outline-primary w-100">
+                    <i class="bi bi-list-ul me-1"></i>View All VMs
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resource Allocation Card -->
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-cpu me-2"></i>Resource Allocation
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span><i class="bi bi-cpu text-primary me-2"></i>vCPUs</span>
+                    <strong>@Model.TotalvCPUs.ToString("N0")</strong>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span><i class="bi bi-memory text-info me-2"></i>Memory</span>
+                    <strong>@Model.TotalvMemoryGiB.ToString("N0") GiB</strong>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span><i class="bi bi-hdd text-warning me-2"></i>Provisioned</span>
+                    <strong>@Model.TotalStorageTiB.ToString("N1") TiB</strong>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-hdd-fill text-success me-2"></i>In Use</span>
+                    <strong>@Model.UsedStorageTiB.ToString("N1") TiB</strong>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0 pt-0">
+                <a asp-controller="EnterpriseSummary" asp-action="Index" class="btn btn-sm btn-outline-primary w-100">
+                    <i class="bi bi-building me-1"></i>Enterprise Summary
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Storage Capacity Card -->
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-hdd-stack me-2"></i>Storage Capacity
+            </div>
+            <div class="card-body">
+                @if (Model.CriticalDatastores > 0 || Model.WarningDatastores > 0)
+                {
+                    <div class="alert alert-warning py-2 px-3 mb-3">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        @if (Model.CriticalDatastores > 0)
+                        {
+                            <span class="badge badge-status-critical me-1">@Model.CriticalDatastores Critical</span>
+                        }
+                        @if (Model.WarningDatastores > 0)
+                        {
+                            <span class="badge badge-status-warning">@Model.WarningDatastores Warning</span>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-success py-2 px-3 mb-3">
+                        <i class="bi bi-check-circle me-1"></i>All datastores healthy
+                    </div>
+                }
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>Total Datastores</span>
+                    <strong>@Model.TotalDatastores</strong>
+                </div>
+                <div class="progress mb-2" style="height: 20px;">
+                    <div class="progress-bar bg-success" style="width: @Model.StorageUsedPercent%">@Model.StorageUsedPercent%</div>
+                </div>
+                <div class="text-muted small text-center">@Model.UsedStorageTiB.ToString("N1") / @Model.TotalStorageTiB.ToString("N1") TiB used</div>
+            </div>
+            <div class="card-footer bg-transparent border-0 pt-0">
+                <a asp-controller="DatastoreCapacity" asp-action="Index" class="btn btn-sm btn-outline-primary w-100">
+                    <i class="bi bi-bar-chart me-1"></i>Capacity Details
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Health Status Card -->
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-heart-pulse me-2"></i>Health Status
+            </div>
+            <div class="card-body">
+                @{
+                    var hasIssues = Model.HealthIssueCount > 0 || Model.ExpiringCertificates > 0 || Model.AgingSnapshots > 0 || Model.OrphanedFiles > 0;
+                }
+                @if (!hasIssues)
+                {
+                    <div class="alert alert-success py-2 px-3 mb-3">
+                        <i class="bi bi-check-circle me-1"></i>No issues detected
+                    </div>
+                }
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span><i class="bi bi-exclamation-circle text-danger me-2"></i>Health Issues</span>
+                    <span class="badge @(Model.HealthIssueCount > 0 ? "badge-status-critical" : "badge-status-normal")">@Model.HealthIssueCount</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span><i class="bi bi-shield-exclamation text-warning me-2"></i>Expiring Certs</span>
+                    <span class="badge @(Model.ExpiringCertificates > 0 ? "badge-status-warning" : "badge-status-normal")">@Model.ExpiringCertificates</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span><i class="bi bi-clock-history text-warning me-2"></i>Aging Snapshots</span>
+                    <span class="badge @(Model.AgingSnapshots > 0 ? "badge-status-warning" : "badge-status-normal")">@Model.AgingSnapshots</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-file-earmark-x text-secondary me-2"></i>Orphaned Files</span>
+                    <span class="badge @(Model.OrphanedFiles > 0 ? "badge-status-warning" : "badge-status-normal")">@Model.OrphanedFiles</span>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0 pt-0">
+                <a asp-controller="HealthIssues" asp-action="Index" class="btn btn-sm btn-outline-primary w-100">
+                    <i class="bi bi-list-check me-1"></i>View Health Issues
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Access Reports Row -->
+<div class="row">
+    <div class="col-12">
+        <h5 class="text-muted mb-3"><i class="bi bi-grid-3x3-gap me-2"></i>Quick Access</h5>
+    </div>
+
+    <!-- Inventory Reports -->
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-server me-2"></i>Inventory
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><a asp-controller="VMInventory" asp-action="Index" class="text-decoration-none"><i class="bi bi-pc-display me-2"></i>VM Inventory</a></li>
+                    <li class="list-group-item"><a asp-controller="HostInventory" asp-action="Index" class="text-decoration-none"><i class="bi bi-hdd-rack me-2"></i>Host Inventory</a></li>
+                    <li class="list-group-item"><a asp-controller="ClusterSummary" asp-action="Index" class="text-decoration-none"><i class="bi bi-diagram-3 me-2"></i>Cluster Summary</a></li>
+                    <li class="list-group-item"><a asp-controller="DatastoreInventory" asp-action="Index" class="text-decoration-none"><i class="bi bi-hdd me-2"></i>Datastore Inventory</a></li>
+                    <li class="list-group-item"><a asp-controller="NetworkTopology" asp-action="Index" class="text-decoration-none"><i class="bi bi-diagram-2 me-2"></i>Network Topology</a></li>
+                    <li class="list-group-item"><a asp-controller="LicenseCompliance" asp-action="Index" class="text-decoration-none"><i class="bi bi-key me-2"></i>License Compliance</a></li>
+                    <li class="list-group-item"><a asp-controller="ResourcePool" asp-action="Index" class="text-decoration-none"><i class="bi bi-layers me-2"></i>Resource Pools</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Health Reports -->
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-heart-pulse me-2"></i>Health
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><a asp-controller="HealthIssues" asp-action="Index" class="text-decoration-none"><i class="bi bi-exclamation-triangle me-2"></i>Health Issues</a></li>
+                    <li class="list-group-item"><a asp-controller="CertificateExpiration" asp-action="Index" class="text-decoration-none"><i class="bi bi-shield-lock me-2"></i>Certificate Expiration</a></li>
+                    <li class="list-group-item"><a asp-controller="SnapshotAging" asp-action="Index" class="text-decoration-none"><i class="bi bi-clock-history me-2"></i>Snapshot Aging</a></li>
+                    <li class="list-group-item"><a asp-controller="ConfigurationCompliance" asp-action="Index" class="text-decoration-none"><i class="bi bi-clipboard-check me-2"></i>Configuration Compliance</a></li>
+                    <li class="list-group-item"><a asp-controller="OrphanedFiles" asp-action="Index" class="text-decoration-none"><i class="bi bi-file-earmark-x me-2"></i>Orphaned Files</a></li>
+                    <li class="list-group-item"><a asp-controller="ToolsStatus" asp-action="Index" class="text-decoration-none"><i class="bi bi-tools me-2"></i>VMware Tools Status</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Capacity Reports -->
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-hdd-stack me-2"></i>Capacity
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><a asp-controller="DatastoreCapacity" asp-action="Index" class="text-decoration-none"><i class="bi bi-hdd me-2"></i>Datastore Capacity</a></li>
+                    <li class="list-group-item"><a asp-controller="HostCapacity" asp-action="Index" class="text-decoration-none"><i class="bi bi-hdd-rack me-2"></i>Host Capacity</a></li>
+                    <li class="list-group-item"><a asp-controller="VMResourceAllocation" asp-action="Index" class="text-decoration-none"><i class="bi bi-pie-chart me-2"></i>VM Resource Allocation</a></li>
+                    <li class="list-group-item"><a asp-controller="VMRightSizing" asp-action="Index" class="text-decoration-none"><i class="bi bi-arrows-angle-contract me-2"></i>VM Right-Sizing</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trend Reports -->
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-graph-up me-2"></i>Trends
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><a asp-controller="VMCountTrend" asp-action="Index" class="text-decoration-none"><i class="bi bi-graph-up-arrow me-2"></i>VM Count Trend</a></li>
+                    <li class="list-group-item"><a asp-controller="StorageGrowth" asp-action="Index" class="text-decoration-none"><i class="bi bi-bar-chart-line me-2"></i>Storage Growth</a></li>
+                    <li class="list-group-item"><a asp-controller="DatastoreCapacityTrend" asp-action="Index" class="text-decoration-none"><i class="bi bi-activity me-2"></i>Datastore Capacity Trend</a></li>
+                    <li class="list-group-item"><a asp-controller="HostUtilization" asp-action="Index" class="text-decoration-none"><i class="bi bi-speedometer2 me-2"></i>Host Utilization</a></li>
+                    <li class="list-group-item"><a asp-controller="VMConfigChanges" asp-action="Index" class="text-decoration-none"><i class="bi bi-pencil-square me-2"></i>VM Config Changes</a></li>
+                    <li class="list-group-item"><a asp-controller="VMLifecycle" asp-action="Index" class="text-decoration-none"><i class="bi bi-arrow-repeat me-2"></i>VM Lifecycle</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

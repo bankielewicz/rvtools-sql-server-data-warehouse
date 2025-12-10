@@ -1,0 +1,86 @@
+@using System.Text.Json
+@using RVToolsWeb.Models.ViewModels.Shared
+@model (ChartDataViewModel ChartData, ChartOptions Options, string ChartId)
+
+@{
+    var jsonOptions = new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = false
+    };
+
+    // Convert datasets to Chart.js format
+    var chartJsData = new
+    {
+        labels = Model.ChartData.Labels,
+        datasets = Model.ChartData.Datasets.Select(ds => new
+        {
+            label = ds.Label,
+            data = ds.Data,
+            borderColor = ds.BorderColor,
+            backgroundColor = ds.BackgroundColor,
+            fill = ds.Fill,
+            tension = ds.Tension,
+            pointRadius = ds.PointRadius,
+            borderWidth = ds.BorderWidth
+        })
+    };
+
+    var chartDataJson = JsonSerializer.Serialize(chartJsData, jsonOptions);
+    var chartOptionsJson = JsonSerializer.Serialize(new
+    {
+        responsive = true,
+        maintainAspectRatio = false,
+        plugins = new
+        {
+            legend = new
+            {
+                display = Model.Options.ShowLegend,
+                position = "top"
+            },
+            title = new
+            {
+                display = !string.IsNullOrEmpty(Model.Options.Title),
+                text = Model.Options.Title
+            }
+        },
+        scales = new
+        {
+            x = new
+            {
+                title = new
+                {
+                    display = !string.IsNullOrEmpty(Model.Options.XAxisLabel),
+                    text = Model.Options.XAxisLabel
+                }
+            },
+            y = new
+            {
+                beginAtZero = Model.Options.BeginAtZero,
+                title = new
+                {
+                    display = !string.IsNullOrEmpty(Model.Options.YAxisLabel),
+                    text = Model.Options.YAxisLabel
+                }
+            }
+        }
+    }, jsonOptions);
+}
+
+<div class="chart-container" style="height: @(Model.Options.Height)px;">
+    <canvas id="@Model.ChartId"></canvas>
+</div>
+
+<script>
+    (function() {
+        var ctx = document.getElementById('@Model.ChartId').getContext('2d');
+        var chartData = @Html.Raw(chartDataJson);
+        var chartOptions = @Html.Raw(chartOptionsJson);
+
+        new Chart(ctx, {
+            type: '@Model.Options.ChartType',
+            data: chartData,
+            options: chartOptions
+        });
+    })();
+</script>
