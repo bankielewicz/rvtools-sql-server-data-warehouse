@@ -185,15 +185,19 @@ sequenceDiagram
 
 For bulk importing historical data with dates in filenames, use `Import-RVToolsHistoricalData.ps1`:
 
+**Filename Pattern:** `{vcenter-name}_{d_mm_yyyy}.{domain.tld}.xlsx`
+- `{vcenter-name}`: Alphanumeric + hyphens (e.g., `vCenter01`, `prod-vcenter`, `vc-east-01`)
+- `{domain.tld}`: Must contain at least one dot (e.g., `domain.com`, `corp.domain.com`)
+
 ```mermaid
 flowchart TD
     subgraph Input
-        A[Historical xlsx files<br/>vCenter01_5_06_2024.domain.com.xlsx]
+        A[Historical xlsx files<br/>prod-vcenter_5_06_2024.domain.com.xlsx]
     end
 
     subgraph Parse["Parse & Sort"]
         B[Parse filename for date<br/>d_mm_yyyy pattern]
-        C[Extract VIServer<br/>vCenter01, vCenter02, etc.]
+        C[Extract VIServer<br/>prod-vcenter, vc-east-01, etc.]
         D[Sort by date<br/>oldest first]
     end
 

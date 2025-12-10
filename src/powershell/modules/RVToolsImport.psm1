@@ -153,7 +153,10 @@ function Get-RVToolsExportInfo {
 
     .DESCRIPTION
         Extracts date and vCenter identifier from filenames matching pattern:
-        vCenter{xx}_{d_mm_yyyy}.domain.com.xlsx
+        {vcenter-name}_{d_mm_yyyy}.{domain.tld}.xlsx
+
+        - vcenter-name: Alphanumeric + hyphens (e.g., vCenter01, prod-vcenter, vc-east-01)
+        - domain.tld: Must contain at least one dot (e.g., domain.com, corp.domain.com)
 
         Handles both single-digit (5_06_2024) and double-digit (05_06_2024) formats.
 
@@ -166,6 +169,10 @@ function Get-RVToolsExportInfo {
     .EXAMPLE
         Get-RVToolsExportInfo -FileName "vCenter01_5_06_2024.domain.com.xlsx"
         # Returns: @{ VIServer = 'vCenter01'; ExportDate = [DateTime]; Parsed = $true }
+
+    .EXAMPLE
+        Get-RVToolsExportInfo -FileName "prod-vcenter_15_12_2023.corp.domain.com.xlsx"
+        # Returns: @{ VIServer = 'prod-vcenter'; ExportDate = [DateTime]; Parsed = $true }
     #>
     [CmdletBinding()]
     param(
@@ -173,12 +180,14 @@ function Get-RVToolsExportInfo {
         [string]$FileName
     )
 
-    # Pattern: vCenter{xx}_{d_mm_yyyy}.domain.com.xlsx
-    # Flexible: handles 1_12_2024 or 01_12_2024
-    $pattern = '^vCenter(\d+)_(\d{1,2})_(\d{1,2})_(\d{4})\..*\.xlsx$'
+    # Pattern: {vcenter-name}_{d_mm_yyyy}.{domain.tld}.xlsx
+    # - vcenter-name: alphanumeric + hyphens (e.g., vCenter01, prod-vcenter, vc-east-01)
+    # - d_mm_yyyy: flexible day/month (1_12_2024 or 01_12_2024)
+    # - domain.tld: must contain at least one dot (e.g., domain.com, corp.domain.com)
+    $pattern = '^([a-zA-Z0-9-]+)_(\d{1,2})_(\d{1,2})_(\d{4})\.[^.]+\.[^.]+.*\.xlsx$'
 
     if ($FileName -match $pattern) {
-        $viServer = "vCenter$($Matches[1])"
+        $viServer = $Matches[1]
         $day = [int]$Matches[2]
         $month = [int]$Matches[3]
         $year = [int]$Matches[4]

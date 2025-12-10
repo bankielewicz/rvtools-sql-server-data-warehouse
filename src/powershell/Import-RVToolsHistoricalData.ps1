@@ -3,7 +3,11 @@
     Imports historical RVTools Excel files with dates parsed from filenames.
 
 .DESCRIPTION
-    Processes files matching pattern: vCenter{xx}_{d_mm_yyyy}.domain.com.xlsx
+    Processes files matching pattern: {vcenter-name}_{d_mm_yyyy}.{domain.tld}.xlsx
+
+    vcenter-name: Alphanumeric + hyphens (e.g., vCenter01, prod-vcenter, vc-east-01)
+    d_mm_yyyy: Day, month, year (flexible: 5_06_2024 or 05_06_2024)
+    domain.tld: Must contain at least one dot (e.g., domain.com, corp.domain.com)
 
     Files are sorted by parsed date (oldest first) to maintain correct
     History table chronology. The parsed date becomes ValidFrom in History tables,
@@ -47,7 +51,12 @@
 
 .NOTES
     Requires: ImportExcel, SqlServer PowerShell modules
-    Files must match pattern: vCenter{xx}_{d_mm_yyyy}.domain.com.xlsx
+    Files must match pattern: {vcenter-name}_{d_mm_yyyy}.{domain.tld}.xlsx
+
+    Examples:
+    - vCenter01_5_06_2024.domain.com.xlsx
+    - prod-vcenter_15_12_2023.corp.domain.com.xlsx
+    - vc-east-01_1_1_2025.local.net.xlsx
 
     IMPORTANT: Files are processed in chronological order (oldest first).
     This ensures the History table ValidFrom/ValidTo timeline is correct.
@@ -143,7 +152,7 @@ if ($skippedFiles.Count -gt 0) {
 
 if ($fileTable.Count -eq 0) {
     Write-Host ""
-    Write-Host "No files match the expected pattern: vCenter{xx}_{d_mm_yyyy}.domain.com.xlsx" -ForegroundColor Red
+    Write-Host "No files match the expected pattern: {vcenter-name}_{d_mm_yyyy}.{domain.tld}.xlsx" -ForegroundColor Red
     Write-Host "Please verify your filenames match this pattern." -ForegroundColor Red
     exit 1
 }

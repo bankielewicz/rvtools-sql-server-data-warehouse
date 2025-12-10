@@ -120,7 +120,7 @@ Tracks each import execution:
 | SuccessRows | INT | Rows successfully imported |
 | FailedRows | INT | Rows that failed |
 
-> **Note**: For historical imports via `Import-RVToolsHistoricalData.ps1`, the `RVToolsExportDate` is parsed from the filename pattern `vCenter{xx}_{d_mm_yyyy}.domain.com.xlsx` and used as the `ValidFrom` date in History tables.
+> **Note**: For historical imports via `Import-RVToolsHistoricalData.ps1`, the `RVToolsExportDate` is parsed from the filename pattern `{vcenter-name}_{d_mm_yyyy}.{domain.tld}.xlsx` and used as the `ValidFrom` date in History tables.
 
 ### ImportBatchDetail
 

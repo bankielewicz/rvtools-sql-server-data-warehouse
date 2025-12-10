@@ -64,7 +64,9 @@ If you have historical RVTools exports with dates in filenames:
 .\Import-RVToolsHistoricalData.ps1 -ServerInstance "localhost"
 ```
 
-Files must match pattern: `vCenter{xx}_{d_mm_yyyy}.domain.com.xlsx`
+Files must match pattern: `{vcenter-name}_{d_mm_yyyy}.{domain.tld}.xlsx`
+
+Examples: `vCenter01_5_06_2024.domain.com.xlsx`, `prod-vcenter_15_12_2023.corp.domain.com.xlsx`
 
 See [Importing Data](./usage/importing-data.md#historical-import) for details.
 

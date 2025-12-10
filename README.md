@@ -56,7 +56,7 @@ If you have historical RVTools exports with dates in filenames:
 .\Import-RVToolsHistoricalData.ps1 -ServerInstance "localhost"
 ```
 
-Filename pattern: `vCenter{xx}_{d_mm_yyyy}.domain.com.xlsx`
+Filename pattern: `{vcenter-name}_{d_mm_yyyy}.{domain.tld}.xlsx` (e.g., `vCenter01_5_06_2024.domain.com.xlsx`)
 
 See [Getting Started](docs/getting-started.md) for detailed setup instructions.
 
