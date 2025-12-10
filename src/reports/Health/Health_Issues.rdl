@@ -81,7 +81,6 @@ ORDER BY IssueType, ObjectName
                 </TablixMember>
               </TablixMembers>
             </TablixRowHierarchy>
-            HealthIssues</DataSetName>
           </Tablix>
         </ReportItems>
         <Height>2in</Height>

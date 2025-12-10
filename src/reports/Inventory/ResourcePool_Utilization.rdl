@@ -100,7 +100,6 @@ ORDER BY Total_Memory_MiB DESC
                 </TablixMember>
               </TablixMembers>
             </TablixRowHierarchy>
-            ResourcePoolData</DataSetName>
           </Tablix>
         </ReportItems>
         <Height>2in</Height>

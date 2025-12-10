@@ -154,7 +154,6 @@ ORDER BY Datacenter, Cluster, VM
                 </TablixMember>
               </TablixMembers>
             </TablixRowHierarchy>
-            <DataSetName>VMInventory</DataSetName>
           </Tablix>
         </ReportItems>
         <Height>2in</Height>

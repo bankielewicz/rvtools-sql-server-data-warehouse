@@ -101,7 +101,6 @@ ORDER BY IsOrphaned DESC, File_Size_GiB DESC
                 </TablixMember>
               </TablixMembers>
             </TablixRowHierarchy>
-            OrphanedFiles</DataSetName>
             <NoRowsMessage>No file data available. Run RVTools with -GetFileInfo parameter.</NoRowsMessage>
           </Tablix>
         </ReportItems>

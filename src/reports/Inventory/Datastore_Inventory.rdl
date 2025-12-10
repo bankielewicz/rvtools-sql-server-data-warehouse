@@ -91,7 +91,6 @@ ORDER BY DatastoreName
                 </TablixMember>
               </TablixMembers>
             </TablixRowHierarchy>
-            DatastoreInventory</DataSetName>
           </Tablix>
         </ReportItems>
         <Height>2in</Height>

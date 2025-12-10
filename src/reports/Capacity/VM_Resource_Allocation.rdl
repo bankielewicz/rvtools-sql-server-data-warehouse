@@ -96,7 +96,6 @@ ORDER BY Memory_Size_MiB DESC
                 </TablixMember>
               </TablixMembers>
             </TablixRowHierarchy>
-            VMResources</DataSetName>
           </Tablix>
         </ReportItems>
         <Height>2in</Height>

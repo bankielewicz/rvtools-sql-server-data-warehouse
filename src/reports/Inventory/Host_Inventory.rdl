@@ -112,7 +112,6 @@ ORDER BY Datacenter, Cluster, Host
                 </TablixMember>
               </TablixMembers>
             </TablixRowHierarchy>
-            HostInventory</DataSetName>
           </Tablix>
         </ReportItems>
         <Height>2in</Height>

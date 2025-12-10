@@ -114,7 +114,6 @@ ORDER BY CPU_Usage_Percent DESC
                 </TablixMember>
               </TablixMembers>
             </TablixRowHierarchy>
-            HostCapacity</DataSetName>
           </Tablix>
         </ReportItems>
         <Height>2in</Height>

@@ -106,7 +106,6 @@ ORDER BY CASE Compliance_Status WHEN 'Over-Allocated' THEN 1 WHEN 'Expired' THEN
                 </TablixMember>
               </TablixMembers>
             </TablixRowHierarchy>
-            LicenseCompliance</DataSetName>
           </Tablix>
         </ReportItems>
         <Height>2in</Height>

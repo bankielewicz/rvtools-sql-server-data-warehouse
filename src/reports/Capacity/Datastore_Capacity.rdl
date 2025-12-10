@@ -107,8 +107,7 @@ ORDER BY Free_Percent ASC
                   <Group Name="Details" />
                 </TablixMember>
               </TablixMembers>
-            </TablixRowHierarchy>
-            DatastoreCapacity</DataSetName>
+            </TablixRowHierarchy>            
           </Tablix>
         </ReportItems>
         <Height>2in</Height>

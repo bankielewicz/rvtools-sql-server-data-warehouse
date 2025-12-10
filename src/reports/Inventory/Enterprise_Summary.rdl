@@ -109,7 +109,6 @@ ORDER BY VI_SDK_Server
                 </TablixMember>
               </TablixMembers>
             </TablixRowHierarchy>
-            EnterpriseSummary</DataSetName>
           </Tablix>
         </ReportItems>
         <Height>2in</Height>

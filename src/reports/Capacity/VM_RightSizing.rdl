@@ -100,7 +100,6 @@ ORDER BY Memory_Allocated_MiB DESC
                 </TablixMember>
               </TablixMembers>
             </TablixRowHierarchy>
-            RightSizingData</DataSetName>
           </Tablix>
         </ReportItems>
         <Height>2in</Height>

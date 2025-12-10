@@ -92,7 +92,6 @@ ORDER BY ClusterName
                 </TablixMember>
               </TablixMembers>
             </TablixRowHierarchy>
-            ClusterSummary</DataSetName>
           </Tablix>
         </ReportItems>
         <Height>2in</Height>

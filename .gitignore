@@ -5,6 +5,9 @@ errors/
 failed/
 logs/
 
+#exclude for now until complete
+src/web/
+
 # Claude Code (development assistant context)
 .claude/
 CLAUDE.md
