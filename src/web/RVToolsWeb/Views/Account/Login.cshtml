@@ -1,0 +1,99 @@
+@model RVToolsWeb.Models.ViewModels.Account.LoginViewModel
+@{
+    ViewData["Title"] = "Login";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - RVTools Data Warehouse</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" />
+    <style>
+        body {
+            background-color: #212529;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-card {
+            max-width: 400px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="card shadow">
+            <div class="card-header bg-dark text-white text-center py-3">
+                <h4 class="mb-0"><i class="bi bi-database me-2"></i>RVTools Data Warehouse</h4>
+            </div>
+            <div class="card-body p-4">
+                @if (ViewBag.SetupComplete == true)
+                {
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle me-2"></i>
+                        Setup complete! Log in with username <strong>admin</strong> and password <strong>admin</strong>.
+                        You will be prompted to change your password.
+                    </div>
+                }
+                @if (TempData["PasswordChanged"] != null)
+                {
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle me-2"></i>
+                        Password changed successfully. Please log in with your new password.
+                    </div>
+                }
+
+                <form asp-action="Login" method="post">
+                    <input type="hidden" asp-for="ReturnUrl" />
+
+                    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                    {
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i>@Model.ErrorMessage
+                        </div>
+                    }
+
+                    <div class="mb-3">
+                        <label asp-for="Username" class="form-label"></label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-person"></i></span>
+                            <input asp-for="Username" class="form-control" autofocus />
+                        </div>
+                        <span asp-validation-for="Username" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Password" class="form-label"></label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                            <input asp-for="Password" class="form-control" />
+                        </div>
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input asp-for="RememberMe" class="form-check-input" />
+                        <label asp-for="RememberMe" class="form-check-label"></label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+                    </button>
+                </form>
+            </div>
+            <div class="card-footer text-center text-muted small">
+                RVTools Data Warehouse v1.0
+            </div>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+</body>
+</html>

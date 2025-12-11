@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RVToolsWeb.Models.ViewModels.Inventory;
 using RVToolsWeb.Services.Interfaces;
@@ -8,6 +9,7 @@ namespace RVToolsWeb.Controllers.Inventory;
 /// <summary>
 /// Controller for the Resource Pool Utilization report.
 /// </summary>
+[Authorize]
 public class ResourcePoolController : Controller
 {
     private readonly ResourcePoolService _reportService;

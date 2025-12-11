@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RVToolsWeb.Models.ViewModels.Health;
 using RVToolsWeb.Services.Health;
@@ -8,6 +9,7 @@ namespace RVToolsWeb.Controllers.Health;
 /// <summary>
 /// Controller for the Health Issues report.
 /// </summary>
+[Authorize]
 public class HealthIssuesController : Controller
 {
     private readonly HealthIssuesService _reportService;

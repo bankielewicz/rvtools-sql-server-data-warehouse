@@ -6,6 +6,7 @@ namespace RVToolsWeb.Configuration;
 public class AppSettings
 {
     public ConnectionStringsConfig ConnectionStrings { get; set; } = new();
+    public AuthenticationConfig Authentication { get; set; } = new();
     public UiConfig Ui { get; set; } = new();
     public CachingConfig Caching { get; set; } = new();
     public WebLoggingConfig WebLogging { get; set; } = new();
@@ -67,4 +68,19 @@ public class ConsoleLoggingConfig
 {
     public bool Enabled { get; set; } = true;
     public string MinimumLevel { get; set; } = "Information";
+}
+
+/// <summary>
+/// Authentication configuration for cookie-based auth
+/// </summary>
+public class AuthenticationConfig
+{
+    public string CookieName { get; set; } = "RVToolsDW.Auth";
+    public int CookieExpirationMinutes { get; set; } = 480;
+    public bool SlidingExpiration { get; set; } = true;
+    public int LockoutThreshold { get; set; } = 5;
+    public int LockoutMinutes { get; set; } = 15;
+    public int PasswordMinLength { get; set; } = 8;
+    public bool RequireUppercase { get; set; } = true;
+    public bool RequireDigit { get; set; } = true;
 }
