@@ -365,7 +365,12 @@ public class LdapService : ILdapService
     {
         if (entry.Attributes.Contains(attributeName) && entry.Attributes[attributeName].Count > 0)
         {
-            return entry.Attributes[attributeName][0]?.ToString();
+            var value = entry.Attributes[attributeName][0];
+            if (value is byte[] byteArray)
+            {
+                return System.Text.Encoding.UTF8.GetString(byteArray);
+            }
+            return value?.ToString();
         }
         return null;
     }
@@ -379,7 +384,15 @@ public class LdapService : ILdapService
             {
                 if (value != null)
                 {
-                    values.Add(value.ToString()!);
+                    // LDAP attributes are returned as byte arrays - convert to string
+                    if (value is byte[] byteArray)
+                    {
+                        values.Add(System.Text.Encoding.UTF8.GetString(byteArray));
+                    }
+                    else
+                    {
+                        values.Add(value.ToString()!);
+                    }
                 }
             }
         }
