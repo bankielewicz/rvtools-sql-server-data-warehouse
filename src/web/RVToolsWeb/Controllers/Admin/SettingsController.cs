@@ -421,7 +421,9 @@ public class SettingsController : Controller
             request.LdapBindPassword,
             request.LdapAdminGroup,
             request.LdapUserGroup,
-            request.LdapFallbackToLocal);
+            request.LdapFallbackToLocal,
+            request.LdapValidateCertificate,
+            request.LdapCertificateThumbprint);
 
         if (success)
         {
@@ -541,6 +543,8 @@ public class UpdateLdapSettingsRequest
     public string? LdapAdminGroup { get; set; }
     public string? LdapUserGroup { get; set; }
     public bool LdapFallbackToLocal { get; set; } = true;
+    public bool LdapValidateCertificate { get; set; } = true;
+    public string? LdapCertificateThumbprint { get; set; }
 }
 
 public class SwitchAuthProviderRequest

@@ -24,6 +24,8 @@ public class AuthSettingsViewModel
     public string? LdapAdminGroup { get; set; }
     public string? LdapUserGroup { get; set; }
     public bool LdapFallbackToLocal { get; set; } = true;
+    public bool LdapValidateCertificate { get; set; } = true;
+    public string? LdapCertificateThumbprint { get; set; }
     public bool IsConfigured { get; set; }
 }
 

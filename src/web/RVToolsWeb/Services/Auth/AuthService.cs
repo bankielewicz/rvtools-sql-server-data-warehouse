@@ -126,7 +126,9 @@ public class AuthService : IAuthService
         string? ldapBindPassword,
         string? ldapAdminGroup,
         string? ldapUserGroup,
-        bool ldapFallbackToLocal)
+        bool ldapFallbackToLocal,
+        bool ldapValidateCertificate = true,
+        string? ldapCertificateThumbprint = null)
     {
         const string sql = @"
             UPDATE Web.AuthSettings
@@ -141,6 +143,8 @@ public class AuthService : IAuthService
                 LdapAdminGroup = @LdapAdminGroup,
                 LdapUserGroup = @LdapUserGroup,
                 LdapFallbackToLocal = @LdapFallbackToLocal,
+                LdapValidateCertificate = @LdapValidateCertificate,
+                LdapCertificateThumbprint = @LdapCertificateThumbprint,
                 ModifiedDate = GETUTCDATE()";
 
         try
@@ -157,7 +161,9 @@ public class AuthService : IAuthService
                 LdapBindPassword = ldapBindPassword,
                 LdapAdminGroup = ldapAdminGroup,
                 LdapUserGroup = ldapUserGroup,
-                LdapFallbackToLocal = ldapFallbackToLocal
+                LdapFallbackToLocal = ldapFallbackToLocal,
+                LdapValidateCertificate = ldapValidateCertificate,
+                LdapCertificateThumbprint = ldapCertificateThumbprint
             });
 
             _logger.LogInformation("LDAP settings updated for server: {Server}", ldapServer);

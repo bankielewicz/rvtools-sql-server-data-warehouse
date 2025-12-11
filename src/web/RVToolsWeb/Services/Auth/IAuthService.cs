@@ -42,5 +42,7 @@ public interface IAuthService
         string? ldapBindPassword,
         string? ldapAdminGroup,
         string? ldapUserGroup,
-        bool ldapFallbackToLocal);
+        bool ldapFallbackToLocal,
+        bool ldapValidateCertificate = true,
+        string? ldapCertificateThumbprint = null);
 }
