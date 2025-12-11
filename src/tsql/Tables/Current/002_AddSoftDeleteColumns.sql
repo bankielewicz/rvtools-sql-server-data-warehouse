@@ -273,6 +273,55 @@ DEALLOCATE table_cursor;
 GO
 
 -- ============================================================================
+-- Initialize LastSeenBatchId/LastSeenDate for existing records
+-- This prevents existing records from being marked as deleted on next import
+-- ============================================================================
+PRINT 'Initializing LastSeenBatchId/LastSeenDate for existing records...';
+
+DECLARE @InitSQL NVARCHAR(MAX);
+DECLARE @InitTableName NVARCHAR(100);
+DECLARE @InitRowCount INT;
+
+DECLARE init_cursor CURSOR LOCAL FAST_FORWARD FOR
+    SELECT t.name
+    FROM sys.tables t
+    INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
+    INNER JOIN sys.columns c ON t.object_id = c.object_id
+    WHERE s.name = 'Current'
+      AND c.name = 'LastSeenBatchId'
+    ORDER BY t.name;
+
+OPEN init_cursor;
+FETCH NEXT FROM init_cursor INTO @InitTableName;
+
+WHILE @@FETCH_STATUS = 0
+BEGIN
+    -- Update existing records: set LastSeenBatchId/Date from ImportBatchId/LastModifiedDate
+    SET @InitSQL = N'
+    UPDATE [Current].' + QUOTENAME(@InitTableName) + '
+    SET LastSeenBatchId = ImportBatchId,
+        LastSeenDate = ISNULL(LastModifiedDate, GETUTCDATE())
+    WHERE LastSeenBatchId IS NULL
+      AND ImportBatchId IS NOT NULL;
+    SELECT @cnt = @@ROWCOUNT;';
+
+    BEGIN TRY
+        EXEC sp_executesql @InitSQL, N'@cnt INT OUTPUT', @cnt = @InitRowCount OUTPUT;
+        IF @InitRowCount > 0
+            PRINT '  Initialized ' + CAST(@InitRowCount AS VARCHAR) + ' records in Current.' + @InitTableName;
+    END TRY
+    BEGIN CATCH
+        PRINT '  FAILED to initialize Current.' + @InitTableName + ': ' + ERROR_MESSAGE();
+    END CATCH
+
+    FETCH NEXT FROM init_cursor INTO @InitTableName;
+END
+
+CLOSE init_cursor;
+DEALLOCATE init_cursor;
+GO
+
+-- ============================================================================
 -- Verification
 -- ============================================================================
 PRINT '';
