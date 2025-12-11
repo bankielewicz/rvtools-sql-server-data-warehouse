@@ -93,9 +93,38 @@ public class AccountController : Controller
 
             _logger.LogWarning("First-time setup completed with LocalDB. Admin user created with generated password.");
         }
-        else
+        else if (model.AuthProvider == "LDAP")
         {
-            _logger.LogWarning("First-time setup completed with LDAP/AD authentication.");
+            // Validate required LDAP fields
+            if (string.IsNullOrEmpty(model.LdapServer) || string.IsNullOrEmpty(model.LdapBaseDN))
+            {
+                ModelState.AddModelError("", "LDAP Server and Base DN are required for LDAP authentication.");
+                return View("Setup", model);
+            }
+
+            // Save LDAP configuration
+            var ldapSaved = await _authService.UpdateLdapSettingsAsync(
+                model.LdapServer!,
+                model.LdapDomain,
+                model.LdapBaseDN!,
+                model.LdapPort,
+                model.LdapUseSsl,
+                model.LdapBindDN,
+                model.LdapBindPassword,
+                model.LdapAdminGroup,
+                model.LdapUserGroup,
+                model.LdapFallbackToLocal,
+                model.LdapValidateCertificate,
+                model.LdapCertificateThumbprint
+            );
+
+            if (!ldapSaved)
+            {
+                ModelState.AddModelError("", "Failed to save LDAP configuration. Please check your settings.");
+                return View("Setup", model);
+            }
+
+            _logger.LogWarning("First-time setup completed with LDAP. Configuration saved: {Server}", model.LdapServer);
         }
 
         // Mark setup as complete

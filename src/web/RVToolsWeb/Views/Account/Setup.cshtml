@@ -58,27 +58,125 @@
                         </div>
                     </div>
 
-                    <hr class="my-4" />
+                    <!-- LDAP Configuration Section (shown only when LDAP is selected) -->
+                    <div id="ldapConfigSection" style="display: none;">
+                        <hr class="my-4" />
 
-                    <h5 class="mb-3">Administrator Account</h5>
-                    <div class="alert alert-info">
-                        <i class="bi bi-shield-lock me-2"></i>
-                        An administrator account will be created with:
-                        <ul class="mb-0 mt-2">
-                            <li>Username: <strong>admin</strong></li>
-                            <li>Password: <strong>Securely generated</strong></li>
-                        </ul>
-                        <small class="d-block mt-2">
-                            A secure random password will be generated and shown <strong>once</strong> after setup.
-                            You will be required to change it on first login.
-                        </small>
+                        <h5 class="mb-3"><i class="bi bi-server me-2"></i>LDAP Server Configuration</h5>
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Configure connection to your Active Directory or LDAP server.
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <label asp-for="LdapServer" class="form-label">
+                                    LDAP Server * <small class="text-muted">(hostname or IP)</small>
+                                </label>
+                                <input asp-for="LdapServer" class="form-control" placeholder="ldap.company.com or dc01.company.com" />
+                                <span asp-validation-for="LdapServer" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="LdapPort" class="form-label">Port</label>
+                                <input asp-for="LdapPort" type="number" class="form-control" id="ldapPortField" />
+                                <small class="text-muted">389 or 636</small>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="LdapBaseDN" class="form-label">
+                                Base DN * <small class="text-muted">(search base)</small>
+                            </label>
+                            <input asp-for="LdapBaseDN" class="form-control" placeholder="DC=company,DC=com" />
+                            <span asp-validation-for="LdapBaseDN" class="text-danger small"></span>
+                            <small class="text-muted d-block">Example: DC=corp,DC=company,DC=com</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="LdapDomain" class="form-label">
+                                Domain <small class="text-muted">(optional)</small>
+                            </label>
+                            <input asp-for="LdapDomain" class="form-control" placeholder="company.com" />
+                            <small class="text-muted">Used for UPN login format (user@company.com)</small>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input asp-for="LdapUseSsl" class="form-check-input" id="ldapSslCheckbox" />
+                            <label class="form-check-label" for="ldapSslCheckbox">
+                                <strong>Enable SSL/TLS</strong> <small class="text-muted">(Recommended for production)</small>
+                            </label>
+                            <small class="d-block text-muted ms-4">Uses port 636 and validates certificates</small>
+                        </div>
+
+                        <h6 class="mt-4 mb-2">Service Account <small class="text-muted">(Optional)</small></h6>
+                        <p class="text-muted small mb-3">
+                            Required for group-based role assignment. Leave blank for simple bind authentication (all users get User role).
+                        </p>
+
+                        <div class="mb-3">
+                            <label asp-for="LdapBindDN" class="form-label">Bind DN</label>
+                            <input asp-for="LdapBindDN" class="form-control" placeholder="CN=ServiceAccount,OU=Service,DC=company,DC=com" />
+                            <small class="text-muted">Distinguished Name of service account</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="LdapBindPassword" class="form-label">Bind Password</label>
+                            <input asp-for="LdapBindPassword" type="password" class="form-control" placeholder="Service account password" autocomplete="new-password" />
+                            <small class="text-muted">Encrypted before storage using Data Protection API</small>
+                        </div>
+
+                        <h6 class="mt-4 mb-2">Role Mapping <small class="text-muted">(Optional)</small></h6>
+                        <p class="text-muted small mb-3">
+                            Map Active Directory groups to application roles.
+                        </p>
+
+                        <div class="mb-3">
+                            <label asp-for="LdapAdminGroup" class="form-label">Admin Group DN</label>
+                            <input asp-for="LdapAdminGroup" class="form-control" placeholder="CN=RVTools-Admins,OU=Groups,DC=company,DC=com" />
+                            <small class="text-muted">Members of this group get Admin role</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="LdapUserGroup" class="form-label">User Group DN</label>
+                            <input asp-for="LdapUserGroup" class="form-control" placeholder="CN=RVTools-Users,OU=Groups,DC=company,DC=com" />
+                            <small class="text-muted">Members of this group get User role (or leave blank for all users)</small>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input asp-for="LdapFallbackToLocal" class="form-check-input" id="ldapFallbackCheckbox" checked />
+                            <label class="form-check-label" for="ldapFallbackCheckbox">
+                                <strong>Enable fallback to local database</strong>
+                            </label>
+                            <small class="d-block text-muted ms-4">
+                                If LDAP fails, attempt local database authentication (recommended for safety)
+                            </small>
+                        </div>
                     </div>
 
-                    <div class="mb-4">
-                        <label asp-for="AdminEmail" class="form-label"></label>
-                        <input asp-for="AdminEmail" class="form-control" placeholder="admin@company.com" />
-                        <span asp-validation-for="AdminEmail" class="text-danger small"></span>
-                        <small class="text-muted">Optional. Used for notifications (future feature).</small>
+                    <!-- Administrator Account Section (shown only for LocalDB) -->
+                    <div id="localDbAdminSection">
+                        <hr class="my-4" />
+
+                        <h5 class="mb-3">Administrator Account</h5>
+                        <div class="alert alert-info">
+                            <i class="bi bi-shield-lock me-2"></i>
+                            An administrator account will be created with:
+                            <ul class="mb-0 mt-2">
+                                <li>Username: <strong>admin</strong></li>
+                                <li>Password: <strong>Securely generated</strong></li>
+                            </ul>
+                            <small class="d-block mt-2">
+                                A secure random password will be generated and shown <strong>once</strong> after setup.
+                                You will be required to change it on first login.
+                            </small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="AdminEmail" class="form-label"></label>
+                            <input asp-for="AdminEmail" class="form-control" placeholder="admin@company.com" />
+                            <span asp-validation-for="AdminEmail" class="text-danger small"></span>
+                            <small class="text-muted">Optional. Used for notifications (future feature).</small>
+                        </div>
                     </div>
 
                     <button type="submit" class="btn btn-primary w-100">
@@ -92,5 +190,38 @@
     <script src="~/lib/jquery/jquery.min.js"></script>
     <script src="~/lib/jquery-validation/jquery.validate.min.js"></script>
     <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    <script>
+        // Show/hide configuration sections based on authentication provider selection
+        $(document).ready(function() {
+            const ldapRadio = $('#authLDAP');
+            const localDbRadio = $('#authLocalDB');
+            const ldapSection = $('#ldapConfigSection');
+            const localDbSection = $('#localDbAdminSection');
+            const ldapPortField = $('#ldapPortField');
+            const ldapSslCheckbox = $('#ldapSslCheckbox');
+
+            function toggleSections() {
+                if (ldapRadio.is(':checked')) {
+                    ldapSection.show();
+                    localDbSection.hide();
+                } else {
+                    ldapSection.hide();
+                    localDbSection.show();
+                }
+            }
+
+            // Update port when SSL checkbox changes
+            ldapSslCheckbox.on('change', function() {
+                ldapPortField.val($(this).is(':checked') ? 636 : 389);
+            });
+
+            // Toggle sections on radio button change
+            ldapRadio.on('change', toggleSections);
+            localDbRadio.on('change', toggleSections);
+
+            // Initial state
+            toggleSections();
+        });
+    </script>
 </body>
 </html>
