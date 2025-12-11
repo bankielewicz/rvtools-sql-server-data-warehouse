@@ -82,9 +82,10 @@ public class FirstTimeSetupMiddleware
 
     private static bool IsSetupPath(string path)
     {
+        // Only block the setup wizard and completion POST endpoint
+        // Do NOT block /setupcomplete - it's the confirmation page shown after setup
         return path == "/account/setup" ||
-               path == "/account/completesetup" ||
-               path == "/account/setupcomplete";
+               path == "/account/completesetup";
     }
 }
 
