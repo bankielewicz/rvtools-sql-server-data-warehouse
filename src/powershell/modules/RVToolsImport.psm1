@@ -29,6 +29,20 @@ $Script:LogLevels = @{
     'Error'   = 3
 }
 
+# SEC-006: Whitelist of valid RVTools table names
+# These are the only table names allowed in dynamic SQL queries
+# Must match the 27 RVTools tabs exactly
+$Script:ValidTableNames = @(
+    'vInfo', 'vCPU', 'vMemory', 'vDisk', 'vPartition', 'vNetwork',
+    'vCD', 'vUSB', 'vSnapshot', 'vTools',
+    'vHost', 'vHBA', 'vNIC',
+    'vSwitch', 'vPort', 'dvSwitch', 'dvPort', 'vSC_VMK',
+    'vDatastore', 'vMultiPath', 'vFileInfo',
+    'vCluster', 'vRP',
+    'vLicense',
+    'vSource', 'vHealth', 'vMetaData'
+)
+
 # ============================================================================
 # Logging Functions
 # ============================================================================
@@ -93,6 +107,70 @@ function Initialize-ImportLog {
     Write-ImportLog -Message "Log initialized: $($Script:LogFile)" -Level 'Info'
 
     return $Script:LogFile
+}
+
+# ============================================================================
+# Security Functions (SEC-006)
+# ============================================================================
+
+function Test-ValidTableName {
+    <#
+    .SYNOPSIS
+        Validates that a table name is in the whitelist of allowed RVTools tables.
+
+    .DESCRIPTION
+        Security function to prevent SQL injection via table names. Only allows
+        the 27 known RVTools tab names to be used in dynamic SQL queries.
+
+    .PARAMETER TableName
+        The table name to validate.
+
+    .OUTPUTS
+        Boolean indicating if the table name is valid.
+
+    .EXAMPLE
+        if (-not (Test-ValidTableName -TableName $sheetName)) { throw "Invalid table" }
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$TableName
+    )
+
+    return $Script:ValidTableNames -contains $TableName
+}
+
+function Assert-ValidTableName {
+    <#
+    .SYNOPSIS
+        Throws an exception if the table name is not in the whitelist.
+
+    .DESCRIPTION
+        Security function that validates table names and throws a descriptive
+        error if the name is not allowed. Use before any dynamic SQL with table names.
+
+    .PARAMETER TableName
+        The table name to validate.
+
+    .PARAMETER Context
+        Optional context string for error message (e.g., "Clear-StagingTable").
+
+    .EXAMPLE
+        Assert-ValidTableName -TableName $sheetName -Context "Import-SheetToStaging"
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$TableName,
+
+        [string]$Context = "SQL operation"
+    )
+
+    if (-not (Test-ValidTableName -TableName $TableName)) {
+        $validList = $Script:ValidTableNames -join ', '
+        throw "SEC-006: Invalid table name '$TableName' in $Context. " +
+              "Only whitelisted RVTools tables are allowed: $validList"
+    }
 }
 
 # ============================================================================
@@ -312,6 +390,9 @@ function Clear-StagingTable {
         [string]$TableName
     )
 
+    # SEC-006: Validate table name against whitelist before dynamic SQL
+    Assert-ValidTableName -TableName $TableName -Context "Clear-StagingTable"
+
     $query = "TRUNCATE TABLE [Staging].[$TableName]"
 
     try {
@@ -406,8 +487,14 @@ function Import-SheetToStaging {
             }
         }
 
-        # Clear staging table
+        # SEC-006: The staging table name should match the sheet name (which is a valid RVTools tab)
+        # The regex sanitization is kept for safety but should be a no-op for valid tab names
         $stagingTableName = $SheetName -replace '[^a-zA-Z0-9_]', '_'
+
+        # Validate against whitelist before any SQL operations
+        Assert-ValidTableName -TableName $stagingTableName -Context "Import-SheetToStaging"
+
+        # Clear staging table
         Clear-StagingTable -TableName $stagingTableName
 
         # Get staging table columns
@@ -519,6 +606,9 @@ function Insert-StagingBatch {
     )
 
     if ($Batch.Count -eq 0) { return }
+
+    # SEC-006: Validate table name against whitelist before dynamic SQL
+    Assert-ValidTableName -TableName $TableName -Context "Insert-StagingBatch"
 
     # Build bulk insert
     $columns = $Batch[0].Keys | Where-Object { $_ -ne $null }
