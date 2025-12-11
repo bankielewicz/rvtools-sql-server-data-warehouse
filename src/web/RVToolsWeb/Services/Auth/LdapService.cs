@@ -284,8 +284,21 @@ public class LdapService : ILdapService
 
         try
         {
+            // Strip domain prefix if present (domain\user or user@domain)
+            var searchUsername = username;
+            if (username.Contains('\\'))
+            {
+                // domain\user format - extract username after backslash
+                searchUsername = username.Split('\\')[1];
+            }
+            else if (username.Contains('@'))
+            {
+                // user@domain format - extract username before @
+                searchUsername = username.Split('@')[0];
+            }
+
             // Search for user by sAMAccountName (AD) or uid (generic LDAP)
-            var searchFilter = $"(|(sAMAccountName={EscapeLdapFilter(username)})(uid={EscapeLdapFilter(username)}))";
+            var searchFilter = $"(|(sAMAccountName={EscapeLdapFilter(searchUsername)})(uid={EscapeLdapFilter(searchUsername)}))";
             var searchRequest = new SearchRequest(
                 baseDn,
                 searchFilter,
