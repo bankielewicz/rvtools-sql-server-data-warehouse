@@ -67,12 +67,6 @@
         </button>
     </li>
     <li class="nav-item">
-        <button class="nav-link @(Model.ActiveTab == "environment" ? "active" : "")"
-                data-bs-toggle="tab" data-bs-target="#environment" type="button" role="tab">
-            <i class="bi bi-pc-display me-1"></i>Environment
-        </button>
-    </li>
-    <li class="nav-item">
         <button class="nav-link @(Model.ActiveTab == "status" ? "active" : "")"
                 data-bs-toggle="tab" data-bs-target="#status" type="button" role="tab">
             <i class="bi bi-database me-1"></i>Database Status
@@ -82,12 +76,6 @@
         <button class="nav-link @(Model.ActiveTab == "metadata" ? "active" : "")"
                 data-bs-toggle="tab" data-bs-target="#metadata" type="button" role="tab">
             <i class="bi bi-table me-1"></i>Metadata
-        </button>
-    </li>
-    <li class="nav-item">
-        <button class="nav-link @(Model.ActiveTab == "security" ? "active" : "")"
-                data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab">
-            <i class="bi bi-shield-lock me-1"></i>Security
         </button>
     </li>
 </ul>
@@ -103,17 +91,11 @@
     <div class="tab-pane fade @(Model.ActiveTab == "application" ? "show active" : "")" id="application" role="tabpanel">
         <partial name="_AppSettingsPartial" model="Model.AppSettings" />
     </div>
-    <div class="tab-pane fade @(Model.ActiveTab == "environment" ? "show active" : "")" id="environment" role="tabpanel">
-        <partial name="_EnvironmentPartial" model="Model.Environment" />
-    </div>
     <div class="tab-pane fade @(Model.ActiveTab == "status" ? "show active" : "")" id="status" role="tabpanel">
         <partial name="_DatabaseStatusPartial" model="Model.DatabaseStatus" />
     </div>
     <div class="tab-pane fade @(Model.ActiveTab == "metadata" ? "show active" : "")" id="metadata" role="tabpanel">
         <partial name="_MetadataPartial" model="Model" />
-    </div>
-    <div class="tab-pane fade @(Model.ActiveTab == "security" ? "show active" : "")" id="security" role="tabpanel">
-        <partial name="_SecurityPartial" model="Model.Security" />
     </div>
 </div>
 
