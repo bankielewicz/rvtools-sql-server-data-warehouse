@@ -321,13 +321,27 @@ public class LdapService : ILdapService
     {
         var groupList = groups.ToList();
 
+        // Debug logging to diagnose group matching issues
+        _logger.LogDebug("DetermineRole called with {GroupCount} groups", groupList.Count);
+        _logger.LogDebug("User's groups: {Groups}", string.Join(" | ", groupList));
+        _logger.LogDebug("Configured AdminGroup: {AdminGroup}", adminGroup ?? "(null)");
+        _logger.LogDebug("Configured UserGroup: {UserGroup}", userGroup ?? "(null)");
+
         // Check if user is in admin group
         if (!string.IsNullOrEmpty(adminGroup))
         {
-            if (groupList.Any(g => g.Equals(adminGroup, StringComparison.OrdinalIgnoreCase) ||
-                                   g.Contains(adminGroup, StringComparison.OrdinalIgnoreCase)))
+            var matchedAdmin = groupList.FirstOrDefault(g =>
+                g.Equals(adminGroup, StringComparison.OrdinalIgnoreCase) ||
+                g.Contains(adminGroup, StringComparison.OrdinalIgnoreCase));
+
+            if (matchedAdmin != null)
             {
+                _logger.LogInformation("User matched Admin group: {MatchedGroup}", matchedAdmin);
                 return "Admin";
+            }
+            else
+            {
+                _logger.LogDebug("User not in Admin group (no match found)");
             }
         }
 
