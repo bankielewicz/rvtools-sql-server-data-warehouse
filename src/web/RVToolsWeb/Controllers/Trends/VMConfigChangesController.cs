@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RVToolsWeb.Models.ViewModels.Trends;
 using RVToolsWeb.Services.Interfaces;
@@ -8,6 +9,7 @@ namespace RVToolsWeb.Controllers.Trends;
 /// <summary>
 /// Controller for the VM Configuration Changes report.
 /// </summary>
+[Authorize]
 public class VMConfigChangesController : Controller
 {
     private readonly VMConfigChangesService _reportService;

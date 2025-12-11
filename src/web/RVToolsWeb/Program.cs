@@ -1,8 +1,11 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
 using RVToolsWeb.Configuration;
 using RVToolsWeb.Data;
 using RVToolsWeb.Data.Repositories;
 using RVToolsWeb.Middleware;
 using RVToolsWeb.Services;
+using RVToolsWeb.Services.Admin;
+using RVToolsWeb.Services.Auth;
 using RVToolsWeb.Services.Capacity;
 using RVToolsWeb.Services.Health;
 using RVToolsWeb.Services.Home;
@@ -10,7 +13,6 @@ using RVToolsWeb.Services.Interfaces;
 using RVToolsWeb.Services.Inventory;
 using RVToolsWeb.Services.Logging;
 using RVToolsWeb.Services.Trends;
-using RVToolsWeb.Services.Admin;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -74,6 +76,27 @@ builder.Services.AddScoped<ITableRetentionService, TableRetentionService>();
 builder.Services.AddScoped<IAppSettingsService, AppSettingsService>();
 builder.Services.AddScoped<IDatabaseStatusService, DatabaseStatusService>();
 
+// Authentication Services
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ILdapService, LdapService>();
+builder.Services.AddScoped<IUserService, UserService>();
+
+// Cookie Authentication
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Account/Login";
+        options.LogoutPath = "/Account/Logout";
+        options.AccessDeniedPath = "/Account/AccessDenied";
+        options.Cookie.Name = builder.Configuration["Authentication:CookieName"] ?? "RVToolsDW.Auth";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        options.Cookie.SameSite = SameSiteMode.Strict;
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(
+            builder.Configuration.GetValue<int>("Authentication:CookieExpirationMinutes", 480));
+        options.SlidingExpiration = builder.Configuration.GetValue<bool>("Authentication:SlidingExpiration", true);
+    });
+
 // MVC
 builder.Services.AddControllersWithViews();
 
@@ -92,7 +115,9 @@ if (!app.Environment.IsDevelopment())
 
 app.UseStaticFiles();
 app.UseRouting();
+app.UseAuthentication();
 app.UseAuthorization();
+app.UseFirstTimeSetup();
 
 app.MapControllerRoute(
     name: "default",

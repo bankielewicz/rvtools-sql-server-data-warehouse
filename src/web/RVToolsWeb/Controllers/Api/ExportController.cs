@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RVToolsWeb.Models.ViewModels.Capacity;
 using RVToolsWeb.Models.ViewModels.Health;
@@ -14,6 +15,7 @@ namespace RVToolsWeb.Controllers.Api;
 /// <summary>
 /// API controller for exporting report data to CSV and Excel formats.
 /// </summary>
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class ExportController : ControllerBase

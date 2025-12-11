@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RVToolsWeb.Models.ViewModels.Health;
 using RVToolsWeb.Services.Health;
@@ -8,6 +9,7 @@ namespace RVToolsWeb.Controllers.Health;
 /// <summary>
 /// Controller for the Configuration Compliance report.
 /// </summary>
+[Authorize]
 public class ConfigurationComplianceController : Controller
 {
     private readonly ConfigurationComplianceService _reportService;
