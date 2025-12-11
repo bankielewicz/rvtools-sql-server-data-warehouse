@@ -1,0 +1,174 @@
+@model RVToolsWeb.Models.ViewModels.Admin.AppSettingsViewModel
+@{
+    var logLevels = RVToolsWeb.Models.ViewModels.Admin.AppSettingsViewModel.LogLevels;
+}
+
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="bi bi-app me-2"></i>Application Settings
+        <span class="text-muted small ms-2">(appsettings.json)</span>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-warning mb-4">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <strong>Warning:</strong> Changes to application settings modify the appsettings.json file.
+            Some settings may require an application restart to take effect.
+        </div>
+
+        <form id="appSettingsForm">
+            <!-- UI Settings -->
+            <h6 class="text-muted border-bottom pb-2 mb-3">
+                <i class="bi bi-palette me-2"></i>UI Customization
+            </h6>
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label class="form-label">Application Title</label>
+                    <input type="text" class="form-control" name="applicationTitle"
+                           value="@Model.ApplicationTitle" />
+                    <small class="text-muted">Displayed in the browser title and sidebar header</small>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Logo Path</label>
+                    <input type="text" class="form-control" name="logoPath"
+                           value="@Model.LogoPath" />
+                    <small class="text-muted">Relative path from wwwroot (e.g., /images/logo.png)</small>
+                </div>
+            </div>
+
+            <!-- Caching Settings -->
+            <h6 class="text-muted border-bottom pb-2 mb-3">
+                <i class="bi bi-clock-history me-2"></i>Caching
+            </h6>
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <label class="form-label">Filter Cache Minutes</label>
+                    <input type="number" class="form-control" name="filterCacheMinutes"
+                           value="@Model.FilterCacheMinutes" min="1" max="60" />
+                    <small class="text-muted">How long dropdown filter values are cached</small>
+                </div>
+            </div>
+
+            <!-- Logging Settings -->
+            <h6 class="text-muted border-bottom pb-2 mb-3">
+                <i class="bi bi-journal-text me-2"></i>Web Logging
+            </h6>
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="form-check form-switch mb-2">
+                        @if (Model.LoggingEnabled)
+                        {
+                            <input class="form-check-input" type="checkbox" name="loggingEnabled" id="loggingEnabled" checked />
+                        }
+                        else
+                        {
+                            <input class="form-check-input" type="checkbox" name="loggingEnabled" id="loggingEnabled" />
+                        }
+                        <label class="form-check-label" for="loggingEnabled">Logging Enabled</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Minimum Level</label>
+                    <select class="form-select" name="loggingMinimumLevel">
+                        @foreach (var level in logLevels)
+                        {
+                            if (Model.LoggingMinimumLevel == level)
+                            {
+                                <option value="@level" selected>@level</option>
+                            }
+                            else
+                            {
+                                <option value="@level">@level</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Log Retention Days</label>
+                    <input type="number" class="form-control" name="logRetentionDays"
+                           value="@Model.LogRetentionDays" min="1" max="365" />
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="form-check form-switch mb-2">
+                        @if (Model.DatabaseLoggingEnabled)
+                        {
+                            <input class="form-check-input" type="checkbox" name="databaseLoggingEnabled" id="databaseLoggingEnabled" checked />
+                        }
+                        else
+                        {
+                            <input class="form-check-input" type="checkbox" name="databaseLoggingEnabled" id="databaseLoggingEnabled" />
+                        }
+                        <label class="form-check-label" for="databaseLoggingEnabled">Database Logging</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">DB Log Level</label>
+                    <select class="form-select" name="databaseLoggingMinimumLevel">
+                        @foreach (var level in logLevels)
+                        {
+                            if (Model.DatabaseLoggingMinimumLevel == level)
+                            {
+                                <option value="@level" selected>@level</option>
+                            }
+                            else
+                            {
+                                <option value="@level">@level</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-check form-switch mb-2">
+                        @if (Model.ConsoleLoggingEnabled)
+                        {
+                            <input class="form-check-input" type="checkbox" name="consoleLoggingEnabled" id="consoleLoggingEnabled" checked />
+                        }
+                        else
+                        {
+                            <input class="form-check-input" type="checkbox" name="consoleLoggingEnabled" id="consoleLoggingEnabled" />
+                        }
+                        <label class="form-check-label" for="consoleLoggingEnabled">Console Logging</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Console Log Level</label>
+                    <select class="form-select" name="consoleLoggingMinimumLevel">
+                        @foreach (var level in logLevels)
+                        {
+                            if (Model.ConsoleLoggingMinimumLevel == level)
+                            {
+                                <option value="@level" selected>@level</option>
+                            }
+                            else
+                            {
+                                <option value="@level">@level</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <!-- Connection String (Read-Only) -->
+            <h6 class="text-muted border-bottom pb-2 mb-3">
+                <i class="bi bi-database me-2"></i>Connection String (Read-Only)
+            </h6>
+            <div class="row mb-4">
+                <div class="col-12">
+                    <input type="text" class="form-control" value="@Model.ConnectionStringMasked"
+                           readonly disabled />
+                    <small class="text-muted">
+                        Connection strings must be modified directly in appsettings.json for security reasons.
+                    </small>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle me-1"></i>Save Application Settings
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

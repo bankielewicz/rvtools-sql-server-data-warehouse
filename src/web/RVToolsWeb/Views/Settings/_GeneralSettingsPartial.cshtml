@@ -1,0 +1,81 @@
+@model IEnumerable<RVToolsWeb.Models.ViewModels.Admin.GeneralSettingViewModel>
+
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-sliders me-2"></i>Database Configuration Settings
+        <span class="text-muted small ms-2">(Config.Settings)</span>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-4">
+            These settings control import behavior, retention policies, and notifications.
+            Changes take effect immediately for new imports.
+        </p>
+
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th style="width: 25%">Setting</th>
+                        <th style="width: 30%">Value</th>
+                        <th style="width: 35%">Description</th>
+                        <th style="width: 10%">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var setting in Model)
+                    {
+                        <tr data-setting-id="@setting.SettingId" data-setting-name="@setting.SettingName">
+                            <td>
+                                <strong>@setting.DisplayName</strong>
+                                <br><small class="text-muted">(@setting.DataType)</small>
+                            </td>
+                            <td>
+                                @if (setting.DataType == "bool")
+                                {
+                                    var isTrue = setting.SettingValue.ToLower() == "true";
+                                    <select class="form-select form-select-sm setting-value" style="width: 120px;">
+                                        @if (isTrue)
+                                        {
+                                            <option value="true" selected>True</option>
+                                            <option value="false">False</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="true">True</option>
+                                            <option value="false" selected>False</option>
+                                        }
+                                    </select>
+                                }
+                                else if (setting.DataType == "int")
+                                {
+                                    <input type="number" class="form-control form-control-sm setting-value"
+                                           value="@setting.SettingValue" style="width: 120px;" />
+                                }
+                                else
+                                {
+                                    <input type="text" class="form-control form-control-sm setting-value"
+                                           value="@setting.SettingValue" style="max-width: 300px;" />
+                                }
+                            </td>
+                            <td class="text-muted small">@setting.Description</td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-outline-primary btn-save-setting"
+                                        data-setting-name="@setting.SettingName">
+                                    <i class="bi bi-check"></i> Save
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                No configuration settings found. Run <code>usp_RefreshColumnMapping</code> to populate default settings.
+            </div>
+        }
+    </div>
+</div>
