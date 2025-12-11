@@ -2,7 +2,7 @@
     ViewData["Title"] = "Setup Complete";
     Layout = null;
     var generatedPassword = ViewBag.GeneratedPassword as string;
-    var authProvider = TempData["AuthProvider"]?.ToString() ?? "LocalDB";
+    var authProvider = ViewBag.AuthProvider as string ?? "LocalDB";
     var isLdap = authProvider == "LDAP";
 }
 <!DOCTYPE html>

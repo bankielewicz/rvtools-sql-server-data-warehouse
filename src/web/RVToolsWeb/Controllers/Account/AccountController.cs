@@ -131,14 +131,19 @@ public class AccountController : Controller
             return RedirectToAction("Login");
         }
 
+        var authProvider = TempData["AuthProvider"]?.ToString();
         var generatedPassword = TempData["GeneratedPassword"]?.ToString();
-        if (string.IsNullOrEmpty(generatedPassword))
+
+        // For LocalDB, password is required
+        // For LDAP, no password is generated (users auth against AD)
+        if (authProvider == "LocalDB" && string.IsNullOrEmpty(generatedPassword))
         {
             return RedirectToAction("Login");
         }
 
-        // Pass to view - this is the ONLY time the password is displayed
+        // Pass to view - shows password for LocalDB, instructions for LDAP
         ViewBag.GeneratedPassword = generatedPassword;
+        ViewBag.AuthProvider = authProvider;
         return View();
     }
 
