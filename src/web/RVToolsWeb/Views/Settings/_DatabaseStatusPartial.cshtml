@@ -1,0 +1,165 @@
+@model RVToolsWeb.Models.ViewModels.Admin.DatabaseStatusViewModel
+
+<div class="row">
+    <!-- Connection Health -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-heart-pulse me-2"></i>Connection Health
+            </div>
+            <div class="card-body">
+                @if (Model.IsConnected)
+                {
+                    <div class="alert alert-success py-2 mb-3">
+                        <i class="bi bi-check-circle me-2"></i>Database Connected
+                    </div>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Server Version</dt>
+                        <dd class="col-sm-8">@Model.ServerVersion</dd>
+                        <dt class="col-sm-4">Database</dt>
+                        <dd class="col-sm-8">@Model.DatabaseName</dd>
+                        <dt class="col-sm-4">Checked</dt>
+                        <dd class="col-sm-8">@Model.LastChecked?.ToString("g")</dd>
+                    </dl>
+                }
+                else
+                {
+                    <div class="alert alert-danger py-2 mb-3">
+                        <i class="bi bi-x-circle me-2"></i>Connection Failed
+                    </div>
+                    <pre class="text-danger small mb-0">@Model.ConnectionError</pre>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Last Import -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-arrow-down-circle me-2"></i>Last Import Batch
+            </div>
+            <div class="card-body">
+                @if (Model.LastImportBatchId.HasValue)
+                {
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Batch ID</dt>
+                        <dd class="col-sm-8"><span class="badge bg-secondary">#@Model.LastImportBatchId</span></dd>
+                        <dt class="col-sm-4">File</dt>
+                        <dd class="col-sm-8 text-truncate" title="@Model.LastImportFile">
+                            <small>@Model.LastImportFile</small>
+                        </dd>
+                        <dt class="col-sm-4">vCenter</dt>
+                        <dd class="col-sm-8">@Model.LastImportVIServer</dd>
+                        <dt class="col-sm-4">Date</dt>
+                        <dd class="col-sm-8">@Model.LastImportDate?.ToString("g")</dd>
+                        <dt class="col-sm-4">Status</dt>
+                        <dd class="col-sm-8">
+                            @{
+                                var statusClass = Model.LastImportStatus switch
+                                {
+                                    "Success" => "bg-success",
+                                    "Failed" => "bg-danger",
+                                    "PartialSuccess" => "bg-warning",
+                                    _ => "bg-secondary"
+                                };
+                            }
+                            <span class="badge @statusClass">@Model.LastImportStatus</span>
+                        </dd>
+                        <dt class="col-sm-4">Rows Merged</dt>
+                        <dd class="col-sm-8">@Model.LastImportRowsMerged?.ToString("N0")</dd>
+                        <dt class="col-sm-4">Rows Failed</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.LastImportRowsFailed > 0)
+                            {
+                                <span class="text-danger">@Model.LastImportRowsFailed?.ToString("N0")</span>
+                            }
+                            else
+                            {
+                                <span>@Model.LastImportRowsFailed?.ToString("N0")</span>
+                            }
+                        </dd>
+                    </dl>
+                }
+                else
+                {
+                    <div class="alert alert-info py-2 mb-0">
+                        <i class="bi bi-info-circle me-2"></i>No imports recorded yet.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Record Counts -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-table me-2"></i>Current Record Counts
+            </div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        <tr>
+                            <td><i class="bi bi-display me-2 text-muted"></i>VMs</td>
+                            <td class="text-end fw-bold">@Model.TotalVMs.ToString("N0")</td>
+                        </tr>
+                        <tr>
+                            <td><i class="bi bi-server me-2 text-muted"></i>Hosts</td>
+                            <td class="text-end fw-bold">@Model.TotalHosts.ToString("N0")</td>
+                        </tr>
+                        <tr>
+                            <td><i class="bi bi-device-hdd me-2 text-muted"></i>Datastores</td>
+                            <td class="text-end fw-bold">@Model.TotalDatastores.ToString("N0")</td>
+                        </tr>
+                        <tr>
+                            <td><i class="bi bi-diagram-3 me-2 text-muted"></i>Clusters</td>
+                            <td class="text-end fw-bold">@Model.TotalClusters.ToString("N0")</td>
+                        </tr>
+                        <tr class="table-secondary">
+                            <td><i class="bi bi-arrow-repeat me-2 text-muted"></i>Import Batches</td>
+                            <td class="text-end fw-bold">@Model.TotalImportBatches.ToString("N0")</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schema Info -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-diagram-2 me-2"></i>Database Schema
+            </div>
+            <div class="card-body">
+                <table class="table table-sm mb-3">
+                    <tbody>
+                        <tr>
+                            <td><span class="badge bg-info me-2">Staging</span>Tables</td>
+                            <td class="text-end fw-bold">@Model.StagingTableCount</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-primary me-2">Current</span>Tables</td>
+                            <td class="text-end fw-bold">@Model.CurrentTableCount</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-secondary me-2">History</span>Tables</td>
+                            <td class="text-end fw-bold">@Model.HistoryTableCount</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="text-muted small">
+                    <i class="bi bi-clock-history me-1"></i>
+                    Total History Records: <strong>@Model.TotalHistoryRecords.ToString("N0")</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-end">
+    <button type="button" class="btn btn-outline-primary" id="refreshStatus">
+        <i class="bi bi-arrow-clockwise me-1"></i>Refresh Status
+    </button>
+</div>

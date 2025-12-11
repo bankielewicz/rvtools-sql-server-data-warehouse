@@ -72,7 +72,7 @@
 </div>
 
 <script>
-    (function() {
+    document.addEventListener('DOMContentLoaded', function() {
         var ctx = document.getElementById('@Model.ChartId').getContext('2d');
         var chartData = @Html.Raw(chartDataJson);
         var chartOptions = @Html.Raw(chartOptionsJson);
@@ -82,5 +82,5 @@
             data: chartData,
             options: chartOptions
         });
-    })();
+    });
 </script>

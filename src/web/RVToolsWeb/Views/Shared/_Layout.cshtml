@@ -37,6 +37,12 @@
                         @ViewData["Title"]
                     </span>
                     <div class="ms-auto d-flex align-items-center">
+                        <a asp-controller="Settings" asp-action="Index"
+                           class="btn btn-link text-muted me-3 p-0"
+                           title="Settings"
+                           data-bs-toggle="tooltip">
+                            <i class="bi bi-gear fs-5"></i>
+                        </a>
                         <span class="text-muted small">
                             <i class="bi bi-person-circle me-1"></i>
                             @User.Identity?.Name

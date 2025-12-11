@@ -1,0 +1,111 @@
+@model RVToolsWeb.Models.ViewModels.Admin.SettingsIndexViewModel
+
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>
+            <i class="bi bi-calendar3 me-2"></i>Table Retention Overrides
+            <span class="text-muted small ms-2">(Config.TableRetention)</span>
+        </span>
+        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#addRetentionForm">
+            <i class="bi bi-plus me-1"></i>Add Override
+        </button>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-4">
+            Override the default retention period (<code>RetentionDays</code> from General Settings) for specific History tables.
+            Tables without an override use the default value.
+        </p>
+
+        <!-- Add New Override Form (Collapsed) -->
+        <div class="collapse mb-4" id="addRetentionForm">
+            <div class="card card-body bg-light">
+                <h6 class="mb-3"><i class="bi bi-plus-circle me-2"></i>Add Retention Override</h6>
+                <form id="newRetentionForm">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-5">
+                            <label class="form-label">Table</label>
+                            <select class="form-select form-select-sm" id="newRetentionTable" required>
+                                <option value="">Select a table...</option>
+                                @foreach (var table in Model.AvailableTables)
+                                {
+                                    <option value="@table">@table</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Retention Days</label>
+                            <input type="number" class="form-control form-control-sm" id="newRetentionDays"
+                                   value="365" min="1" max="9999" required />
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="bi bi-check me-1"></i>Add Override
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                                    data-bs-toggle="collapse" data-bs-target="#addRetentionForm">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Existing Overrides Table -->
+        @if (Model.TableRetentions.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Schema</th>
+                            <th>Table</th>
+                            <th style="width: 150px">Retention Days</th>
+                            <th style="width: 150px">Last Modified</th>
+                            <th style="width: 150px">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var retention in Model.TableRetentions)
+                        {
+                            <tr data-retention-id="@retention.TableRetentionId">
+                                <td>@retention.SchemaName</td>
+                                <td>@retention.TableName</td>
+                                <td>
+                                    <input type="number" class="form-control form-control-sm retention-days"
+                                           value="@retention.RetentionDays" min="1" max="9999" style="width: 100px;" />
+                                </td>
+                                <td class="text-muted small">@retention.ModifiedDate.ToString("g")</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-outline-primary btn-update-retention"
+                                            data-id="@retention.TableRetentionId">
+                                        <i class="bi bi-check"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger btn-delete-retention"
+                                            data-id="@retention.TableRetentionId">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                No table-specific retention overrides configured. All History tables use the default retention period.
+            </div>
+        }
+
+        @if (!Model.AvailableTables.Any() && Model.TableRetentions.Any())
+        {
+            <div class="alert alert-secondary mt-3">
+                <i class="bi bi-check-circle me-2"></i>
+                All History tables have retention overrides configured.
+            </div>
+        }
+    </div>
+</div>

@@ -1,0 +1,104 @@
+@model RVToolsWeb.Models.ViewModels.Admin.SettingsIndexViewModel
+
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="bi bi-table me-2"></i>Table Mapping Configuration
+        <span class="text-muted small ms-2">(Config.TableMapping - Read Only)</span>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-4">
+            Table mappings define natural keys and column counts for each RVTools sheet.
+            These are populated by running <code>EXEC dbo.usp_RefreshColumnMapping</code> and should not be modified manually.
+        </p>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-primary me-2">@Model.TableMappings.Count()</span>
+                    <span>Tables Configured</span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-secondary me-2">@Model.TotalColumnMappings</span>
+                    <span>Total Column Mappings</span>
+                </div>
+            </div>
+        </div>
+
+        @if (Model.TableMappings.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-sm table-hover">
+                    <thead>
+                        <tr>
+                            <th>Table Name</th>
+                            <th>Natural Key Columns</th>
+                            <th class="text-center">Columns</th>
+                            <th class="text-center">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var mapping in Model.TableMappings)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@mapping.TableName</strong>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(mapping.NaturalKeyColumns))
+                                    {
+                                        @foreach (var key in mapping.NaturalKeyColumns.Split(','))
+                                        {
+                                            <span class="badge bg-light text-dark border me-1">@key.Trim()</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-secondary">@mapping.ColumnCount</span>
+                                </td>
+                                <td class="text-center">
+                                    @if (mapping.IsActive)
+                                    {
+                                        <span class="badge bg-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning">Inactive</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                No table mappings found. Run <code>EXEC dbo.usp_RefreshColumnMapping</code> to populate configuration.
+            </div>
+        }
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-info-circle me-2"></i>Configuration Refresh
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-3">
+            If you've added new columns or tables to the database schema, refresh the column mappings to update the configuration:
+        </p>
+        <pre class="bg-dark text-light p-3 rounded"><code>-- Run in SQL Server Management Studio
+EXEC dbo.usp_RefreshColumnMapping @@DebugMode = 1;</code></pre>
+        <p class="text-muted small mb-0">
+            This stored procedure scans the Staging, Current, and History schemas and updates Config.TableMapping and Config.ColumnMapping tables.
+        </p>
+    </div>
+</div>
