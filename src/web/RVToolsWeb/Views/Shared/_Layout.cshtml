@@ -62,12 +62,18 @@
                                     }
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end">
-                                    <li>
-                                        <a class="dropdown-item" asp-controller="Account" asp-action="ChangePassword">
-                                            <i class="bi bi-key me-2"></i>Change Password
-                                        </a>
-                                    </li>
-                                    <li><hr class="dropdown-divider" /></li>
+                                    @{
+                                        var authSource = User.FindFirst("AuthSource")?.Value ?? "LocalDB";
+                                    }
+                                    @if (authSource == "LocalDB")
+                                    {
+                                        <li>
+                                            <a class="dropdown-item" asp-controller="Account" asp-action="ChangePassword">
+                                                <i class="bi bi-key me-2"></i>Change Password
+                                            </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider" /></li>
+                                    }
                                     <li>
                                         <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
                                             @Html.AntiForgeryToken()
