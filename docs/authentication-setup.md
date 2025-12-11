@@ -53,13 +53,28 @@ On first deployment, the application will automatically redirect to the setup wi
 
 If you selected **Local Database**, you'll see the Setup Complete page with your generated admin credentials:
 
-![Setup Complete](images/settings/setup-complete.png)
+![Setup Complete - LocalDB](images/settings/setup-complete.png)
 
 **IMPORTANT**:
 - **Username**: `admin`
 - **Password**: Cryptographically generated 16-character password shown ONCE
 - **Copy the password immediately** - it will not be shown again
 - You will be required to change this password on first login
+
+### After Setup: LDAP/Active Directory
+
+If you selected **LDAP/Active Directory**, you'll see the Setup Complete page with LDAP configuration instructions:
+
+![Setup Complete - LDAP](images/authentication/setup-complete-ldap.png)
+
+**Next Steps**:
+1. Click **Proceed to Login**
+2. Log in with your Active Directory admin account
+3. Navigate to **Settings > Security**
+4. Click **Configure** next to Authentication Provider
+5. Complete LDAP configuration (server, port, groups, etc.)
+
+See [LDAP Configuration Guide](ldap-configuration.md) for detailed setup instructions.
 
 ---
 
