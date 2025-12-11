@@ -69,6 +69,7 @@ SELECT
     LastModifiedDate
 
 FROM [Current].[vCluster]
+WHERE ISNULL(IsDeleted, 0) = 0  -- Exclude soft-deleted records
 GO
 
 PRINT 'Created [Reporting].[vw_Cluster_Summary]'

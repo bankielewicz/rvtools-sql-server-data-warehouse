@@ -63,6 +63,7 @@ LEFT JOIN [Current].[vCPU] c
 LEFT JOIN [Current].[vMemory] m
     ON i.VM_UUID = m.VM_UUID
     AND i.VI_SDK_Server = m.VI_SDK_Server
+WHERE ISNULL(i.IsDeleted, 0) = 0  -- Exclude soft-deleted records
 GO
 
 PRINT 'Created [Reporting].[vw_VM_Resource_Allocation]'

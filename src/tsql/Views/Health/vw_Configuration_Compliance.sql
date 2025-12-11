@@ -120,6 +120,7 @@ LEFT JOIN [Current].[vTools] t
     ON i.VM_UUID = t.VM_UUID
     AND i.VI_SDK_Server = t.VI_SDK_Server
 WHERE i.Template = 0
+  AND ISNULL(i.IsDeleted, 0) = 0  -- Exclude soft-deleted records
 GO
 
 PRINT 'Created [Reporting].[vw_Health_Configuration_Compliance]'

@@ -69,6 +69,7 @@ LEFT JOIN [Current].[vMemory] m
     AND i.VI_SDK_Server = m.VI_SDK_Server
 WHERE i.Template = 0  -- Exclude templates
   AND i.Powerstate = 'poweredOn'  -- Only running VMs
+  AND ISNULL(i.IsDeleted, 0) = 0  -- Exclude soft-deleted records
 GO
 
 PRINT 'Created [Reporting].[vw_Capacity_VM_RightSizing]'

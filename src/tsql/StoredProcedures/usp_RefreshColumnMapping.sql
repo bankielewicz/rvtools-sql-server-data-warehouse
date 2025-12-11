@@ -210,18 +210,26 @@ BEGIN
         c.is_computed AS IsComputed,
 
         -- System columns (metadata we add, not from RVTools)
+        -- Includes soft-delete tracking columns added in 002_AddSoftDeleteColumns.sql
         CASE WHEN c.name IN ('RowId', 'ImportBatchId', 'CreatedDate', 'LastModifiedDate',
                              'ModifiedDate', 'ValidFrom', 'ValidTo', 'IsCurrent', 'SourceFile',
-                             'StagingId', 'ImportRowNum', 'HistoryId')
+                             'StagingId', 'ImportRowNum', 'HistoryId',
+                             -- Soft-delete columns (not from RVTools, managed by usp_MergeTable)
+                             'LastSeenBatchId', 'LastSeenDate', 'IsDeleted',
+                             'DeletedBatchId', 'DeletedDate', 'DeletedReason')
              THEN 1 ELSE 0 END AS IsSystemColumn,
 
         -- Include in merge (exclude system columns, identity, computed)
         -- System columns exist only in Current/History, not in Staging
         -- Note: LastModifiedDate/ModifiedDate ARE included - they get special handling in usp_MergeTable
         --       to use @Now (effective date for historical imports, or current time for regular imports)
+        -- Soft-delete columns are managed directly by usp_MergeTable, not from Staging data
         CASE WHEN c.name IN ('RowId', 'CreatedDate',
                              'StagingId', 'ImportRowNum', 'HistoryId',
-                             'ValidFrom', 'ValidTo', 'IsCurrent', 'SourceFile')
+                             'ValidFrom', 'ValidTo', 'IsCurrent', 'SourceFile',
+                             -- Soft-delete columns (managed by SOFT_DELETE/UPDATE_LAST_SEEN steps)
+                             'LastSeenBatchId', 'LastSeenDate', 'IsDeleted',
+                             'DeletedBatchId', 'DeletedDate', 'DeletedReason')
                   OR c.is_identity = 1
                   OR c.is_computed = 1
              THEN 0 ELSE 1 END AS IncludeInMerge,

@@ -1,36 +1,52 @@
 /*
-    RVTools Data Warehouse - Dynamic MERGE Procedure
+    RVTools Data Warehouse - Dynamic MERGE Procedure with Soft-Delete Support
 
     Purpose: Dynamically merges data from Staging to Current and History
-             using metadata from Config.ColumnMapping
+             using metadata from Config.ColumnMapping.
+             Includes soft-delete detection for records no longer in source.
 
     Parameters:
         @ImportBatchId  - The batch ID for this import
         @TableName      - Table to merge (e.g., 'vInfo', 'vHost')
         @SourceFile     - Source xlsx filename (for history tracking)
+        @VIServer       - vCenter server name (for multi-vCenter soft-delete safety)
+        @EffectiveDate  - Override for ValidFrom (historical imports)
         @MergedCount    - OUTPUT: Number of rows merged
+        @DeletedCount   - OUTPUT: Number of rows soft-deleted
 
     Process:
         1. Log start to Audit.MergeProgress
         2. Read column mappings from Config.ColumnMapping
         3. Build dynamic MERGE statement with proper type conversions
-        4. Archive changed/deleted records to History
-        5. Execute MERGE to update Current
-        6. Insert new history records for changes
-        7. Update progress with result
+        4. Archive changed/deleted records to History (HISTORY_CLOSE)
+        5. **NEW: SOFT_DELETE** - Mark Current records as deleted if not in staging
+        6. **NEW: UPDATE_LAST_SEEN** - Update LastSeenBatchId/Date for matched records
+        7. Execute MERGE to update Current (also resets IsDeleted=0 for reappearing records)
+        8. Insert new history records for changes (HISTORY_INSERT)
+        9. Update progress with result (includes RowsDeleted)
+
+    Soft-Delete Behavior:
+        - Records not in current import are marked IsDeleted=1
+        - ONLY marks deleted for same VI_SDK_Server (multi-vCenter safe)
+        - Records that reappear have IsDeleted reset to 0
+        - Deleted records tracked with DeletedBatchId, DeletedDate, DeletedReason
+        - Controlled by Config.Settings 'SoftDeleteEnabled' (default: true)
 
     Enhanced Logging:
         - Logs to Audit.MergeProgress before/after each operation
         - On failure, logs full error details to Audit.ErrorLog
         - Captures dynamic SQL for debugging
+        - Now populates RowsDeleted column
 
     Usage:
-        DECLARE @Count INT;
+        DECLARE @Merged INT, @Deleted INT;
         EXEC dbo.usp_MergeTable
             @ImportBatchId = 1,
             @TableName = 'vInfo',
             @SourceFile = 'export.xlsx',
-            @MergedCount = @Count OUTPUT;
+            @VIServer = 'vcenter01.domain.com',
+            @MergedCount = @Merged OUTPUT,
+            @DeletedCount = @Deleted OUTPUT;
 */
 
 USE [RVToolsDW]
@@ -48,8 +64,10 @@ CREATE PROCEDURE dbo.usp_MergeTable
     @ImportBatchId INT,
     @TableName NVARCHAR(100),
     @SourceFile NVARCHAR(500) = NULL,
-    @EffectiveDate DATETIME2 = NULL,  -- Override for ValidFrom (historical imports)
-    @MergedCount INT = 0 OUTPUT
+    @VIServer NVARCHAR(255) = NULL,    -- vCenter server for multi-vCenter soft-delete safety
+    @EffectiveDate DATETIME2 = NULL,   -- Override for ValidFrom (historical imports)
+    @MergedCount INT = 0 OUTPUT,
+    @DeletedCount INT = 0 OUTPUT       -- NEW: Number of rows soft-deleted
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -65,6 +83,26 @@ BEGIN
     DECLARE @ProgressId BIGINT;
     DECLARE @RowsInStaging INT = 0;
     DECLARE @ErrorMsg NVARCHAR(MAX);
+    DECLARE @SoftDeleteEnabled BIT = 1;  -- Default enabled
+
+    -- Check if soft-delete is enabled in Config.Settings
+    SELECT @SoftDeleteEnabled = CASE WHEN SettingValue IN ('true', '1', 'yes') THEN 1 ELSE 0 END
+    FROM Config.Settings
+    WHERE SettingName = 'SoftDeleteEnabled';
+
+    -- If @VIServer not provided, try to detect from staging data
+    IF @VIServer IS NULL
+    BEGIN
+        SET @SQL = N'SELECT TOP 1 @vi = VI_SDK_Server FROM [Staging].' + QUOTENAME(@TableName) +
+                   ' WHERE ImportBatchId = @BatchId AND VI_SDK_Server IS NOT NULL';
+        BEGIN TRY
+            EXEC sp_executesql @SQL, N'@BatchId INT, @vi NVARCHAR(255) OUTPUT',
+                @BatchId = @ImportBatchId, @vi = @VIServer OUTPUT;
+        END TRY
+        BEGIN CATCH
+            SET @VIServer = NULL;  -- Table might not have VI_SDK_Server (e.g., vMetaData)
+        END CATCH
+    END
 
     -- ========================================================================
     -- Step 0: Log start of operation
@@ -354,6 +392,123 @@ BEGIN
     END CATCH
 
     -- ========================================================================
+    -- Step 1b: SOFT_DELETE - Mark records as deleted if not in staging
+    -- Only runs if SoftDeleteEnabled=true and we have VI_SDK_Server context
+    -- ========================================================================
+    IF @SoftDeleteEnabled = 1
+    BEGIN
+        SET @CurrentOperation = 'SOFT_DELETE';
+
+        -- Build VI_SDK_Server filter (multi-vCenter safety)
+        DECLARE @VIServerFilter NVARCHAR(500) = '';
+        IF @VIServer IS NOT NULL
+        BEGIN
+            SET @VIServerFilter = ' AND c.VI_SDK_Server = @VIServer';
+        END
+
+        -- Check if IsDeleted column exists in this table
+        DECLARE @HasIsDeleted BIT = 0;
+        SELECT @HasIsDeleted = 1
+        FROM sys.columns col
+        INNER JOIN sys.tables t ON col.object_id = t.object_id
+        INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
+        WHERE s.name = 'Current' AND t.name = @TableName AND col.name = 'IsDeleted';
+
+        IF @HasIsDeleted = 1
+        BEGIN
+            -- Mark records as deleted that are NOT in current staging import
+            -- but ARE for the same VI_SDK_Server being imported
+            SET @CurrentSQL = N'
+            UPDATE c
+            SET
+                c.IsDeleted = 1,
+                c.DeletedBatchId = @BatchId,
+                c.DeletedDate = @Now,
+                c.DeletedReason = ''NotInSource''
+            FROM [Current].[' + @TableName + '] c
+            WHERE c.IsDeleted = 0' + @VIServerFilter + '
+              AND NOT EXISTS (
+                  SELECT 1 FROM [Staging].[' + @TableName + '] s
+                  WHERE s.ImportBatchId = @BatchId
+                  AND ' + @StagingCompareClause + '
+              );
+
+            SELECT @DeletedCnt = @@ROWCOUNT;
+            ';
+
+            BEGIN TRY
+                EXEC sp_executesql @CurrentSQL,
+                    N'@BatchId INT, @Now DATETIME2, @VIServer NVARCHAR(255), @DeletedCnt INT OUTPUT',
+                    @BatchId = @ImportBatchId,
+                    @Now = @Now,
+                    @VIServer = @VIServer,
+                    @DeletedCnt = @DeletedCount OUTPUT;
+            END TRY
+            BEGIN CATCH
+                -- Log but don't fail - soft-delete is supplementary
+                INSERT INTO Audit.ErrorLog (ImportBatchId, ProcedureName, TableName, Operation,
+                    ErrorNumber, ErrorSeverity, ErrorState, ErrorLine, ErrorMessage, DynamicSQL)
+                VALUES (@ImportBatchId, 'usp_MergeTable', @TableName, @CurrentOperation,
+                    ERROR_NUMBER(), ERROR_SEVERITY(), ERROR_STATE(), ERROR_LINE(),
+                    ERROR_MESSAGE(), LEFT(@CurrentSQL, 8000));
+                SET @DeletedCount = 0;
+            END CATCH
+        END
+    END
+
+    -- ========================================================================
+    -- Step 1c: UPDATE_LAST_SEEN - Update LastSeenBatchId/Date for matched records
+    -- Also resets IsDeleted=0 if a record reappears after being deleted
+    -- ========================================================================
+    IF @SoftDeleteEnabled = 1
+    BEGIN
+        SET @CurrentOperation = 'UPDATE_LAST_SEEN';
+
+        -- Check if LastSeenBatchId column exists
+        DECLARE @HasLastSeen BIT = 0;
+        SELECT @HasLastSeen = 1
+        FROM sys.columns col
+        INNER JOIN sys.tables t ON col.object_id = t.object_id
+        INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
+        WHERE s.name = 'Current' AND t.name = @TableName AND col.name = 'LastSeenBatchId';
+
+        IF @HasLastSeen = 1
+        BEGIN
+            -- Update LastSeen for records that ARE in current import
+            -- Also reset IsDeleted=0 if previously deleted (record reappeared)
+            SET @CurrentSQL = N'
+            UPDATE c
+            SET
+                c.LastSeenBatchId = @BatchId,
+                c.LastSeenDate = @Now,
+                c.IsDeleted = 0,
+                c.DeletedBatchId = NULL,
+                c.DeletedDate = NULL,
+                c.DeletedReason = NULL
+            FROM [Current].[' + @TableName + '] c
+            INNER JOIN [Staging].[' + @TableName + '] s
+                ON ' + REPLACE(REPLACE(@OnClause, 'target.', 'c.'), 'source.', 's.') + '
+            WHERE s.ImportBatchId = @BatchId;
+            ';
+
+            BEGIN TRY
+                EXEC sp_executesql @CurrentSQL,
+                    N'@BatchId INT, @Now DATETIME2',
+                    @BatchId = @ImportBatchId,
+                    @Now = @Now;
+            END TRY
+            BEGIN CATCH
+                -- Log but don't fail - LastSeen update is supplementary
+                INSERT INTO Audit.ErrorLog (ImportBatchId, ProcedureName, TableName, Operation,
+                    ErrorNumber, ErrorSeverity, ErrorState, ErrorLine, ErrorMessage, DynamicSQL)
+                VALUES (@ImportBatchId, 'usp_MergeTable', @TableName, @CurrentOperation,
+                    ERROR_NUMBER(), ERROR_SEVERITY(), ERROR_STATE(), ERROR_LINE(),
+                    ERROR_MESSAGE(), LEFT(@CurrentSQL, 8000));
+            END CATCH
+        END
+    END
+
+    -- ========================================================================
     -- Step 2: Build and execute MERGE statement
     -- ========================================================================
     SET @CurrentOperation = 'MERGE';
@@ -467,12 +622,13 @@ BEGIN
     END CATCH
 
     -- ========================================================================
-    -- Log success
+    -- Log success (now includes RowsDeleted)
     -- ========================================================================
     UPDATE Audit.MergeProgress
     SET EndTime = GETUTCDATE(),
         Status = 'Success',
         RowsProcessed = @MergedCount,
+        RowsDeleted = @DeletedCount,  -- NEW: Track soft-deleted count
         DurationMs = DATEDIFF(MILLISECOND, @StartTime, GETUTCDATE())
     WHERE ProgressId = @ProgressId;
 

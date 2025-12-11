@@ -57,6 +57,7 @@ SELECT
     LastModifiedDate
 
 FROM [Current].[vDatastore]
+WHERE ISNULL(IsDeleted, 0) = 0  -- Exclude soft-deleted records
 GO
 
 PRINT 'Created [Reporting].[vw_Datastore_Capacity]'

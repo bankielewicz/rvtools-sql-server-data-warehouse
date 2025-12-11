@@ -52,6 +52,7 @@ SELECT
 
 FROM [Current].[vFileInfo] f
 WHERE f.File_Type IN ('VMDK', 'VMSD', 'VMSN')  -- Disk, snapshot descriptor, snapshot data
+  AND ISNULL(f.IsDeleted, 0) = 0  -- Exclude soft-deleted records
 GO
 
 PRINT 'Created [Reporting].[vw_Health_Orphaned_Files]'

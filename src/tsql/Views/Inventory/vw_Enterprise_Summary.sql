@@ -50,6 +50,7 @@ SELECT
     MAX(LastModifiedDate) AS Latest_Import_Date
 
 FROM [Current].[vInfo]
+WHERE ISNULL(IsDeleted, 0) = 0  -- Exclude soft-deleted records
 GROUP BY VI_SDK_Server
 GO
 

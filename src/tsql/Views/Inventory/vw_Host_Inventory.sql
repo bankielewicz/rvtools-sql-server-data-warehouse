@@ -83,6 +83,7 @@ SELECT
     LastModifiedDate
 
 FROM [Current].[vHost]
+WHERE ISNULL(IsDeleted, 0) = 0  -- Exclude soft-deleted records
 GO
 
 PRINT 'Created [Reporting].[vw_Host_Inventory]'

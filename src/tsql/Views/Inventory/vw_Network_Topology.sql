@@ -97,6 +97,7 @@ SELECT
     p.LastModifiedDate
 
 FROM [Current].[vPort] p
+WHERE ISNULL(p.IsDeleted, 0) = 0  -- Exclude soft-deleted records
 GO
 
 PRINT 'Created [Reporting].[vw_Inventory_Network_Topology]'
