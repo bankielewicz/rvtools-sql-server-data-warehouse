@@ -27,6 +27,11 @@ Desktop.ini
 *.temp
 ~$*
 *.bak
+tmp/
+
+# Screenshots
+Screenshot*.png
+*.screenshot.png
 
 # SQL Server
 *.mdf
