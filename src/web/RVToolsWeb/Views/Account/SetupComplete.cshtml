@@ -2,6 +2,8 @@
     ViewData["Title"] = "Setup Complete";
     Layout = null;
     var generatedPassword = ViewBag.GeneratedPassword as string;
+    var authProvider = TempData["AuthProvider"]?.ToString() ?? "LocalDB";
+    var isLdap = authProvider == "LDAP";
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -44,41 +46,68 @@
                 <h4 class="mb-0"><i class="bi bi-check-circle me-2"></i>Setup Complete!</h4>
             </div>
             <div class="card-body p-4">
-                <div class="alert alert-danger">
-                    <h5 class="alert-heading"><i class="bi bi-exclamation-triangle me-2"></i>Important - Save Your Password!</h5>
-                    <p class="mb-2">
-                        Your administrator account has been created. <strong>This password will only be shown once.</strong>
-                        Please copy it now and store it securely.
-                    </p>
-                </div>
-
-                <div class="mb-4">
-                    <label class="form-label fw-bold">Username</label>
-                    <div class="password-display">admin</div>
-                </div>
-
-                <div class="mb-4">
-                    <label class="form-label fw-bold">Generated Password</label>
-                    <div class="input-group">
-                        <input type="text" id="passwordField" class="form-control password-display"
-                               value="@generatedPassword" readonly />
-                        <button class="btn btn-outline-secondary copy-btn" type="button"
-                                onclick="copyPassword()" title="Copy to clipboard">
-                            <i class="bi bi-clipboard" id="copyIcon"></i>
-                        </button>
+                @if (isLdap)
+                {
+                    <div class="alert alert-info">
+                        <h5 class="alert-heading"><i class="bi bi-info-circle me-2"></i>LDAP/AD Authentication Configured</h5>
+                        <p class="mb-2">
+                            The application is now configured to authenticate against your Active Directory or LDAP server.
+                        </p>
+                        <ul class="mb-0">
+                            <li>Users will log in with their domain credentials</li>
+                            <li>Roles are assigned based on AD group membership</li>
+                            <li>Configure LDAP settings in <strong>Settings > Security</strong> after first admin login</li>
+                        </ul>
                     </div>
-                    <small class="text-muted d-block mt-2">
-                        <i class="bi bi-info-circle me-1"></i>
-                        You will be required to change this password on first login.
-                    </small>
-                </div>
 
-                <div class="alert alert-warning">
-                    <i class="bi bi-shield-lock me-2"></i>
-                    <strong>Security Note:</strong> This password is cryptographically generated and is not stored
-                    anywhere except as a secure hash. If you lose it before logging in, you will need to
-                    reset the database.
-                </div>
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Next Steps:</strong>
+                        <ol class="mb-0 mt-2">
+                            <li>Log in with your AD admin account</li>
+                            <li>Go to Settings > Security</li>
+                            <li>Complete LDAP configuration (server, port, groups, etc.)</li>
+                        </ol>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-danger">
+                        <h5 class="alert-heading"><i class="bi bi-exclamation-triangle me-2"></i>Important - Save Your Password!</h5>
+                        <p class="mb-2">
+                            Your administrator account has been created. <strong>This password will only be shown once.</strong>
+                            Please copy it now and store it securely.
+                        </p>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Username</label>
+                        <div class="password-display">admin</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Generated Password</label>
+                        <div class="input-group">
+                            <input type="text" id="passwordField" class="form-control password-display"
+                                   value="@generatedPassword" readonly />
+                            <button class="btn btn-outline-secondary copy-btn" type="button"
+                                    onclick="copyPassword()" title="Copy to clipboard">
+                                <i class="bi bi-clipboard" id="copyIcon"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted d-block mt-2">
+                            <i class="bi bi-info-circle me-1"></i>
+                            You will be required to change this password on first login.
+                        </small>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="bi bi-shield-lock me-2"></i>
+                        <strong>Security Note:</strong> This password is cryptographically generated and is not stored
+                        anywhere except as a secure hash. If you lose it before logging in, you will need to
+                        reset the database.
+                    </div>
+                }
 
                 <a href="@Url.Action("Login")" class="btn btn-primary w-100">
                     <i class="bi bi-box-arrow-in-right me-2"></i>Proceed to Login

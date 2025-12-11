@@ -68,24 +68,34 @@ public class AccountController : Controller
             return View("Setup", model);
         }
 
-        // For MVP, only LocalDB is supported
-        model.AuthProvider = "LocalDB";
+        string? generatedPassword = null;
 
-        // Generate a cryptographically secure random password
-        var generatedPassword = GenerateSecurePassword(16);
-
-        // Create default admin user with generated password and force change flag
-        var adminCreated = await _userService.CreateUserAsync(
-            username: "admin",
-            password: generatedPassword,
-            role: "Admin",
-            email: model.AdminEmail,
-            forcePasswordChange: true);
-
-        if (!adminCreated)
+        // Create admin user only for LocalDB provider
+        // For LDAP, users authenticate against AD and are created on first login
+        if (model.AuthProvider == "LocalDB")
         {
-            ModelState.AddModelError("", "Failed to create admin user. Please check database connectivity.");
-            return View("Setup", model);
+            // Generate a cryptographically secure random password
+            generatedPassword = GenerateSecurePassword(16);
+
+            // Create default admin user with generated password and force change flag
+            var adminCreated = await _userService.CreateUserAsync(
+                username: "admin",
+                password: generatedPassword,
+                role: "Admin",
+                email: model.AdminEmail,
+                forcePasswordChange: true);
+
+            if (!adminCreated)
+            {
+                ModelState.AddModelError("", "Failed to create admin user. Please check database connectivity.");
+                return View("Setup", model);
+            }
+
+            _logger.LogWarning("First-time setup completed with LocalDB. Admin user created with generated password.");
+        }
+        else
+        {
+            _logger.LogWarning("First-time setup completed with LDAP/AD authentication.");
         }
 
         // Mark setup as complete
@@ -98,12 +108,13 @@ public class AccountController : Controller
         // Reset middleware cache
         FirstTimeSetupMiddleware.ResetSetupCache();
 
-        _logger.LogWarning("First-time setup completed. Admin user created with generated password.");
-
-        // Store the generated password in TempData to display once
-        // It will only be shown on the setup complete page
+        // Store setup completion flag and generated password (if LocalDB)
         TempData["SetupComplete"] = true;
-        TempData["GeneratedPassword"] = generatedPassword;
+        TempData["AuthProvider"] = model.AuthProvider;
+        if (!string.IsNullOrEmpty(generatedPassword))
+        {
+            TempData["GeneratedPassword"] = generatedPassword;
+        }
         return RedirectToAction("SetupComplete");
     }
 
