@@ -1,6 +1,7 @@
 namespace RVToolsWeb.Controllers.Account;
 
 using System.Security.Claims;
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -16,15 +17,18 @@ public class AccountController : Controller
 {
     private readonly IAuthService _authService;
     private readonly IUserService _userService;
+    private readonly ICredentialProtectionService _credentialProtection;
     private readonly ILogger<AccountController> _logger;
 
     public AccountController(
         IAuthService authService,
         IUserService userService,
+        ICredentialProtectionService credentialProtection,
         ILogger<AccountController> logger)
     {
         _authService = authService;
         _userService = userService;
+        _credentialProtection = credentialProtection;
         _logger = logger;
     }
 
@@ -67,10 +71,13 @@ public class AccountController : Controller
         // For MVP, only LocalDB is supported
         model.AuthProvider = "LocalDB";
 
-        // Create default admin user with password 'admin' and force change flag
+        // Generate a cryptographically secure random password
+        var generatedPassword = GenerateSecurePassword(16);
+
+        // Create default admin user with generated password and force change flag
         var adminCreated = await _userService.CreateUserAsync(
             username: "admin",
-            password: "admin",
+            password: generatedPassword,
             role: "Admin",
             email: model.AdminEmail,
             forcePasswordChange: true);
@@ -91,10 +98,95 @@ public class AccountController : Controller
         // Reset middleware cache
         FirstTimeSetupMiddleware.ResetSetupCache();
 
-        _logger.LogWarning("First-time setup completed. Admin user created with default password.");
+        _logger.LogWarning("First-time setup completed. Admin user created with generated password.");
 
+        // Store the generated password in TempData to display once
+        // It will only be shown on the setup complete page
         TempData["SetupComplete"] = true;
-        return RedirectToAction("Login");
+        TempData["GeneratedPassword"] = generatedPassword;
+        return RedirectToAction("SetupComplete");
+    }
+
+    /// <summary>
+    /// Display setup complete page with generated credentials
+    /// </summary>
+    [AllowAnonymous]
+    [HttpGet]
+    public IActionResult SetupComplete()
+    {
+        // Only show if we just completed setup
+        if (TempData["SetupComplete"] == null)
+        {
+            return RedirectToAction("Login");
+        }
+
+        var generatedPassword = TempData["GeneratedPassword"]?.ToString();
+        if (string.IsNullOrEmpty(generatedPassword))
+        {
+            return RedirectToAction("Login");
+        }
+
+        // Pass to view - this is the ONLY time the password is displayed
+        ViewBag.GeneratedPassword = generatedPassword;
+        return View();
+    }
+
+    /// <summary>
+    /// Generates a cryptographically secure random password.
+    /// </summary>
+    private static string GenerateSecurePassword(int length)
+    {
+        const string uppercase = "ABCDEFGHJKLMNPQRSTUVWXYZ"; // Excluding I, O
+        const string lowercase = "abcdefghjkmnpqrstuvwxyz"; // Excluding i, l, o
+        const string digits = "23456789"; // Excluding 0, 1
+        const string special = "!@#$%^&*";
+        const string allChars = uppercase + lowercase + digits + special;
+
+        var password = new char[length];
+        var randomBytes = new byte[length];
+
+        using (var rng = RandomNumberGenerator.Create())
+        {
+            rng.GetBytes(randomBytes);
+        }
+
+        // Ensure at least one of each required character type
+        password[0] = uppercase[randomBytes[0] % uppercase.Length];
+        password[1] = lowercase[randomBytes[1] % lowercase.Length];
+        password[2] = digits[randomBytes[2] % digits.Length];
+        password[3] = special[randomBytes[3] % special.Length];
+
+        // Fill the rest with random characters
+        for (int i = 4; i < length; i++)
+        {
+            password[i] = allChars[randomBytes[i] % allChars.Length];
+        }
+
+        // Shuffle the password to avoid predictable positions
+        return ShuffleString(new string(password));
+    }
+
+    /// <summary>
+    /// Cryptographically shuffles a string.
+    /// </summary>
+    private static string ShuffleString(string input)
+    {
+        var chars = input.ToCharArray();
+        var randomBytes = new byte[chars.Length];
+
+        using (var rng = RandomNumberGenerator.Create())
+        {
+            rng.GetBytes(randomBytes);
+        }
+
+        // Fisher-Yates shuffle with cryptographic randomness
+        for (int i = chars.Length - 1; i > 0; i--)
+        {
+            int j = randomBytes[i] % (i + 1);
+            (chars[i], chars[j]) = (chars[j], chars[i]);
+        }
+
+        return new string(chars);
     }
 
     #endregion
@@ -148,9 +240,9 @@ public class AccountController : Controller
         // Check if password change is required
         if (user.ForcePasswordChange)
         {
-            TempData["ForceChangeUserId"] = user.UserId;
-            TempData["ForceChangeUsername"] = user.Username;
-            return RedirectToAction("ChangePassword");
+            // Create a secure, time-limited token instead of using TempData
+            var token = _credentialProtection.CreatePasswordResetToken(user.UserId, user.Username);
+            return RedirectToAction("ChangePassword", new { token });
         }
 
         // Sign in user
@@ -191,16 +283,24 @@ public class AccountController : Controller
     /// </summary>
     [HttpGet]
     [AllowAnonymous] // Allow for forced password change scenario
-    public IActionResult ChangePassword()
+    public IActionResult ChangePassword(string? token = null)
     {
         var model = new ChangePasswordViewModel();
 
-        // Check if this is a forced password change
-        if (TempData["ForceChangeUserId"] != null)
+        // Check if this is a forced password change via secure token
+        if (!string.IsNullOrEmpty(token))
         {
+            var tokenData = _credentialProtection.ValidatePasswordResetToken(token);
+            if (tokenData == null)
+            {
+                // Token is invalid or expired
+                _logger.LogWarning("Invalid or expired password reset token used");
+                TempData["ErrorMessage"] = "Your password reset link has expired. Please log in again.";
+                return RedirectToAction("Login");
+            }
+
             model.IsForced = true;
-            TempData.Keep("ForceChangeUserId");
-            TempData.Keep("ForceChangeUsername");
+            model.ResetToken = token; // Pass token to form for POST
             return View("ForcedChangePassword", model);
         }
         else if (User.Identity?.IsAuthenticated != true)
@@ -227,11 +327,19 @@ public class AccountController : Controller
         int userId;
         string username;
 
-        // Determine user ID from forced change or authenticated user
-        if (TempData["ForceChangeUserId"] is int forcedUserId)
+        // Determine user ID from secure token or authenticated user
+        if (!string.IsNullOrEmpty(model.ResetToken))
         {
-            userId = forcedUserId;
-            username = TempData["ForceChangeUsername"]?.ToString() ?? "unknown";
+            var tokenData = _credentialProtection.ValidatePasswordResetToken(model.ResetToken);
+            if (tokenData == null)
+            {
+                // Token is invalid or expired
+                _logger.LogWarning("Invalid or expired password reset token used in POST");
+                TempData["ErrorMessage"] = "Your password reset link has expired. Please log in again.";
+                return RedirectToAction("Login");
+            }
+            userId = tokenData.Value.UserId;
+            username = tokenData.Value.Username;
             model.IsForced = true;
         }
         else if (User.Identity?.IsAuthenticated == true)

@@ -10,11 +10,16 @@ using RVToolsWeb.Models.DTOs;
 public class AuthService : IAuthService
 {
     private readonly ISqlConnectionFactory _connectionFactory;
+    private readonly ICredentialProtectionService _credentialProtection;
     private readonly ILogger<AuthService> _logger;
 
-    public AuthService(ISqlConnectionFactory connectionFactory, ILogger<AuthService> logger)
+    public AuthService(
+        ISqlConnectionFactory connectionFactory,
+        ICredentialProtectionService credentialProtection,
+        ILogger<AuthService> logger)
     {
         _connectionFactory = connectionFactory;
+        _credentialProtection = credentialProtection;
         _logger = logger;
     }
 
@@ -25,7 +30,15 @@ public class AuthService : IAuthService
         try
         {
             using var connection = _connectionFactory.CreateConnection();
-            return await connection.QuerySingleOrDefaultAsync<AuthSettingsDto>(sql);
+            var settings = await connection.QuerySingleOrDefaultAsync<AuthSettingsDto>(sql);
+
+            // Decrypt the LDAP bind password if present
+            if (settings != null && !string.IsNullOrEmpty(settings.LdapBindPassword))
+            {
+                settings.LdapBindPassword = _credentialProtection.Decrypt(settings.LdapBindPassword);
+            }
+
+            return settings;
         }
         catch (Exception ex)
         {
@@ -126,7 +139,9 @@ public class AuthService : IAuthService
         string? ldapBindPassword,
         string? ldapAdminGroup,
         string? ldapUserGroup,
-        bool ldapFallbackToLocal)
+        bool ldapFallbackToLocal,
+        bool ldapValidateCertificate = true,
+        string? ldapCertificateThumbprint = null)
     {
         const string sql = @"
             UPDATE Web.AuthSettings
@@ -141,10 +156,15 @@ public class AuthService : IAuthService
                 LdapAdminGroup = @LdapAdminGroup,
                 LdapUserGroup = @LdapUserGroup,
                 LdapFallbackToLocal = @LdapFallbackToLocal,
+                LdapValidateCertificate = @LdapValidateCertificate,
+                LdapCertificateThumbprint = @LdapCertificateThumbprint,
                 ModifiedDate = GETUTCDATE()";
 
         try
         {
+            // Encrypt the bind password before storing
+            var encryptedPassword = _credentialProtection.Encrypt(ldapBindPassword);
+
             using var connection = _connectionFactory.CreateConnection();
             var rows = await connection.ExecuteAsync(sql, new
             {
@@ -154,10 +174,12 @@ public class AuthService : IAuthService
                 LdapPort = ldapPort,
                 LdapUseSsl = ldapUseSsl,
                 LdapBindDN = ldapBindDN,
-                LdapBindPassword = ldapBindPassword,
+                LdapBindPassword = encryptedPassword,
                 LdapAdminGroup = ldapAdminGroup,
                 LdapUserGroup = ldapUserGroup,
-                LdapFallbackToLocal = ldapFallbackToLocal
+                LdapFallbackToLocal = ldapFallbackToLocal,
+                LdapValidateCertificate = ldapValidateCertificate,
+                LdapCertificateThumbprint = ldapCertificateThumbprint
             });
 
             _logger.LogInformation("LDAP settings updated for server: {Server}", ldapServer);

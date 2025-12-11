@@ -28,4 +28,10 @@ public class ChangePasswordViewModel
     /// True when user is required to change password (first login)
     /// </summary>
     public bool IsForced { get; set; }
+
+    /// <summary>
+    /// Secure, time-limited token for forced password reset.
+    /// Contains encrypted user ID and expiration time.
+    /// </summary>
+    public string? ResetToken { get; set; }
 }

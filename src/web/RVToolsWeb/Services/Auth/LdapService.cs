@@ -2,6 +2,7 @@ namespace RVToolsWeb.Services.Auth;
 
 using System.DirectoryServices.Protocols;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using RVToolsWeb.Data;
 using Dapper;
 
@@ -12,11 +13,16 @@ using Dapper;
 public class LdapService : ILdapService
 {
     private readonly ISqlConnectionFactory _connectionFactory;
+    private readonly ICredentialProtectionService _credentialProtection;
     private readonly ILogger<LdapService> _logger;
 
-    public LdapService(ISqlConnectionFactory connectionFactory, ILogger<LdapService> logger)
+    public LdapService(
+        ISqlConnectionFactory connectionFactory,
+        ICredentialProtectionService credentialProtection,
+        ILogger<LdapService> logger)
     {
         _connectionFactory = connectionFactory;
+        _credentialProtection = credentialProtection;
         _logger = logger;
     }
 
@@ -39,7 +45,12 @@ public class LdapService : ILdapService
             var bindUsername = BuildBindUsername(username, settings.LdapDomain);
 
             // Attempt to bind with user credentials
-            using var connection = CreateConnection(settings.LdapServer, settings.LdapPort, settings.LdapUseSsl);
+            using var connection = CreateConnection(
+                settings.LdapServer,
+                settings.LdapPort,
+                settings.LdapUseSsl,
+                settings.LdapValidateCertificate,
+                settings.LdapCertificateThumbprint);
             var credential = new NetworkCredential(bindUsername, password);
             connection.Credential = credential;
             connection.AuthType = AuthType.Basic;
@@ -151,7 +162,12 @@ public class LdapService : ILdapService
                 return Enumerable.Empty<string>();
             }
 
-            using var connection = CreateConnection(settings.LdapServer, settings.LdapPort, settings.LdapUseSsl);
+            using var connection = CreateConnection(
+                settings.LdapServer,
+                settings.LdapPort,
+                settings.LdapUseSsl,
+                settings.LdapValidateCertificate,
+                settings.LdapCertificateThumbprint);
             connection.Credential = new NetworkCredential(settings.LdapBindDN, settings.LdapBindPassword);
             connection.AuthType = AuthType.Basic;
             connection.Bind();
@@ -166,7 +182,8 @@ public class LdapService : ILdapService
         }
     }
 
-    private LdapConnection CreateConnection(string server, int port, bool useSsl)
+    private LdapConnection CreateConnection(string server, int port, bool useSsl,
+        bool validateCertificate = true, string? certificateThumbprint = null)
     {
         var identifier = new LdapDirectoryIdentifier(server, port);
         var connection = new LdapConnection(identifier)
@@ -181,12 +198,64 @@ public class LdapService : ILdapService
         if (useSsl)
         {
             connection.SessionOptions.SecureSocketLayer = true;
-            // In production, you should validate certificates properly
-            // For now, we'll skip validation for self-signed certs (common in enterprise AD)
-            connection.SessionOptions.VerifyServerCertificate = (conn, cert) => true;
+
+            if (validateCertificate)
+            {
+                // If thumbprint provided, use certificate pinning for self-signed certs
+                if (!string.IsNullOrEmpty(certificateThumbprint))
+                {
+                    connection.SessionOptions.VerifyServerCertificate = (conn, cert) =>
+                        ValidateCertificateByThumbprint(cert, certificateThumbprint, server);
+                }
+                // Otherwise use default system certificate validation
+                // (no custom callback = uses default chain validation)
+            }
+            else
+            {
+                // Explicitly disabled validation - log warning
+                _logger.LogWarning(
+                    "LDAP certificate validation is DISABLED for server {Server}. " +
+                    "This is insecure and should only be used for testing.",
+                    server);
+                connection.SessionOptions.VerifyServerCertificate = (conn, cert) => true;
+            }
         }
 
         return connection;
+    }
+
+    private bool ValidateCertificateByThumbprint(X509Certificate certificate, string expectedThumbprint, string server)
+    {
+        try
+        {
+            using var x509Cert = new X509Certificate2(certificate);
+            var actualThumbprint = x509Cert.Thumbprint;
+
+            // Normalize both thumbprints for comparison (uppercase, no spaces/colons)
+            var normalizedExpected = expectedThumbprint
+                .Replace(" ", "")
+                .Replace(":", "")
+                .Replace("-", "")
+                .ToUpperInvariant();
+            var normalizedActual = actualThumbprint.ToUpperInvariant();
+
+            if (normalizedActual == normalizedExpected)
+            {
+                _logger.LogDebug("LDAP certificate thumbprint matched for server {Server}", server);
+                return true;
+            }
+
+            _logger.LogError(
+                "LDAP certificate thumbprint mismatch for server {Server}. " +
+                "Expected: {Expected}, Actual: {Actual}",
+                server, normalizedExpected, normalizedActual);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error validating LDAP certificate for server {Server}", server);
+            return false;
+        }
     }
 
     private string BuildBindUsername(string username, string? domain)
@@ -327,13 +396,23 @@ public class LdapService : ILdapService
                 LdapBindPassword,
                 LdapAdminGroup,
                 LdapUserGroup,
-                LdapFallbackToLocal
+                LdapFallbackToLocal,
+                LdapValidateCertificate,
+                LdapCertificateThumbprint
             FROM Web.AuthSettings";
 
         try
         {
             using var connection = _connectionFactory.CreateConnection();
-            return await connection.QuerySingleOrDefaultAsync<LdapSettings>(sql);
+            var settings = await connection.QuerySingleOrDefaultAsync<LdapSettings>(sql);
+
+            // Decrypt the bind password if present
+            if (settings != null && !string.IsNullOrEmpty(settings.LdapBindPassword))
+            {
+                settings.LdapBindPassword = _credentialProtection.Decrypt(settings.LdapBindPassword);
+            }
+
+            return settings;
         }
         catch (Exception ex)
         {
@@ -361,5 +440,7 @@ public class LdapService : ILdapService
         public string? LdapAdminGroup { get; set; }
         public string? LdapUserGroup { get; set; }
         public bool LdapFallbackToLocal { get; set; } = true;
+        public bool LdapValidateCertificate { get; set; } = true;
+        public string? LdapCertificateThumbprint { get; set; }
     }
 }
