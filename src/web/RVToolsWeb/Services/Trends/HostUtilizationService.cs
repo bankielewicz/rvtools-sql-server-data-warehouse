@@ -44,7 +44,8 @@ public class HostUtilizationService
             WHERE (@VI_SDK_Server IS NULL OR VI_SDK_Server = @VI_SDK_Server)
               AND (@HostName IS NULL OR HostName = @HostName)
               AND (@Cluster IS NULL OR Cluster = @Cluster)
-              AND SnapshotDate >= DATEADD(DAY, -@DaysBack, CAST(GETUTCDATE() AS DATE))
+              AND SnapshotDate >= @StartDate
+              AND SnapshotDate <= @EndDate
             ORDER BY HostName, SnapshotDate ASC";
 
         using var connection = _connectionFactory.CreateConnection();
@@ -53,7 +54,8 @@ public class HostUtilizationService
             filter.VI_SDK_Server,
             filter.HostName,
             filter.Cluster,
-            filter.DaysBack
+            StartDate = filter.EffectiveStartDate,
+            EndDate = filter.EffectiveEndDate
         });
     }
 

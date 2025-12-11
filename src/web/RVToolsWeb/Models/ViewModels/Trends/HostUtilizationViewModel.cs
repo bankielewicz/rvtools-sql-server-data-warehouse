@@ -44,12 +44,13 @@ public class HostUtilizationViewModel
 /// <summary>
 /// Filter parameters for the Host Utilization report.
 /// </summary>
-public class HostUtilizationFilter
+public class HostUtilizationFilter : DateRangeFilter
 {
     public string? VI_SDK_Server { get; set; }
     public string? HostName { get; set; }
     public string? Cluster { get; set; }
-    public int DaysBack { get; set; } = 30;
+
+    protected override int DefaultDaysBack => 30;
 }
 
 /// <summary>

@@ -217,7 +217,9 @@ BEGIN
 
         -- Include in merge (exclude system columns, identity, computed)
         -- System columns exist only in Current/History, not in Staging
-        CASE WHEN c.name IN ('RowId', 'CreatedDate', 'LastModifiedDate', 'ModifiedDate',
+        -- Note: LastModifiedDate/ModifiedDate ARE included - they get special handling in usp_MergeTable
+        --       to use @Now (effective date for historical imports, or current time for regular imports)
+        CASE WHEN c.name IN ('RowId', 'CreatedDate',
                              'StagingId', 'ImportRowNum', 'HistoryId',
                              'ValidFrom', 'ValidTo', 'IsCurrent', 'SourceFile')
                   OR c.is_identity = 1

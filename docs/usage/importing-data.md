@@ -69,6 +69,89 @@ $cred = Get-Credential
 .\Import-RVToolsData.ps1 -LogLevel Verbose
 ```
 
+---
+
+## Historical Import
+
+Use `Import-RVToolsHistoricalData.ps1` when you have historical RVTools exports with dates embedded in the filenames.
+
+### When to Use
+
+- Bulk importing historical data (e.g., hundreds of files spanning months/years)
+- Files have dates in filename pattern: `{vcenter-name}_{m_d_yyyy}.{domain.tld}.xlsx`
+- You need accurate `ValidFrom` dates in History tables (not import timestamp)
+
+### Filename Pattern
+
+```
+{vcenter-name}_{m_d_yyyy}.{domain.tld}.xlsx
+```
+
+**Pattern Components:**
+- `{vcenter-name}`: Alphanumeric + hyphens (e.g., `vCenter01`, `prod-vcenter`, `vc-east-01`)
+- `{m_d_yyyy}`: US date format month_day_year (flexible: `3_20_2024` or `03_20_2024`)
+- `{domain.tld}`: Must contain at least one dot (e.g., `domain.com`, `corp.domain.com`)
+
+| Example | Parsed Date | VIServer |
+|---------|-------------|----------|
+| `vCenter01_6_15_2024.domain.com.xlsx` | June 15, 2024 | vCenter01 |
+| `prod-vcenter_12_25_2023.corp.domain.com.xlsx` | December 25, 2023 | prod-vcenter |
+| `vc-east-01_1_1_2025.local.net.xlsx` | January 1, 2025 | vc-east-01 |
+
+Flexible parsing handles both single-digit (3_20_2024) and double-digit (03_20_2024) formats.
+
+### Historical Import Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `-IncomingFolder` | string | ../incoming | Source folder |
+| `-ServerInstance` | string | localhost | SQL Server instance |
+| `-Database` | string | RVToolsDW | Database name |
+| `-UseSqlAuth` | switch | false | Use SQL authentication |
+| `-Credential` | PSCredential | (none) | SQL credential |
+| `-LogLevel` | string | Info | Logging verbosity |
+| `-WhatIf` | switch | false | Preview mode (shows files without importing) |
+| `-Force` | switch | false | Skip confirmation prompt |
+
+### Historical Import Examples
+
+```powershell
+cd src/powershell
+
+# Preview files (see what would be imported and in what order)
+.\Import-RVToolsHistoricalData.ps1 -WhatIf
+
+# Run import with verbose logging
+.\Import-RVToolsHistoricalData.ps1 -ServerInstance "localhost" -LogLevel Verbose
+
+# Skip confirmation prompt
+.\Import-RVToolsHistoricalData.ps1 -Force
+
+# SQL Authentication
+.\Import-RVToolsHistoricalData.ps1 -UseSqlAuth
+```
+
+### How Historical Import Works
+
+1. **Scans** incoming folder for xlsx files
+2. **Parses** filename to extract date and VIServer
+3. **Sorts** files by date (oldest first)
+4. **Imports** each file with:
+   - `Audit.ImportBatch.RVToolsExportDate` = parsed date
+   - `History.ValidFrom` = parsed date (not import timestamp)
+
+### Why Chronological Order?
+
+Files are processed oldest-first to maintain correct History table timeline. This ensures:
+- `ValidFrom`/`ValidTo` ranges are accurate
+- Point-in-time queries work correctly: `WHERE ValidFrom <= '2024-06-15'`
+
+### Skipped Files
+
+Files that don't match the expected pattern are skipped and listed at the start of the import. Move them to a different folder or rename them to match the pattern.
+
+---
+
 ## Generating RVTools Exports
 
 In RVTools:

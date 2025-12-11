@@ -58,11 +58,12 @@ public class StorageGrowthViewModel
 /// <summary>
 /// Filter parameters for the Storage Growth report.
 /// </summary>
-public class StorageGrowthFilter
+public class StorageGrowthFilter : DateRangeFilter
 {
     public string? VI_SDK_Server { get; set; }
     public string? DatastoreName { get; set; }
-    public int LookbackDays { get; set; } = 30;
+
+    protected override int DefaultDaysBack => 30;
 }
 
 /// <summary>

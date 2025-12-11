@@ -36,7 +36,8 @@ GO
 
 CREATE PROCEDURE [dbo].[usp_ProcessImport]
     @ImportBatchId INT,
-    @SourceFile NVARCHAR(500) = NULL
+    @SourceFile NVARCHAR(500) = NULL,
+    @RVToolsExportDate DATETIME2 = NULL  -- Override for ValidFrom (historical imports)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -100,6 +101,7 @@ BEGIN
                 @ImportBatchId = @ImportBatchId,
                 @TableName = @SheetName,
                 @SourceFile = @SourceFile,
+                @EffectiveDate = @RVToolsExportDate,
                 @MergedCount = @RowCount OUTPUT;
 
             SET @TotalMerged = @TotalMerged + ISNULL(@RowCount, 0);

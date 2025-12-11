@@ -38,11 +38,12 @@ public class DatastoreCapacityTrendViewModel
 /// <summary>
 /// Filter parameters for the Datastore Capacity Trend report.
 /// </summary>
-public class DatastoreCapacityTrendFilter
+public class DatastoreCapacityTrendFilter : DateRangeFilter
 {
     public string? VI_SDK_Server { get; set; }
     public string? DatastoreName { get; set; }
-    public int LookbackDays { get; set; } = 30;
+
+    protected override int DefaultDaysBack => 30;
 }
 
 /// <summary>
