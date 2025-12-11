@@ -101,6 +101,12 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.SlidingExpiration = builder.Configuration.GetValue<bool>("Authentication:SlidingExpiration", true);
     });
 
+// Anti-forgery - configure to accept tokens from headers for AJAX requests
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "X-XSRF-TOKEN";
+});
+
 // MVC
 builder.Services.AddControllersWithViews();
 

@@ -40,7 +40,7 @@
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'RequestVerificationToken': getAntiForgeryToken()
+                'X-XSRF-TOKEN': getAntiForgeryToken()
             },
             body: JSON.stringify(data)
         });
