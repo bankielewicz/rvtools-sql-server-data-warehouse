@@ -31,14 +31,16 @@ public class VMCountTrendService
                 ImportBatchId
             FROM [Reporting].[vw_VM_Count_Trend]
             WHERE (@VI_SDK_Server IS NULL OR VI_SDK_Server = @VI_SDK_Server)
-              AND SnapshotDate >= DATEADD(DAY, -@DaysBack, CAST(GETUTCDATE() AS DATE))
+              AND SnapshotDate >= @StartDate
+              AND SnapshotDate <= @EndDate
             ORDER BY SnapshotDate ASC, VI_SDK_Server";
 
         using var connection = _connectionFactory.CreateConnection();
         return await connection.QueryAsync<VMCountTrendItem>(sql, new
         {
             filter.VI_SDK_Server,
-            filter.DaysBack
+            StartDate = filter.EffectiveStartDate,
+            EndDate = filter.EffectiveEndDate
         });
     }
 

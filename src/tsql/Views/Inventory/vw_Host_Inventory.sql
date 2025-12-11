@@ -62,7 +62,13 @@ SELECT
     Serial_number,
     Service_tag,
     BIOS_Version,
-    BIOS_Date,
+    -- Handle Excel OLE Automation dates (serial numbers like 43929.8333333333)
+    CASE
+        WHEN BIOS_Date IS NULL OR BIOS_Date = '' THEN NULL
+        WHEN TRY_CAST(BIOS_Date AS FLOAT) IS NOT NULL
+            THEN DATEADD(DAY, TRY_CAST(BIOS_Date AS FLOAT), '1899-12-30')
+        ELSE TRY_CAST(BIOS_Date AS DATETIME2)
+    END AS BIOS_Date,
 
     -- Time
     Boot_time,

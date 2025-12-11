@@ -48,10 +48,11 @@ public class VMCountTrendViewModel
 /// <summary>
 /// Filter parameters for the VM Count Trend report.
 /// </summary>
-public class VMCountTrendFilter
+public class VMCountTrendFilter : DateRangeFilter
 {
     public string? VI_SDK_Server { get; set; }
-    public int DaysBack { get; set; } = 30;
+
+    protected override int DefaultDaysBack => 30;
 }
 
 /// <summary>

@@ -52,6 +52,24 @@ cd src/powershell
 .\Import-RVToolsData.ps1 -ServerInstance "localhost" -UseSqlAuth -LogLevel Verbose
 ```
 
+### Importing Historical Data (Optional)
+
+If you have historical RVTools exports with dates in filenames:
+
+```powershell
+# Preview what would be imported
+.\Import-RVToolsHistoricalData.ps1 -WhatIf
+
+# Import historical files (oldest first)
+.\Import-RVToolsHistoricalData.ps1 -ServerInstance "localhost"
+```
+
+Files must match pattern: `{vcenter-name}_{m_d_yyyy}.{domain.tld}.xlsx`
+
+Examples: `vCenter01_6_15_2024.domain.com.xlsx`, `prod-vcenter_12_25_2023.corp.domain.com.xlsx`
+
+See [Importing Data](./usage/importing-data.md#historical-import) for details.
+
 ## Step 4: Verify
 
 ```sql

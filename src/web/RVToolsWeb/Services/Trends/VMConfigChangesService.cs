@@ -41,7 +41,8 @@ public class VMConfigChangesService
             FROM [Reporting].[vw_VM_Config_Changes]
             WHERE (@VI_SDK_Server IS NULL OR VI_SDK_Server = @VI_SDK_Server)
               AND (@VMName IS NULL OR VM LIKE '%' + @VMName + '%')
-              AND ChangedDate >= DATEADD(DAY, -@DaysBack, CAST(GETUTCDATE() AS DATE))
+              AND ChangedDate >= @StartDate
+              AND ChangedDate <= @EndDate
             ORDER BY ChangedDate DESC, VM";
 
         using var connection = _connectionFactory.CreateConnection();
@@ -49,7 +50,8 @@ public class VMConfigChangesService
         {
             filter.VI_SDK_Server,
             filter.VMName,
-            filter.DaysBack
+            StartDate = filter.EffectiveStartDate,
+            EndDate = filter.EffectiveEndDate
         });
     }
 }

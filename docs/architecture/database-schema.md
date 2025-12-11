@@ -111,12 +111,16 @@ Tracks each import execution:
 |--------|------|-------------|
 | BatchId | INT | Primary key |
 | FileName | NVARCHAR(500) | Source file path |
+| VIServer | NVARCHAR(255) | vCenter identifier (from filename for historical imports) |
 | StartTime | DATETIME2 | Import start time |
 | EndTime | DATETIME2 | Import end time |
+| RVToolsExportDate | DATETIME2 | When RVTools captured data (from filename for historical imports, otherwise same as StartTime) |
 | Status | NVARCHAR(50) | Success, Failed, Partial |
 | TotalRows | INT | Total rows processed |
 | SuccessRows | INT | Rows successfully imported |
 | FailedRows | INT | Rows that failed |
+
+> **Note**: For historical imports via `Import-RVToolsHistoricalData.ps1`, the `RVToolsExportDate` is parsed from the filename pattern `{vcenter-name}_{m_d_yyyy}.{domain.tld}.xlsx` (US date format) and used as the `ValidFrom` date in History tables.
 
 ### ImportBatchDetail
 

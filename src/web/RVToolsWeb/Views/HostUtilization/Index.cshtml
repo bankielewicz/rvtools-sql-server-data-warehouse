@@ -38,15 +38,8 @@
                     }
                 </select>
             </div>
-            <div class="col-md-2">
-                <label class="form-label" for="daysBackSelect">Time Range</label>
-                <select class="form-select form-select-sm" id="daysBackSelect" name="DaysBack">
-                    <option value="7" selected="@(Model.Filter.DaysBack == 7)">Last 7 Days</option>
-                    <option value="30" selected="@(Model.Filter.DaysBack == 30)">Last 30 Days</option>
-                    <option value="90" selected="@(Model.Filter.DaysBack == 90)">Last 90 Days</option>
-                    <option value="180" selected="@(Model.Filter.DaysBack == 180)">Last 6 Months</option>
-                    <option value="365" selected="@(Model.Filter.DaysBack == 365)">Last Year</option>
-                </select>
+            <div class="col-md-auto">
+                @await Html.PartialAsync("_DateRangePickerPartial", (Model.Filter.StartDate, Model.Filter.EndDate, 30))
             </div>
             <div class="col-md-3">
                 <button type="submit" class="btn btn-primary btn-sm">
@@ -133,11 +126,11 @@ else
         <span class="text-muted">@Model.Items.Count() data points</span>
     </div>
     <div>
-        <a href="/api/Export/host-utilization/excel?VI_SDK_Server=@Model.Filter.VI_SDK_Server&HostName=@Model.Filter.HostName&Cluster=@Model.Filter.Cluster&DaysBack=@Model.Filter.DaysBack"
+        <a href="/api/Export/host-utilization/excel?VI_SDK_Server=@Model.Filter.VI_SDK_Server&HostName=@Model.Filter.HostName&Cluster=@Model.Filter.Cluster&StartDate=@Model.Filter.EffectiveStartDate.ToString("yyyy-MM-dd")&EndDate=@Model.Filter.EffectiveEndDate.ToString("yyyy-MM-dd")"
            class="btn btn-outline-success btn-sm btn-export">
             <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
         </a>
-        <a href="/api/Export/host-utilization/csv?VI_SDK_Server=@Model.Filter.VI_SDK_Server&HostName=@Model.Filter.HostName&Cluster=@Model.Filter.Cluster&DaysBack=@Model.Filter.DaysBack"
+        <a href="/api/Export/host-utilization/csv?VI_SDK_Server=@Model.Filter.VI_SDK_Server&HostName=@Model.Filter.HostName&Cluster=@Model.Filter.Cluster&StartDate=@Model.Filter.EffectiveStartDate.ToString("yyyy-MM-dd")&EndDate=@Model.Filter.EffectiveEndDate.ToString("yyyy-MM-dd")"
            class="btn btn-outline-secondary btn-sm btn-export">
             <i class="bi bi-filetype-csv me-1"></i>Export CSV
         </a>

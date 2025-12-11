@@ -31,10 +31,10 @@ SELECT
     TRY_CAST(Free_MiB AS BIGINT) AS Free_MiB,
     TRY_CAST(Free_Percent AS DECIMAL(5,2)) AS Free_Percent,
 
-    -- Calculated Metrics
+    -- Calculated Metrics (DECIMAL(10,2) to handle high over-provisioning >1000%)
     CASE
         WHEN TRY_CAST(Capacity_MiB AS BIGINT) > 0
-        THEN CAST(TRY_CAST(Provisioned_MiB AS DECIMAL(18,2)) / TRY_CAST(Capacity_MiB AS DECIMAL(18,2)) * 100 AS DECIMAL(5,2))
+        THEN CAST(TRY_CAST(Provisioned_MiB AS DECIMAL(18,2)) / TRY_CAST(Capacity_MiB AS DECIMAL(18,2)) * 100 AS DECIMAL(10,2))
         ELSE 0
     END AS OverProvisioningPercent,
 

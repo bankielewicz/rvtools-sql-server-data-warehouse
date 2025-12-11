@@ -34,7 +34,8 @@ public class StorageGrowthService
             FROM [Reporting].[vw_Trends_Storage_Growth]
             WHERE (@VI_SDK_Server IS NULL OR VI_SDK_Server = @VI_SDK_Server)
               AND (@DatastoreName IS NULL OR DatastoreName = @DatastoreName)
-              AND SnapshotDate >= DATEADD(DAY, -@LookbackDays, CAST(GETUTCDATE() AS DATE))
+              AND SnapshotDate >= @StartDate
+              AND SnapshotDate <= @EndDate
             ORDER BY DatastoreName, SnapshotDate ASC";
 
         using var connection = _connectionFactory.CreateConnection();
@@ -42,7 +43,8 @@ public class StorageGrowthService
         {
             filter.VI_SDK_Server,
             filter.DatastoreName,
-            filter.LookbackDays
+            StartDate = filter.EffectiveStartDate,
+            EndDate = filter.EffectiveEndDate
         });
     }
 
