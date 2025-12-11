@@ -76,7 +76,11 @@ builder.Services.AddScoped<ITableRetentionService, TableRetentionService>();
 builder.Services.AddScoped<IAppSettingsService, AppSettingsService>();
 builder.Services.AddScoped<IDatabaseStatusService, DatabaseStatusService>();
 
+// Data Protection - for encrypting sensitive credentials
+builder.Services.AddDataProtection();
+
 // Authentication Services
+builder.Services.AddSingleton<ICredentialProtectionService, CredentialProtectionService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ILdapService, LdapService>();
 builder.Services.AddScoped<IUserService, UserService>();

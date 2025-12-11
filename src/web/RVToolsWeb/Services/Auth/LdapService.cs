@@ -13,11 +13,16 @@ using Dapper;
 public class LdapService : ILdapService
 {
     private readonly ISqlConnectionFactory _connectionFactory;
+    private readonly ICredentialProtectionService _credentialProtection;
     private readonly ILogger<LdapService> _logger;
 
-    public LdapService(ISqlConnectionFactory connectionFactory, ILogger<LdapService> logger)
+    public LdapService(
+        ISqlConnectionFactory connectionFactory,
+        ICredentialProtectionService credentialProtection,
+        ILogger<LdapService> logger)
     {
         _connectionFactory = connectionFactory;
+        _credentialProtection = credentialProtection;
         _logger = logger;
     }
 
@@ -399,7 +404,15 @@ public class LdapService : ILdapService
         try
         {
             using var connection = _connectionFactory.CreateConnection();
-            return await connection.QuerySingleOrDefaultAsync<LdapSettings>(sql);
+            var settings = await connection.QuerySingleOrDefaultAsync<LdapSettings>(sql);
+
+            // Decrypt the bind password if present
+            if (settings != null && !string.IsNullOrEmpty(settings.LdapBindPassword))
+            {
+                settings.LdapBindPassword = _credentialProtection.Decrypt(settings.LdapBindPassword);
+            }
+
+            return settings;
         }
         catch (Exception ex)
         {
