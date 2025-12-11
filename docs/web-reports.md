@@ -12,6 +12,14 @@ A modern, browser-based reporting interface for the RVTools Data Warehouse that 
 
 The Web Reports application is an ASP.NET Core 8.0 MVC application that connects directly to the RVToolsDW database and presents the same 24 reports available through SSRS in a modern, responsive web interface. The application features a unified dashboard with infrastructure summary metrics, health status indicators, and quick navigation to all reports.
 
+### Authentication Required
+
+**All web reports require authentication.** On first deployment, you'll be guided through a setup wizard to configure authentication. See [Authentication Setup Guide](authentication-setup.md) for details.
+
+**Access Levels:**
+- **Admin role**: Full access to reports + Settings/Security administration
+- **User role**: Read-only access to all reports
+
 ## Features
 
 ### Dashboard
@@ -172,9 +180,25 @@ For SQL Authentication:
 }
 ```
 
+## Administration
+
+The web application includes an admin Settings section for managing the system. See [Admin Settings Guide](admin-settings-guide.md) for documentation on:
+
+- **General Settings** - Database configuration (retention days, log levels, notifications)
+- **Table Retention** - Per-table history retention overrides
+- **Application Settings** - UI theme, caching, logging configuration
+- **Environment** - View/switch ASP.NET environment (Development/Production)
+- **Database Status** - Connection health, table statistics, import history
+- **Metadata** - View table/column mappings and natural keys
+- **Security** - User management and authentication provider configuration
+
+**Access**: Admin role required. Click the gear icon in the top-right corner.
+
 ## Related Documentation
 
+- [Authentication Setup Guide](authentication-setup.md) - First-time setup and login
+- [LDAP Configuration Guide](ldap-configuration.md) - Configuring Active Directory authentication
+- [Admin Settings Guide](admin-settings-guide.md) - Managing all Settings tabs
 - [SSRS Reports User Guide](./SSRS_Reports_User_Guide.md) - Original SSRS report documentation
-- [Reports Overview](./usage/reports.md) - Report categories and descriptions
 - [Database Schema](./architecture/database-schema.md) - Understanding the data model
 - [Data Flow](./architecture/data-flow.md) - How data moves from RVTools to reports
