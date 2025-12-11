@@ -18,6 +18,38 @@ This guide explains how to configure LDAP/Active Directory authentication for th
 
 ---
 
+## Configuration Methods
+
+You can configure LDAP in two ways:
+
+### Method 1: During First-Time Setup (Recommended)
+
+When you first deploy the application, the setup wizard allows you to configure LDAP immediately:
+
+1. Navigate to the application (automatically redirects to `/Account/Setup`)
+2. Select **LDAP/Active Directory** from authentication provider options
+3. Fill in LDAP connection details (server, port, Base DN)
+4. Optionally configure service account and group mappings
+5. Click **Complete Setup**
+6. Log in with your AD credentials
+
+![LDAP Setup Wizard](images/authentication/first-time-setup-ldap-form.png)
+
+See [Authentication Setup Guide](authentication-setup.md#after-setup-ldapactive-directory) for the complete first-time setup process.
+
+### Method 2: After Setup via Settings
+
+If you initially set up with LocalDB or need to modify LDAP settings:
+
+1. Log in as Admin
+2. Navigate to **Settings > Security**
+3. Click **Configure** next to Authentication Provider
+4. Configure or update LDAP settings
+
+The rest of this guide focuses on Method 2 and provides detailed field explanations.
+
+---
+
 ## Prerequisites
 
 Before configuring LDAP, ensure you have:

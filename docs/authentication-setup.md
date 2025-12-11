@@ -63,18 +63,33 @@ If you selected **Local Database**, you'll see the Setup Complete page with your
 
 ### After Setup: LDAP/Active Directory
 
-If you selected **LDAP/Active Directory**, you'll see the Setup Complete page with LDAP configuration instructions:
+If you selected **LDAP/Active Directory**, the setup wizard will show LDAP configuration fields:
+
+![LDAP Setup Form](images/authentication/first-time-setup-ldap-form.png)
+
+**Required Fields**:
+- **LDAP Server**: Hostname or IP address of your AD/LDAP server
+- **Port**: 389 (standard) or 636 (SSL/TLS)
+- **Base DN**: LDAP search base (e.g., `DC=company,DC=com`)
+
+**Optional Fields**:
+- **Domain**: AD domain for UPN login format (e.g., `company.com`)
+- **Enable SSL/TLS**: Recommended for production (automatically changes port to 636)
+- **Service Account**: Bind DN and password for group membership queries
+- **Admin Group DN**: AD group whose members get Admin role
+- **User Group DN**: AD group whose members get User role
+- **Enable fallback to local database**: Recommended for safety
+
+After entering LDAP settings, click **Complete Setup**. You'll see the confirmation page:
 
 ![Setup Complete - LDAP](images/authentication/setup-complete-ldap.png)
 
 **Next Steps**:
 1. Click **Proceed to Login**
-2. Log in with your Active Directory admin account
-3. Navigate to **Settings > Security**
-4. Click **Configure** next to Authentication Provider
-5. Complete LDAP configuration (server, port, groups, etc.)
+2. Log in with your Active Directory credentials
+3. You can modify LDAP settings anytime via **Settings > Security**
 
-See [LDAP Configuration Guide](ldap-configuration.md) for detailed setup instructions.
+See [LDAP Configuration Guide](ldap-configuration.md) for field explanations and troubleshooting.
 
 ---
 
