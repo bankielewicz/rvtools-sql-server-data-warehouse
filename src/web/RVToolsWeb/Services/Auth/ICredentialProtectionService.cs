@@ -27,4 +27,22 @@ public interface ICredentialProtectionService
     /// <param name="value">The value to check</param>
     /// <returns>True if the value appears to be encrypted</returns>
     bool IsEncrypted(string? value);
+
+    /// <summary>
+    /// Creates a time-limited, tamper-proof token for password reset operations.
+    /// The token contains the user ID and expires after the specified duration.
+    /// </summary>
+    /// <param name="userId">The user ID to encode in the token</param>
+    /// <param name="username">The username to encode in the token</param>
+    /// <param name="validFor">How long the token should be valid (default: 15 minutes)</param>
+    /// <returns>A protected token string</returns>
+    string CreatePasswordResetToken(int userId, string username, TimeSpan? validFor = null);
+
+    /// <summary>
+    /// Validates a password reset token and extracts the user ID and username.
+    /// Returns null if the token is invalid, expired, or tampered with.
+    /// </summary>
+    /// <param name="token">The token to validate</param>
+    /// <returns>Tuple of (userId, username) if valid, null otherwise</returns>
+    (int UserId, string Username)? ValidatePasswordResetToken(string? token);
 }

@@ -13,17 +13,23 @@ using Microsoft.AspNetCore.DataProtection;
 /// </summary>
 public class CredentialProtectionService : ICredentialProtectionService
 {
-    private const string Purpose = "RVToolsDW.Credentials.v1";
+    private const string CredentialPurpose = "RVToolsDW.Credentials.v1";
+    private const string PasswordResetPurpose = "RVToolsDW.PasswordReset.v1";
     private const string EncryptedPrefix = "ENC:";
+    private static readonly TimeSpan DefaultTokenValidity = TimeSpan.FromMinutes(15);
 
-    private readonly IDataProtector _protector;
+    private readonly IDataProtector _credentialProtector;
+    private readonly ITimeLimitedDataProtector _passwordResetProtector;
     private readonly ILogger<CredentialProtectionService> _logger;
 
     public CredentialProtectionService(
         IDataProtectionProvider dataProtectionProvider,
         ILogger<CredentialProtectionService> logger)
     {
-        _protector = dataProtectionProvider.CreateProtector(Purpose);
+        _credentialProtector = dataProtectionProvider.CreateProtector(CredentialPurpose);
+        _passwordResetProtector = dataProtectionProvider
+            .CreateProtector(PasswordResetPurpose)
+            .ToTimeLimitedDataProtector();
         _logger = logger;
     }
 
@@ -36,7 +42,7 @@ public class CredentialProtectionService : ICredentialProtectionService
 
         try
         {
-            var encrypted = _protector.Protect(plaintext);
+            var encrypted = _credentialProtector.Protect(plaintext);
             // Prefix with marker so we can identify encrypted values
             return EncryptedPrefix + encrypted;
         }
@@ -66,7 +72,7 @@ public class CredentialProtectionService : ICredentialProtectionService
             }
 
             var encryptedValue = encrypted.Substring(EncryptedPrefix.Length);
-            return _protector.Unprotect(encryptedValue);
+            return _credentialProtector.Unprotect(encryptedValue);
         }
         catch (Exception ex)
         {
@@ -83,5 +89,49 @@ public class CredentialProtectionService : ICredentialProtectionService
         }
 
         return value.StartsWith(EncryptedPrefix);
+    }
+
+    public string CreatePasswordResetToken(int userId, string username, TimeSpan? validFor = null)
+    {
+        var expiration = validFor ?? DefaultTokenValidity;
+        var payload = $"{userId}|{username}";
+
+        try
+        {
+            return _passwordResetProtector.Protect(payload, expiration);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create password reset token for user {UserId}", userId);
+            throw new InvalidOperationException("Failed to create password reset token", ex);
+        }
+    }
+
+    public (int UserId, string Username)? ValidatePasswordResetToken(string? token)
+    {
+        if (string.IsNullOrEmpty(token))
+        {
+            return null;
+        }
+
+        try
+        {
+            var payload = _passwordResetProtector.Unprotect(token);
+            var parts = payload.Split('|', 2);
+
+            if (parts.Length != 2 || !int.TryParse(parts[0], out var userId))
+            {
+                _logger.LogWarning("Invalid password reset token format");
+                return null;
+            }
+
+            return (userId, parts[1]);
+        }
+        catch (Exception ex)
+        {
+            // Token is invalid, expired, or tampered with
+            _logger.LogWarning(ex, "Password reset token validation failed");
+            return null;
+        }
     }
 }
