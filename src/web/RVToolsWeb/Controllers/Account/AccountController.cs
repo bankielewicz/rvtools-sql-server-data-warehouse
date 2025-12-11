@@ -18,17 +18,20 @@ public class AccountController : Controller
     private readonly IAuthService _authService;
     private readonly IUserService _userService;
     private readonly ICredentialProtectionService _credentialProtection;
+    private readonly ISessionService _sessionService;
     private readonly ILogger<AccountController> _logger;
 
     public AccountController(
         IAuthService authService,
         IUserService userService,
         ICredentialProtectionService credentialProtection,
+        ISessionService sessionService,
         ILogger<AccountController> logger)
     {
         _authService = authService;
         _userService = userService;
         _credentialProtection = credentialProtection;
+        _sessionService = sessionService;
         _logger = logger;
     }
 
@@ -274,16 +277,18 @@ public class AccountController : Controller
             return View(model);
         }
 
-        var user = await _userService.ValidateCredentialsAsync(model.Username, model.Password);
+        // Validate returns tuple instead of UserDto
+        var (success, user, authSource, errorMessage) = await _userService.ValidateCredentialsAsync(
+            model.Username, model.Password);
 
-        if (user == null)
+        if (!success || user == null)
         {
-            model.ErrorMessage = "Invalid username or password, or account is locked.";
+            model.ErrorMessage = errorMessage ?? "Invalid username or password, or account is locked.";
             return View(model);
         }
 
-        // Check if password change is required
-        if (user.ForcePasswordChange)
+        // Check if password change is required (LocalDB only)
+        if (authSource == "LocalDB" && user.ForcePasswordChange)
         {
             // Create a secure, time-limited token instead of using TempData
             var token = _credentialProtection.CreatePasswordResetToken(user.UserId, user.Username);
@@ -293,7 +298,12 @@ public class AccountController : Controller
         // Sign in user
         await SignInUserAsync(user, model.RememberMe);
 
-        _logger.LogInformation("User {Username} logged in successfully", user.Username);
+        // Record session in Web.Sessions table
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var userAgent = HttpContext.Request.Headers.UserAgent.ToString();
+        await _sessionService.RecordLoginAsync(user, ipAddress, userAgent);
+
+        _logger.LogInformation("User {Username} logged in successfully via {AuthSource}", user.Username, authSource);
 
         // Redirect to return URL or home
         if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
@@ -312,6 +322,13 @@ public class AccountController : Controller
     public async Task<IActionResult> Logout()
     {
         var username = User.Identity?.Name;
+
+        // Record logout in Web.Sessions table
+        if (!string.IsNullOrEmpty(username))
+        {
+            await _sessionService.RecordLogoutAsync(username);
+        }
+
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
         _logger.LogInformation("User {Username} logged out", username);
@@ -351,6 +368,14 @@ public class AccountController : Controller
         else if (User.Identity?.IsAuthenticated != true)
         {
             return RedirectToAction("Login");
+        }
+
+        // Block LDAP users from changing passwords (managed in Active Directory)
+        var authSource = User.FindFirst("AuthSource")?.Value;
+        if (authSource == "LDAP")
+        {
+            TempData["ErrorMessage"] = "LDAP/Active Directory passwords cannot be changed here. Contact your IT administrator.";
+            return RedirectToAction("Index", "Home");
         }
 
         return View(model);
@@ -408,8 +433,8 @@ public class AccountController : Controller
             return RedirectToAction("Login");
         }
 
-        var validPassword = await _userService.ValidateCredentialsAsync(user.Username, model.CurrentPassword);
-        if (validPassword == null)
+        var (credentialsValid, _, _, _) = await _userService.ValidateCredentialsAsync(user.Username, model.CurrentPassword);
+        if (!credentialsValid)
         {
             ModelState.AddModelError("CurrentPassword", "Current password is incorrect");
             return View(model);
@@ -466,7 +491,10 @@ public class AccountController : Controller
     {
         var claims = new List<Claim>
         {
-            new(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+            // Use "ldap:{username}" for LDAP users (transient), "{userId}" for LocalDB users
+            new(ClaimTypes.NameIdentifier, user.AuthSource == "LDAP"
+                ? $"ldap:{user.Username}"
+                : user.UserId.ToString()),
             new(ClaimTypes.Name, user.Username),
             new(ClaimTypes.Role, user.Role),
             new("AuthSource", user.AuthSource)

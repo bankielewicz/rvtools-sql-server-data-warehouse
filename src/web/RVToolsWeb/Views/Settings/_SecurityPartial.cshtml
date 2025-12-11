@@ -1,5 +1,27 @@
 @model RVToolsWeb.Models.ViewModels.Admin.SecurityViewModel
 
+@if (Model.AuthSettings.AuthProvider == "LDAP")
+{
+    <div class="alert alert-primary mb-3" role="alert">
+        <div class="d-flex align-items-start">
+            <i class="bi bi-building fs-4 me-3"></i>
+            <div>
+                <strong>Active Directory Authentication:</strong>
+                Users authenticate against <strong>@Model.AuthSettings.LdapServer</strong>.
+                LDAP/AD users are managed in Active Directory and do not appear in the user table below.
+                @if (Model.AuthSettings.LdapFallbackToLocal)
+                {
+                    <br />
+                    <span class="text-muted">
+                        <i class="bi bi-info-circle me-1"></i>
+                        The LocalDB accounts shown below are available for fallback authentication during LDAP outages.
+                    </span>
+                }
+            </div>
+        </div>
+    </div>
+}
+
 <div class="row">
     <!-- Auth Provider Settings -->
     <div class="col-lg-4 mb-4">
@@ -67,7 +89,17 @@
     <div class="col-lg-8 mb-4">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-people me-2"></i>User Management</span>
+                <div>
+                    <i class="bi bi-people me-2"></i>
+                    @if (Model.AuthSettings.AuthProvider == "LDAP")
+                    {
+                        <span>Local Database Users (Fallback Authentication)</span>
+                    }
+                    else
+                    {
+                        <span>User Management</span>
+                    }
+                </div>
                 <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
                     <i class="bi bi-plus-circle me-1"></i>Add User
                 </button>

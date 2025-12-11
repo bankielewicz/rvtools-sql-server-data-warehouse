@@ -84,6 +84,7 @@ builder.Services.AddSingleton<ICredentialProtectionService, CredentialProtection
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ILdapService, LdapService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ISessionService, SessionService>();
 
 // Cookie Authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
