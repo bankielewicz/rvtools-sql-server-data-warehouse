@@ -90,63 +90,82 @@ This creates the following schemas:
 | Config | Settings and configuration |
 | Reporting | Report-facing views |
 
-### 4. Create Tables
+### 4. Create Tables and Configuration
 
-Execute in order:
+**IMPORTANT:** Execute SQL scripts in this exact order. Missing steps will break the web application.
 
-```
-src/tsql/Tables/Staging/001_AllStagingTables.sql
-src/tsql/Tables/Staging/002_AddDatacenter2Column.sql
-src/tsql/Tables/Current/001_AllCurrentTables.sql
-src/tsql/Tables/History/001_AllHistoryTables.sql
-src/tsql/Database/004_AddRVToolsExportDate.sql  (historical import support)
-```
+1. `src/tsql/Tables/Staging/001_AllStagingTables.sql`
+2. `src/tsql/Tables/Staging/002_AddDatacenter2Column.sql`
+3. `src/tsql/Tables/Current/001_AllCurrentTables.sql`
+4. `src/tsql/Tables/History/001_AllHistoryTables.sql`
+5. `src/tsql/Tables/Audit/ErrorLog.sql` and `MergeProgress.sql`
+6. `src/tsql/Tables/Web/001_ErrorLog.sql` (web application error logging)
+7. `src/tsql/Tables/Web/002_Users.sql` (authentication - user accounts)
+8. `src/tsql/Tables/Web/003_AuthSettings.sql` (authentication - provider config)
+9. `src/tsql/Tables/Web/004_AuthSettings_LDAP.sql` (LDAP configuration columns)
+10. `src/tsql/Tables/Web/005_AuthSettings_CertValidation.sql` (LDAP certificate validation)
 
 ### 5. Create Stored Procedures
 
-```
-src/tsql/StoredProcedures/usp_ProcessImport.sql
-src/tsql/StoredProcedures/usp_MergeTable_vInfo.sql
-src/tsql/StoredProcedures/usp_PurgeOldHistory.sql
-```
+11. `src/tsql/StoredProcedures/usp_RefreshColumnMapping.sql` (creates Config tables)
+12. Execute: `EXEC dbo.usp_RefreshColumnMapping` (populates column mapping)
+13. Execute remaining stored procedures in `src/tsql/StoredProcedures/`:
+    - `usp_ProcessImport.sql`
+    - `usp_MergeTable.sql`
+    - `usp_PurgeOldHistory.sql`
 
 ### 6. Create Views
 
-Execute all view scripts:
+14. Execute all view scripts in `src/tsql/Views/` subdirectories:
+    - `Views/Inventory/*.sql`
+    - `Views/Health/*.sql`
+    - `Views/Capacity/*.sql`
+    - `Views/Trends/*.sql`
 
-```
-src/tsql/Views/Inventory/*.sql
-src/tsql/Views/Health/*.sql
-src/tsql/Views/Capacity/*.sql
-src/tsql/Views/Trends/*.sql
-```
+### 7. Optional: Enable Transparent Data Encryption (TDE)
 
-### 7. Verify Installation
+15. `src/tsql/Database/005_EnableTDE.sql` (SQL Server Enterprise Edition only)
+
+**Note:** TDE encrypts database files at rest. Requires Enterprise Edition and DBA privileges. See script for detailed instructions and certificate backup requirements.
+
+### 8. Verify Installation
 
 ```sql
--- Check all schemas exist
+-- Check all schemas exist (should return 7 rows)
 SELECT name FROM sys.schemas
-WHERE name IN ('Staging', 'Current', 'History', 'Audit', 'Config', 'Reporting');
+WHERE name IN ('Staging', 'Current', 'History', 'Audit', 'Config', 'Web', 'Reporting')
+ORDER BY name;
 
--- Check table counts (should be 27 each)
+-- Check table counts
 SELECT
     s.name AS SchemaName,
     COUNT(*) AS TableCount
 FROM sys.tables t
 JOIN sys.schemas s ON t.schema_id = s.schema_id
-WHERE s.name IN ('Staging', 'Current', 'History')
-GROUP BY s.name;
+WHERE s.name IN ('Staging', 'Current', 'History', 'Audit', 'Web', 'Config')
+GROUP BY s.name
+ORDER BY s.name;
+-- Expected: Staging=27, Current=27, History=27, Audit=4, Web=3, Config=3
+
+-- Verify authentication tables exist
+SELECT TABLE_SCHEMA, TABLE_NAME
+FROM INFORMATION_SCHEMA.TABLES
+WHERE TABLE_SCHEMA = 'Web'
+ORDER BY TABLE_NAME;
+-- Expected: AuthSettings, ErrorLog, Users
 
 -- Check stored procedures
-SELECT name FROM sys.procedures WHERE name LIKE 'usp_%';
+SELECT name FROM sys.procedures WHERE name LIKE 'usp_%' ORDER BY name;
 
--- Check views
-SELECT name FROM sys.views WHERE SCHEMA_NAME(schema_id) = 'Reporting';
+-- Check reporting views
+SELECT name FROM sys.views WHERE SCHEMA_NAME(schema_id) = 'Reporting' ORDER BY name;
 ```
 
-### 8. Deploy Web Application (Optional)
+### 9. Deploy Web Application
 
-If you want to use the web dashboard instead of or alongside SSRS reports:
+**The web application is required** for authentication, user management, and admin settings.
+
+See [Authentication Setup Guide](authentication-setup.md) for first-time configuration.
 
 ```bash
 cd src/web/RVToolsWeb
