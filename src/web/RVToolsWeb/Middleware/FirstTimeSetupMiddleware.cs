@@ -20,8 +20,8 @@ public class FirstTimeSetupMiddleware
     {
         var path = context.Request.Path.Value?.ToLower() ?? "";
 
-        // Skip for static files and setup-related endpoints
-        if (IsExcludedPath(path))
+        // Skip for static files only (not setup endpoints)
+        if (IsStaticFilePath(path))
         {
             await _next(context);
             return;
@@ -36,9 +36,24 @@ public class FirstTimeSetupMiddleware
             }
         }
 
+        // If setup IS required, allow only setup endpoints
         if (_isSetupRequired == true)
         {
+            if (IsSetupPath(path))
+            {
+                await _next(context);
+                return;
+            }
             context.Response.Redirect("/Account/Setup");
+            return;
+        }
+
+        // If setup is NOT required (already complete), BLOCK setup endpoints
+        // This prevents unauthorized re-initialization
+        if (IsSetupPath(path))
+        {
+            context.Response.StatusCode = 403;
+            await context.Response.WriteAsync("Setup has already been completed. Access denied.");
             return;
         }
 
@@ -56,22 +71,20 @@ public class FirstTimeSetupMiddleware
         }
     }
 
-    private static bool IsExcludedPath(string path)
+    private static bool IsStaticFilePath(string path)
     {
-        // Static files
-        if (path.StartsWith("/lib/") ||
-            path.StartsWith("/css/") ||
-            path.StartsWith("/js/") ||
-            path.StartsWith("/images/") ||
-            path.StartsWith("/favicon"))
-            return true;
+        return path.StartsWith("/lib/") ||
+               path.StartsWith("/css/") ||
+               path.StartsWith("/js/") ||
+               path.StartsWith("/images/") ||
+               path.StartsWith("/favicon");
+    }
 
-        // Setup endpoints
-        if (path.StartsWith("/account/setup") ||
-            path == "/account/completesetup")
-            return true;
-
-        return false;
+    private static bool IsSetupPath(string path)
+    {
+        return path == "/account/setup" ||
+               path == "/account/completesetup" ||
+               path == "/account/setupcomplete";
     }
 }
 
