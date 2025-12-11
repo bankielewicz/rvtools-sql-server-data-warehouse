@@ -194,6 +194,57 @@ The web application includes an admin Settings section for managing the system. 
 
 **Access**: Admin role required. Click the gear icon in the top-right corner.
 
+## Authentication
+
+The web application supports two authentication providers:
+
+### Local Database (Default)
+- Users stored in `Web.Users` table with PBKDF2-SHA256 password hashing
+- First-time setup wizard creates an admin user with a generated password
+- Password change required on first login
+
+### LDAP/Active Directory
+LDAP users authenticate directly against Active Directory and are **not stored in `Web.Users`**. This provides:
+- Clean separation between LocalDB and AD users
+- Settings > Security shows only LocalDB (fallback) users
+- "Change Password" hidden for LDAP users (managed in AD)
+
+**Configuration:**
+1. Navigate to Settings > Security
+2. Select "Active Directory" provider
+3. Click "Configure" and fill in LDAP settings:
+   - Server: `ldap.company.com` or `dc01.company.com`
+   - Port: 636 (SSL) or 389 (no SSL)
+   - Domain: `company.com`
+   - Base DN: `DC=company,DC=com`
+   - Admin Group: `CN=RVTools-Admins,OU=Groups,DC=company,DC=com`
+   - User Group: `CN=RVTools-Users,OU=Groups,DC=company,DC=com`
+4. Test connection before saving
+5. Enable fallback to LocalDB for admin access during outages
+
+**Note:** LDAP users do not appear in the User Management table. They are managed in Active Directory.
+
+### Session Tracking
+
+All authentication events (login/logout) are tracked in `Web.Sessions` for audit purposes. This includes both LocalDB and LDAP users.
+
+**Session Cleanup:**
+
+Configure a weekly cleanup to purge old session records:
+
+```sql
+-- SQL Agent Job or manual execution
+EXEC dbo.usp_CleanupStaleSessions @RetentionDays = 90;
+```
+
+For environments without SQL Agent, create a Windows Scheduled Task:
+
+```powershell
+# Weekly cleanup task (Sunday 2:00 AM)
+Invoke-Sqlcmd -ServerInstance "localhost" -Database "RVToolsDW" `
+    -Query "EXEC dbo.usp_CleanupStaleSessions @RetentionDays = 90"
+```
+
 ## Related Documentation
 
 - [Authentication Setup Guide](authentication-setup.md) - First-time setup and login
