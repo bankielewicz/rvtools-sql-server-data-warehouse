@@ -270,11 +270,11 @@ BEGIN
     -- ========================================================================
     IF @DryRun = 0 AND @TotalArchived > 0
     BEGIN
-        INSERT INTO Audit.ImportLog (Source, LogLevel, Message)
+        INSERT INTO Audit.ImportLog (SheetName, LogLevel, Message)
         VALUES (
-            'usp_ArchiveSoftDeletedRecords',
+            'SoftDeleteArchive',
             'Info',
-            'Archived ' + CAST(@TotalArchived AS VARCHAR) +
+            'usp_ArchiveSoftDeletedRecords: Archived ' + CAST(@TotalArchived AS VARCHAR) +
             ' soft-deleted records to History (retention: ' +
             CAST(@RetentionDays AS VARCHAR) + ' days)'
         );
