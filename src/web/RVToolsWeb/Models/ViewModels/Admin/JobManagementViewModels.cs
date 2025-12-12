@@ -201,6 +201,10 @@ public class JobManagementIndexViewModel
     public ServiceStatusViewModel? ServiceStatus { get; set; }
     public IEnumerable<JobRunViewModel> RecentRuns { get; set; } = Enumerable.Empty<JobRunViewModel>();
     public JobStatisticsViewModel Statistics { get; set; } = new();
+
+    // Windows Service control properties
+    public WindowsServiceStatus? WindowsServiceStatus { get; set; }
+    public bool IsUserLocalAdmin { get; set; }
 }
 
 /// <summary>

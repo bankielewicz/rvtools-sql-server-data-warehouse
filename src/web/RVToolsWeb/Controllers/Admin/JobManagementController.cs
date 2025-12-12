@@ -12,13 +12,16 @@ namespace RVToolsWeb.Controllers.Admin;
 public class JobManagementController : Controller
 {
     private readonly IJobManagementService _jobService;
+    private readonly IWindowsServiceManager _serviceManager;
     private readonly ILogger<JobManagementController> _logger;
 
     public JobManagementController(
         IJobManagementService jobService,
+        IWindowsServiceManager serviceManager,
         ILogger<JobManagementController> logger)
     {
         _jobService = jobService;
+        _serviceManager = serviceManager;
         _logger = logger;
     }
 
@@ -33,7 +36,9 @@ public class JobManagementController : Controller
             Jobs = await _jobService.GetAllJobsAsync(),
             ServiceStatus = await _jobService.GetServiceStatusAsync(),
             RecentRuns = await _jobService.GetRecentJobRunsAsync(10),
-            Statistics = await _jobService.GetStatisticsAsync()
+            Statistics = await _jobService.GetStatisticsAsync(),
+            WindowsServiceStatus = _serviceManager.GetServiceStatus(),
+            IsUserLocalAdmin = _serviceManager.IsCurrentUserLocalAdmin()
         };
 
         return View(viewModel);
@@ -303,6 +308,89 @@ public class JobManagementController : Controller
         var status = await _jobService.GetServiceStatusAsync();
         return PartialView("_ServiceStatusPartial", status);
     }
+
+    #region Windows Service Control
+
+    /// <summary>
+    /// Get Windows Service status for AJAX polling.
+    /// </summary>
+    [HttpGet]
+    public IActionResult WindowsServiceStatus()
+    {
+        var status = _serviceManager.GetServiceStatus();
+        var isAdmin = _serviceManager.IsCurrentUserLocalAdmin();
+        return Json(new { status, isAdmin });
+    }
+
+    /// <summary>
+    /// Start the Windows Service.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> StartService()
+    {
+        if (!_serviceManager.IsCurrentUserLocalAdmin())
+        {
+            return Json(new { success = false, error = "Local administrator privileges required" });
+        }
+
+        _logger.LogInformation("User {User} requested service start", User.Identity?.Name);
+        var result = await _serviceManager.StartServiceAsync();
+        return Json(new { success = result.Success, message = result.Message, error = result.ErrorDetails });
+    }
+
+    /// <summary>
+    /// Stop the Windows Service.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> StopService()
+    {
+        if (!_serviceManager.IsCurrentUserLocalAdmin())
+        {
+            return Json(new { success = false, error = "Local administrator privileges required" });
+        }
+
+        _logger.LogInformation("User {User} requested service stop", User.Identity?.Name);
+        var result = await _serviceManager.StopServiceAsync();
+        return Json(new { success = result.Success, message = result.Message, error = result.ErrorDetails });
+    }
+
+    /// <summary>
+    /// Install the Windows Service.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> InstallService()
+    {
+        if (!_serviceManager.IsCurrentUserLocalAdmin())
+        {
+            return Json(new { success = false, error = "Local administrator privileges required" });
+        }
+
+        _logger.LogInformation("User {User} requested service install", User.Identity?.Name);
+        var result = await _serviceManager.InstallServiceAsync();
+        return Json(new { success = result.Success, message = result.Message, error = result.ErrorDetails });
+    }
+
+    /// <summary>
+    /// Uninstall the Windows Service.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UninstallService()
+    {
+        if (!_serviceManager.IsCurrentUserLocalAdmin())
+        {
+            return Json(new { success = false, error = "Local administrator privileges required" });
+        }
+
+        _logger.LogInformation("User {User} requested service uninstall", User.Identity?.Name);
+        var result = await _serviceManager.UninstallServiceAsync();
+        return Json(new { success = result.Success, message = result.Message, error = result.ErrorDetails });
+    }
+
+    #endregion
 
     /// <summary>
     /// Get available time zones for scheduling.

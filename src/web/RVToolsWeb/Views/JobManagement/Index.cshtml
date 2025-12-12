@@ -122,11 +122,93 @@
 </div>
 
 <div class="row">
-    <!-- Service Status Card -->
+    <!-- Windows Service Status Card -->
     <div class="col-lg-4 mb-4">
         <div class="card">
             <div class="card-header bg-primary text-white">
-                <i class="bi bi-activity me-2"></i>Service Status
+                <i class="bi bi-windows me-2"></i>Windows Service
+            </div>
+            <div class="card-body">
+                @if (Model.WindowsServiceStatus != null)
+                {
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="fs-4 me-3">
+                            <span id="winServiceBadge" class="badge @Model.WindowsServiceStatus.StateBadgeClass">
+                                <i class="@Model.WindowsServiceStatus.StateIcon me-1"></i>@Model.WindowsServiceStatus.StateDisplay
+                            </span>
+                        </div>
+                    </div>
+                    <table class="table table-sm mb-2">
+                        <tr>
+                            <th>Service Name</th>
+                            <td>@Model.WindowsServiceStatus.ServiceName</td>
+                        </tr>
+                        <tr>
+                            <th>Executable</th>
+                            <td>
+                                <small class="text-truncate d-block" style="max-width: 200px;" title="@Model.WindowsServiceStatus.ExecutablePath">
+                                    @Model.WindowsServiceStatus.ExecutablePath
+                                </small>
+                            </td>
+                        </tr>
+                    </table>
+
+                    @if (Model.WindowsServiceStatus.ErrorMessage != null)
+                    {
+                        <div class="alert alert-warning small py-2 mb-2">
+                            <i class="bi bi-exclamation-triangle me-1"></i>@Model.WindowsServiceStatus.ErrorMessage
+                        </div>
+                    }
+
+                    @if (Model.IsUserLocalAdmin)
+                    {
+                        <div class="border-top pt-3">
+                            <h6 class="text-muted mb-2"><i class="bi bi-sliders me-1"></i>Service Control</h6>
+                            <div class="btn-group w-100 mb-2">
+                                <button class="btn btn-outline-success btn-sm"
+                                        onclick="startWindowsService()"
+                                        id="btnStartService"
+                                        @(!Model.WindowsServiceStatus.CanStart ? "disabled" : "")>
+                                    <i class="bi bi-play-fill me-1"></i>Start
+                                </button>
+                                <button class="btn btn-outline-warning btn-sm"
+                                        onclick="stopWindowsService()"
+                                        id="btnStopService"
+                                        @(!Model.WindowsServiceStatus.CanStop ? "disabled" : "")>
+                                    <i class="bi bi-stop-fill me-1"></i>Stop
+                                </button>
+                            </div>
+                            <div class="btn-group w-100">
+                                <button class="btn btn-outline-primary btn-sm"
+                                        onclick="installWindowsService()"
+                                        id="btnInstallService"
+                                        @(!Model.WindowsServiceStatus.CanInstall ? "disabled" : "")>
+                                    <i class="bi bi-download me-1"></i>Install
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm"
+                                        onclick="uninstallWindowsService()"
+                                        id="btnUninstallService"
+                                        @(!Model.WindowsServiceStatus.CanUninstall ? "disabled" : "")>
+                                    <i class="bi bi-trash me-1"></i>Uninstall
+                                </button>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="text-muted text-center py-3">
+                        <i class="bi bi-question-circle fs-1 d-block mb-2"></i>
+                        Service status unavailable.
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Database Heartbeat Card -->
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <i class="bi bi-activity me-2"></i>Database Heartbeat
             </div>
             <div class="card-body" id="serviceStatusContainer">
                 @if (Model.ServiceStatus != null)
@@ -135,7 +217,7 @@
                         <div class="fs-4 me-3">
                             @if (Model.ServiceStatus.IsHealthy)
                             {
-                                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Running</span>
+                                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Healthy</span>
                             }
                             else if (Model.ServiceStatus.Status == "Stopped")
                             {
@@ -170,7 +252,7 @@
                 {
                     <div class="text-muted text-center py-3">
                         <i class="bi bi-question-circle fs-1 d-block mb-2"></i>
-                        Service status unknown. The service may not be running or has not reported yet.
+                        No heartbeat received yet.
                     </div>
                 }
             </div>
@@ -492,5 +574,96 @@
             console.log('Failed to refresh service status');
         }
     }, 30000);
+
+    // Windows Service control functions
+    async function startWindowsService() {
+        await serviceOperation('/JobManagement/StartService', 'Starting service...');
+    }
+
+    async function stopWindowsService() {
+        await serviceOperation('/JobManagement/StopService', 'Stopping service...');
+    }
+
+    async function installWindowsService() {
+        if (!confirm('Install RVTools Import Service?\n\nThe service executable must exist at the configured path.')) return;
+        await serviceOperation('/JobManagement/InstallService', 'Installing service...');
+    }
+
+    async function uninstallWindowsService() {
+        if (!confirm('Uninstall RVTools Import Service?\n\nThis will stop the service if running.')) return;
+        await serviceOperation('/JobManagement/UninstallService', 'Uninstalling service...');
+    }
+
+    async function serviceOperation(url, loadingMessage) {
+        showToast(true, loadingMessage);
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-XSRF-TOKEN': requestToken
+                }
+            });
+
+            if (!response.ok) {
+                const text = await response.text();
+                try {
+                    const errorData = JSON.parse(text);
+                    showToast(false, errorData.error || `Server error: ${response.status}`);
+                } catch {
+                    showToast(false, `Server error: ${response.status}`);
+                }
+                return;
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast(true, result.message || 'Operation completed');
+                // Refresh page after operation
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showToast(false, result.error || 'Operation failed');
+            }
+        } catch (error) {
+            showToast(false, 'Operation failed: ' + error.message);
+        }
+    }
+
+    // Poll Windows Service status every 30 seconds
+    setInterval(async () => {
+        try {
+            const response = await fetch('/JobManagement/WindowsServiceStatus');
+            if (response.ok) {
+                const data = await response.json();
+                updateWindowsServiceStatusUI(data.status, data.isAdmin);
+            }
+        } catch (e) {
+            console.log('Failed to refresh Windows Service status');
+        }
+    }, 30000);
+
+    function updateWindowsServiceStatusUI(status, isAdmin) {
+        // Update badge
+        const badge = document.getElementById('winServiceBadge');
+        if (badge) {
+            badge.className = `badge ${status.stateBadgeClass}`;
+            badge.innerHTML = `<i class="${status.stateIcon} me-1"></i>${status.stateDisplay}`;
+        }
+
+        // Update buttons if admin
+        if (isAdmin) {
+            const btnStart = document.getElementById('btnStartService');
+            const btnStop = document.getElementById('btnStopService');
+            const btnInstall = document.getElementById('btnInstallService');
+            const btnUninstall = document.getElementById('btnUninstallService');
+
+            if (btnStart) btnStart.disabled = !status.canStart;
+            if (btnStop) btnStop.disabled = !status.canStop;
+            if (btnInstall) btnInstall.disabled = !status.canInstall;
+            if (btnUninstall) btnUninstall.disabled = !status.canUninstall;
+        }
+    }
 </script>
 }
