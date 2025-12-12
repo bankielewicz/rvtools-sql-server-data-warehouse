@@ -356,40 +356,6 @@ public class JobManagementController : Controller
         return Json(new { success = result.Success, message = result.Message, error = result.ErrorDetails });
     }
 
-    /// <summary>
-    /// Install the Windows Service.
-    /// </summary>
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> InstallService()
-    {
-        if (!_serviceManager.IsCurrentUserLocalAdmin())
-        {
-            return Json(new { success = false, error = "Local administrator privileges required" });
-        }
-
-        _logger.LogInformation("User {User} requested service install", User.Identity?.Name);
-        var result = await _serviceManager.InstallServiceAsync();
-        return Json(new { success = result.Success, message = result.Message, error = result.ErrorDetails });
-    }
-
-    /// <summary>
-    /// Uninstall the Windows Service.
-    /// </summary>
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UninstallService()
-    {
-        if (!_serviceManager.IsCurrentUserLocalAdmin())
-        {
-            return Json(new { success = false, error = "Local administrator privileges required" });
-        }
-
-        _logger.LogInformation("User {User} requested service uninstall", User.Identity?.Name);
-        var result = await _serviceManager.UninstallServiceAsync();
-        return Json(new { success = result.Success, message = result.Message, error = result.ErrorDetails });
-    }
-
     #endregion
 
     /// <summary>

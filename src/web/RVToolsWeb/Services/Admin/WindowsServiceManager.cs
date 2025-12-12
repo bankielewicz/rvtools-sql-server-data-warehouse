@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Security.Principal;
 using System.ServiceProcess;
 using RVToolsWeb.Models.ViewModels.Admin;
@@ -63,8 +62,6 @@ public class WindowsServiceManager : IWindowsServiceManager
                 StateDisplay = sc.Status.ToString(),
                 CanStart = sc.Status == ServiceControllerStatus.Stopped,
                 CanStop = sc.Status == ServiceControllerStatus.Running,
-                CanInstall = false,
-                CanUninstall = sc.Status == ServiceControllerStatus.Stopped,
                 ExecutablePath = _executablePath
             };
         }
@@ -79,8 +76,6 @@ public class WindowsServiceManager : IWindowsServiceManager
                 StateDisplay = "Not Installed",
                 CanStart = false,
                 CanStop = false,
-                CanInstall = true,
-                CanUninstall = false,
                 ExecutablePath = _executablePath
             };
         }
@@ -181,89 +176,6 @@ public class WindowsServiceManager : IWindowsServiceManager
         });
     }
 
-    public async Task<ServiceOperationResult> InstallServiceAsync()
-    {
-        if (!OperatingSystem.IsWindows())
-        {
-            return ServiceOperationResult.Fail("Windows Service management is only available on Windows");
-        }
-
-        _logger.LogInformation("Installing service {ServiceName} from {Path}", _serviceName, _executablePath);
-
-        // Verify executable exists
-        if (!File.Exists(_executablePath))
-        {
-            return ServiceOperationResult.Fail(
-                "Service executable not found",
-                $"Expected path: {_executablePath}");
-        }
-
-        return await RunImpersonatedAsync(() =>
-        {
-            try
-            {
-                var arguments = $"create \"{_serviceName}\" binPath= \"{_executablePath}\" DisplayName= \"{_displayName}\" start= auto";
-
-                var result = RunScCommand(arguments);
-                if (result.Success)
-                {
-                    _logger.LogInformation("Service {ServiceName} installed successfully", _serviceName);
-                }
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to install service {ServiceName}", _serviceName);
-                return ServiceOperationResult.Fail("Failed to install service", ex.Message);
-            }
-        });
-    }
-
-    public async Task<ServiceOperationResult> UninstallServiceAsync()
-    {
-        if (!OperatingSystem.IsWindows())
-        {
-            return ServiceOperationResult.Fail("Windows Service management is only available on Windows");
-        }
-
-        _logger.LogInformation("Uninstalling service {ServiceName}", _serviceName);
-
-        return await RunImpersonatedAsync(() =>
-        {
-            try
-            {
-                // First, ensure service is stopped
-                try
-                {
-                    using var sc = new ServiceController(_serviceName);
-                    if (sc.Status != ServiceControllerStatus.Stopped)
-                    {
-                        sc.Stop();
-                        sc.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(30));
-                    }
-                }
-                catch (InvalidOperationException)
-                {
-                    // Service doesn't exist - that's fine
-                    return ServiceOperationResult.Ok("Service was not installed");
-                }
-
-                var result = RunScCommand($"delete \"{_serviceName}\"");
-                if (result.Success)
-                {
-                    _logger.LogInformation("Service {ServiceName} uninstalled successfully", _serviceName);
-                }
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to uninstall service {ServiceName}", _serviceName);
-                return ServiceOperationResult.Fail("Failed to uninstall service", ex.Message);
-            }
-        });
-    }
 
     public bool IsCurrentUserLocalAdmin()
     {
@@ -344,36 +256,6 @@ public class WindowsServiceManager : IWindowsServiceManager
         }
     }
 
-    private static ServiceOperationResult RunScCommand(string arguments)
-    {
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = "sc.exe",
-            Arguments = arguments,
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true
-        };
-
-        using var process = Process.Start(startInfo);
-        if (process == null)
-        {
-            return ServiceOperationResult.Fail("Failed to start sc.exe");
-        }
-
-        var stdout = process.StandardOutput.ReadToEnd();
-        var stderr = process.StandardError.ReadToEnd();
-        process.WaitForExit(30000);
-
-        if (process.ExitCode == 0)
-        {
-            return ServiceOperationResult.Ok(stdout.Trim());
-        }
-
-        var errorMessage = !string.IsNullOrEmpty(stderr) ? stderr : stdout;
-        return ServiceOperationResult.Fail($"sc.exe returned exit code {process.ExitCode}", errorMessage.Trim());
-    }
 
     private static WindowsServiceState MapState(ServiceControllerStatus status)
     {

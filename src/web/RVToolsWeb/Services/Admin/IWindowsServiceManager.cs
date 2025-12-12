@@ -22,15 +22,6 @@ public interface IWindowsServiceManager
     /// </summary>
     Task<ServiceOperationResult> StopServiceAsync();
 
-    /// <summary>
-    /// Installs the Windows Service using impersonation.
-    /// </summary>
-    Task<ServiceOperationResult> InstallServiceAsync();
-
-    /// <summary>
-    /// Uninstalls the Windows Service using impersonation.
-    /// </summary>
-    Task<ServiceOperationResult> UninstallServiceAsync();
 
     /// <summary>
     /// Checks if the current user is a local administrator.

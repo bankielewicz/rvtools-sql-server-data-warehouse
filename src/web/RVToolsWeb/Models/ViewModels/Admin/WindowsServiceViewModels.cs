@@ -27,8 +27,6 @@ public class WindowsServiceStatus
     public string StateDisplay { get; set; } = string.Empty;
     public bool CanStart { get; set; }
     public bool CanStop { get; set; }
-    public bool CanInstall { get; set; }
-    public bool CanUninstall { get; set; }
     public string? ErrorMessage { get; set; }
     public string? ExecutablePath { get; set; }
 

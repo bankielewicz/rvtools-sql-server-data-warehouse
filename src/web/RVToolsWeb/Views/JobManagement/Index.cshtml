@@ -164,7 +164,7 @@
                     {
                         <div class="border-top pt-3">
                             <h6 class="text-muted mb-2"><i class="bi bi-sliders me-1"></i>Service Control</h6>
-                            <div class="btn-group w-100 mb-2">
+                            <div class="btn-group w-100">
                                 <button class="btn btn-outline-success btn-sm"
                                         onclick="startWindowsService()"
                                         id="btnStartService"
@@ -176,20 +176,6 @@
                                         id="btnStopService"
                                         @(!Model.WindowsServiceStatus.CanStop ? "disabled" : "")>
                                     <i class="bi bi-stop-fill me-1"></i>Stop
-                                </button>
-                            </div>
-                            <div class="btn-group w-100">
-                                <button class="btn btn-outline-primary btn-sm"
-                                        onclick="installWindowsService()"
-                                        id="btnInstallService"
-                                        @(!Model.WindowsServiceStatus.CanInstall ? "disabled" : "")>
-                                    <i class="bi bi-download me-1"></i>Install
-                                </button>
-                                <button class="btn btn-outline-danger btn-sm"
-                                        onclick="uninstallWindowsService()"
-                                        id="btnUninstallService"
-                                        @(!Model.WindowsServiceStatus.CanUninstall ? "disabled" : "")>
-                                    <i class="bi bi-trash me-1"></i>Uninstall
                                 </button>
                             </div>
                         </div>
@@ -584,16 +570,6 @@
         await serviceOperation('/JobManagement/StopService', 'Stopping service...');
     }
 
-    async function installWindowsService() {
-        if (!confirm('Install RVTools Import Service?\n\nThe service executable must exist at the configured path.')) return;
-        await serviceOperation('/JobManagement/InstallService', 'Installing service...');
-    }
-
-    async function uninstallWindowsService() {
-        if (!confirm('Uninstall RVTools Import Service?\n\nThis will stop the service if running.')) return;
-        await serviceOperation('/JobManagement/UninstallService', 'Uninstalling service...');
-    }
-
     async function serviceOperation(url, loadingMessage) {
         showToast(true, loadingMessage);
 
@@ -656,13 +632,9 @@
         if (isAdmin) {
             const btnStart = document.getElementById('btnStartService');
             const btnStop = document.getElementById('btnStopService');
-            const btnInstall = document.getElementById('btnInstallService');
-            const btnUninstall = document.getElementById('btnUninstallService');
 
             if (btnStart) btnStart.disabled = !status.canStart;
             if (btnStop) btnStop.disabled = !status.canStop;
-            if (btnInstall) btnInstall.disabled = !status.canInstall;
-            if (btnUninstall) btnUninstall.disabled = !status.canUninstall;
         }
     }
 </script>
