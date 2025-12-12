@@ -267,19 +267,31 @@ public class WindowsServiceManager : IWindowsServiceManager
 
     public bool IsCurrentUserLocalAdmin()
     {
-        if (!OperatingSystem.IsWindows())
+        var user = _httpContextAccessor.HttpContext?.User;
+        if (user == null)
         {
             return false;
         }
 
-        var windowsIdentity = _httpContextAccessor.HttpContext?.User?.Identity as WindowsIdentity;
-        if (windowsIdentity == null)
+        // First, check if user has Admin role in the application
+        // This allows cookie-based auth users (LDAP/LocalDB) to see service controls
+        if (user.IsInRole("Admin"))
         {
-            return false;
+            return true;
         }
 
-        var principal = new WindowsPrincipal(windowsIdentity);
-        return principal.IsInRole(WindowsBuiltInRole.Administrator);
+        // For Windows Integrated Auth, also check local Administrators group
+        if (OperatingSystem.IsWindows())
+        {
+            var windowsIdentity = user.Identity as WindowsIdentity;
+            if (windowsIdentity != null)
+            {
+                var principal = new WindowsPrincipal(windowsIdentity);
+                return principal.IsInRole(WindowsBuiltInRole.Administrator);
+            }
+        }
+
+        return false;
     }
 
     private async Task<ServiceOperationResult> RunImpersonatedAsync(Func<ServiceOperationResult> action)
@@ -287,7 +299,27 @@ public class WindowsServiceManager : IWindowsServiceManager
         var windowsIdentity = _httpContextAccessor.HttpContext?.User?.Identity as WindowsIdentity;
         if (windowsIdentity == null)
         {
-            return ServiceOperationResult.Fail("Windows authentication required");
+            // Cookie-based auth (LDAP/LocalDB) doesn't provide a Windows token for impersonation
+            // Fall back to running under the app pool identity
+            _logger.LogWarning("No Windows identity available for impersonation. Running under app pool identity.");
+
+            try
+            {
+                return await Task.Run(action);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning("Access denied running under app pool identity: {Error}", ex.Message);
+                return ServiceOperationResult.Fail(
+                    "Access denied. The IIS application pool identity does not have permission to manage Windows services. " +
+                    "Either configure Windows Integrated Authentication or run the app pool as a local administrator.",
+                    ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error running service operation under app pool identity");
+                return ServiceOperationResult.Fail("Operation failed", ex.Message);
+            }
         }
 
         var userName = windowsIdentity.Name;
