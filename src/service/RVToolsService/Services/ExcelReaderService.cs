@@ -11,9 +11,6 @@ public class ExcelReaderService : IExcelReaderService
 {
     private readonly ILogger<ExcelReaderService> _logger;
 
-    // Regex for sanitizing column names (same as PowerShell)
-    private static readonly Regex InvalidColumnChars = new(@"[^\w]", RegexOptions.Compiled);
-
     public ExcelReaderService(ILogger<ExcelReaderService> logger)
     {
         _logger = logger;
@@ -187,13 +184,19 @@ public class ExcelReaderService : IExcelReaderService
     }
 
     /// <summary>
-    /// Sanitizes a column name by removing invalid characters.
-    /// Matches PowerShell behavior: $sanitized = $columnName -replace '[^\w]', ''
+    /// Sanitizes a column name by replacing invalid characters with underscores.
+    /// Matches StagingService/PowerShell: $sanitized = $columnName -replace '[^a-zA-Z0-9_]', '_'
     /// </summary>
     private static string SanitizeColumnName(string columnName)
     {
-        // Replace non-word characters with empty string
-        var sanitized = InvalidColumnChars.Replace(columnName, "");
+        // Replace non-alphanumeric with underscore (match StagingService/PowerShell)
+        var sanitized = Regex.Replace(columnName, @"[^a-zA-Z0-9_]", "_");
+
+        // Replace multiple underscores with single
+        sanitized = Regex.Replace(sanitized, @"__+", "_");
+
+        // Trim leading/trailing underscores
+        sanitized = sanitized.Trim('_');
 
         // Ensure we don't end up with empty string
         if (string.IsNullOrEmpty(sanitized))

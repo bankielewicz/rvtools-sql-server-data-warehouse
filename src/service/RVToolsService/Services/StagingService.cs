@@ -114,6 +114,21 @@ public class StagingService : IStagingService
             _logger.LogDebug("Sheet '{SheetName}': Mapped {MappedCount}/{TotalCount} columns to staging",
                 sheetData.Name, columnMap.Count, sheetData.Headers.Count);
 
+            // Log unmapped columns for diagnostics
+            var unmappedExcel = sheetData.Headers.Except(columnMap.Keys, StringComparer.OrdinalIgnoreCase).ToList();
+            if (unmappedExcel.Count > 0)
+            {
+                _logger.LogDebug("[{SheetName}] Unmapped Excel columns ({Count}): {Columns}",
+                    sheetData.Name, unmappedExcel.Count, string.Join(", ", unmappedExcel.Take(20)));
+            }
+
+            var unmappedStaging = stagingColumns.Except(columnMap.Values, StringComparer.OrdinalIgnoreCase).ToList();
+            if (unmappedStaging.Count > 0)
+            {
+                _logger.LogDebug("[{SheetName}] Unmapped staging columns ({Count}): {Columns}",
+                    sheetData.Name, unmappedStaging.Count, string.Join(", ", unmappedStaging.Take(20)));
+            }
+
             // Process rows in batches
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
