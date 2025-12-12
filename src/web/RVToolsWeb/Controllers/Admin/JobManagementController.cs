@@ -32,7 +32,8 @@ public class JobManagementController : Controller
         {
             Jobs = await _jobService.GetAllJobsAsync(),
             ServiceStatus = await _jobService.GetServiceStatusAsync(),
-            RecentRuns = await _jobService.GetRecentJobRunsAsync(10)
+            RecentRuns = await _jobService.GetRecentJobRunsAsync(10),
+            Statistics = await _jobService.GetStatisticsAsync()
         };
 
         return View(viewModel);

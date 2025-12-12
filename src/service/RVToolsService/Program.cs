@@ -58,6 +58,9 @@ builder.Services.AddQuartzHostedService(options =>
 // Custom scheduler service that loads jobs from database
 builder.Services.AddSingleton<ISchedulerService, SchedulerService>();
 
+// Register Phase 4 file monitoring service
+builder.Services.AddSingleton<IFileMonitorService, FileMonitorService>();
+
 // Register hosted service (Worker)
 builder.Services.AddHostedService<Worker>();
 

@@ -16,17 +16,20 @@ public class Worker : BackgroundService
     private readonly IConfiguration _configuration;
     private readonly IServiceProvider _serviceProvider;
     private readonly ISchedulerService _schedulerService;
+    private readonly IFileMonitorService _fileMonitorService;
 
     public Worker(
         ILogger<Worker> logger,
         IConfiguration configuration,
         IServiceProvider serviceProvider,
-        ISchedulerService schedulerService)
+        ISchedulerService schedulerService,
+        IFileMonitorService fileMonitorService)
     {
         _logger = logger;
         _configuration = configuration;
         _serviceProvider = serviceProvider;
         _schedulerService = schedulerService;
+        _fileMonitorService = fileMonitorService;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -43,6 +46,18 @@ public class Worker : BackgroundService
         {
             _logger.LogError(ex, "Failed to start Quartz.NET scheduler: {Error}", ex.Message);
             // Continue running - manual triggers will still work
+        }
+
+        // Start file monitoring for FileWatcher jobs (Phase 4)
+        try
+        {
+            await _fileMonitorService.StartAsync(stoppingToken);
+            _logger.LogInformation("File monitor service started - watching for new files");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to start file monitor service: {Error}", ex.Message);
+            // Continue running - scheduled and manual triggers will still work
         }
 
         // Read intervals from configuration
@@ -72,6 +87,17 @@ public class Worker : BackgroundService
             }
 
             await Task.Delay(TimeSpan.FromSeconds(triggerPollInterval), stoppingToken);
+        }
+
+        // Stop file monitor service
+        try
+        {
+            await _fileMonitorService.StopAsync(stoppingToken);
+            _logger.LogInformation("File monitor service stopped");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error stopping file monitor service: {Error}", ex.Message);
         }
 
         // Stop Quartz.NET scheduler

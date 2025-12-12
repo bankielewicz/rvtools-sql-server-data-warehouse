@@ -70,4 +70,10 @@ public interface IJobManagementService
     /// Get the current service status.
     /// </summary>
     Task<ServiceStatusViewModel?> GetServiceStatusAsync();
+
+    // ===== Statistics =====
+    /// <summary>
+    /// Get job statistics for the dashboard.
+    /// </summary>
+    Task<JobStatisticsViewModel> GetStatisticsAsync();
 }

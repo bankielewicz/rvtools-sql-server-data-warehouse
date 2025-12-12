@@ -50,6 +50,78 @@
 </div>
 
 <div class="row">
+    <!-- Statistics Row -->
+    <div class="col-12 mb-4">
+        <div class="row g-3">
+            <!-- Total Jobs -->
+            <div class="col-md-3 col-6">
+                <div class="card border-0 bg-light">
+                    <div class="card-body py-3">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0 bg-primary rounded p-2 me-3">
+                                <i class="bi bi-briefcase text-white"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted small">Total Jobs</div>
+                                <div class="fs-4 fw-bold">@Model.Statistics.TotalJobs</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- 24h Runs -->
+            <div class="col-md-3 col-6">
+                <div class="card border-0 bg-light">
+                    <div class="card-body py-3">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0 bg-info rounded p-2 me-3">
+                                <i class="bi bi-play-circle text-white"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted small">Runs (24h)</div>
+                                <div class="fs-4 fw-bold">@Model.Statistics.RunsLast24Hours</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Success Rate -->
+            <div class="col-md-3 col-6">
+                <div class="card border-0 bg-light">
+                    <div class="card-body py-3">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0 @(Model.Statistics.SuccessRateLast24Hours >= 95 ? "bg-success" : Model.Statistics.SuccessRateLast24Hours >= 80 ? "bg-warning" : "bg-danger") rounded p-2 me-3">
+                                <i class="bi bi-check-circle text-white"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted small">Success Rate (24h)</div>
+                                <div class="fs-4 fw-bold">@Model.Statistics.SuccessRateDisplay</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Files Processed -->
+            <div class="col-md-3 col-6">
+                <div class="card border-0 bg-light">
+                    <div class="card-body py-3">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0 bg-secondary rounded p-2 me-3">
+                                <i class="bi bi-file-earmark-spreadsheet text-white"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted small">Files (24h)</div>
+                                <div class="fs-4 fw-bold">@Model.Statistics.FilesProcessedLast24Hours</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
     <!-- Service Status Card -->
     <div class="col-lg-4 mb-4">
         <div class="card">
@@ -101,6 +173,29 @@
                         Service status unknown. The service may not be running or has not reported yet.
                     </div>
                 }
+            </div>
+        </div>
+
+        <!-- Job Types Card -->
+        <div class="card mt-4">
+            <div class="card-header bg-secondary text-white">
+                <i class="bi bi-diagram-3 me-2"></i>Job Types
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-around text-center">
+                    <div>
+                        <div class="fs-4 fw-bold text-primary">@Model.Statistics.ScheduledJobs</div>
+                        <div class="small text-muted"><i class="bi bi-clock me-1"></i>Scheduled</div>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold text-success">@Model.Statistics.FileWatcherJobs</div>
+                        <div class="small text-muted"><i class="bi bi-folder-symlink me-1"></i>File Watcher</div>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold text-secondary">@Model.Statistics.ManualJobs</div>
+                        <div class="small text-muted"><i class="bi bi-hand-index me-1"></i>Manual</div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -161,16 +256,39 @@
                                 {
                                     <tr class="@(!job.IsEnabled ? "table-secondary" : "")">
                                         <td>
-                                            <a asp-action="Edit" asp-route-id="@job.JobId" class="text-decoration-none">
-                                                <strong>@job.JobName</strong>
-                                            </a>
-                                            @if (!string.IsNullOrEmpty(job.VIServer))
-                                            {
-                                                <small class="d-block text-muted">vCenter: @job.VIServer</small>
-                                            }
+                                            <div class="d-flex align-items-start">
+                                                <span class="me-2 mt-1" title="@job.JobType">
+                                                    @if (job.JobType == "Scheduled")
+                                                    {
+                                                        <i class="bi bi-clock text-primary"></i>
+                                                    }
+                                                    else if (job.JobType == "FileWatcher")
+                                                    {
+                                                        <i class="bi bi-folder-symlink text-success"></i>
+                                                    }
+                                                    else
+                                                    {
+                                                        <i class="bi bi-hand-index text-secondary"></i>
+                                                    }
+                                                </span>
+                                                <div>
+                                                    <a asp-action="Edit" asp-route-id="@job.JobId" class="text-decoration-none">
+                                                        <strong>@job.JobName</strong>
+                                                    </a>
+                                                    @if (!string.IsNullOrEmpty(job.VIServer))
+                                                    {
+                                                        <small class="d-block text-muted">vCenter: @job.VIServer</small>
+                                                    }
+                                                </div>
+                                            </div>
                                         </td>
                                         <td>
-                                            @if (!string.IsNullOrEmpty(job.CronSchedule))
+                                            @if (job.JobType == "FileWatcher")
+                                            {
+                                                <span class="badge bg-success-subtle text-success">File Watch</span>
+                                                <small class="d-block text-muted">Auto-trigger</small>
+                                            }
+                                            else if (!string.IsNullOrEmpty(job.CronSchedule))
                                             {
                                                 <code class="small">@job.CronSchedule</code>
                                                 <small class="d-block text-muted">@job.TimeZone</small>

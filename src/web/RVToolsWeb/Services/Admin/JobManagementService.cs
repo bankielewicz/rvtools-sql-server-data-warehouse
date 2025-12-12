@@ -398,4 +398,49 @@ public class JobManagementService : IJobManagementService
     }
 
     #endregion
+
+    #region Statistics
+
+    public async Task<JobStatisticsViewModel> GetStatisticsAsync()
+    {
+        const string sql = @"
+            -- Job counts by type
+            SELECT
+                COUNT(*) AS TotalJobs,
+                SUM(CASE WHEN IsEnabled = 1 THEN 1 ELSE 0 END) AS EnabledJobs,
+                SUM(CASE WHEN JobType = 'Scheduled' THEN 1 ELSE 0 END) AS ScheduledJobs,
+                SUM(CASE WHEN JobType = 'FileWatcher' THEN 1 ELSE 0 END) AS FileWatcherJobs,
+                SUM(CASE WHEN JobType = 'Manual' THEN 1 ELSE 0 END) AS ManualJobs
+            FROM [Service].[Jobs];
+
+            -- 24-hour run statistics
+            SELECT
+                COUNT(*) AS RunsLast24Hours,
+                SUM(CASE WHEN Status = 'Success' THEN 1 ELSE 0 END) AS SuccessfulRunsLast24Hours,
+                SUM(CASE WHEN Status IN ('Failed', 'PartialSuccess') THEN 1 ELSE 0 END) AS FailedRunsLast24Hours,
+                ISNULL(SUM(FilesProcessed), 0) AS FilesProcessedLast24Hours
+            FROM [Service].[JobRuns]
+            WHERE StartTime >= DATEADD(HOUR, -24, GETUTCDATE());";
+
+        using var connection = _connectionFactory.CreateConnection();
+        using var multi = await connection.QueryMultipleAsync(sql);
+
+        var jobStats = await multi.ReadSingleOrDefaultAsync<dynamic>();
+        var runStats = await multi.ReadSingleOrDefaultAsync<dynamic>();
+
+        return new JobStatisticsViewModel
+        {
+            TotalJobs = jobStats?.TotalJobs ?? 0,
+            EnabledJobs = jobStats?.EnabledJobs ?? 0,
+            ScheduledJobs = jobStats?.ScheduledJobs ?? 0,
+            FileWatcherJobs = jobStats?.FileWatcherJobs ?? 0,
+            ManualJobs = jobStats?.ManualJobs ?? 0,
+            RunsLast24Hours = runStats?.RunsLast24Hours ?? 0,
+            SuccessfulRunsLast24Hours = runStats?.SuccessfulRunsLast24Hours ?? 0,
+            FailedRunsLast24Hours = runStats?.FailedRunsLast24Hours ?? 0,
+            FilesProcessedLast24Hours = runStats?.FilesProcessedLast24Hours ?? 0
+        };
+    }
+
+    #endregion
 }

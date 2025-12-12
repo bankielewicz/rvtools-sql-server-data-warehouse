@@ -200,6 +200,31 @@ public class JobManagementIndexViewModel
     public IEnumerable<JobViewModel> Jobs { get; set; } = Enumerable.Empty<JobViewModel>();
     public ServiceStatusViewModel? ServiceStatus { get; set; }
     public IEnumerable<JobRunViewModel> RecentRuns { get; set; } = Enumerable.Empty<JobRunViewModel>();
+    public JobStatisticsViewModel Statistics { get; set; } = new();
+}
+
+/// <summary>
+/// Statistics for the dashboard.
+/// </summary>
+public class JobStatisticsViewModel
+{
+    public int TotalJobs { get; set; }
+    public int EnabledJobs { get; set; }
+    public int ScheduledJobs { get; set; }
+    public int FileWatcherJobs { get; set; }
+    public int ManualJobs { get; set; }
+
+    // 24-hour statistics
+    public int RunsLast24Hours { get; set; }
+    public int SuccessfulRunsLast24Hours { get; set; }
+    public int FailedRunsLast24Hours { get; set; }
+    public int FilesProcessedLast24Hours { get; set; }
+
+    // Computed properties
+    public double SuccessRateLast24Hours => RunsLast24Hours > 0
+        ? Math.Round((double)SuccessfulRunsLast24Hours / RunsLast24Hours * 100, 1)
+        : 0;
+    public string SuccessRateDisplay => $"{SuccessRateLast24Hours}%";
 }
 
 /// <summary>
