@@ -1,13 +1,20 @@
 /*
     001_Jobs.sql
-    Creates the Service.Jobs table for import job configuration.
+    Creates the Service schema (if needed) and Service.Jobs table for import job configuration.
 
     Execute against: RVToolsDW database
-    Requires: Service schema (006_CreateServiceSchema.sql)
     Part of: Phase 1 - Foundation
 */
 
 USE [RVToolsDW];
+GO
+
+-- Create Service schema if it doesn't exist
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'Service')
+BEGIN
+    EXEC('CREATE SCHEMA [Service] AUTHORIZATION dbo');
+    PRINT 'Service schema created successfully';
+END
 GO
 
 IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[Service].[Jobs]'))
