@@ -420,9 +420,23 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'RequestVerificationToken': requestToken
+                    'X-XSRF-TOKEN': requestToken
                 }
             });
+
+            // Check if response is OK before parsing JSON
+            if (!response.ok) {
+                // Try to parse error response
+                const text = await response.text();
+                try {
+                    const errorData = JSON.parse(text);
+                    showToast(false, errorData.error || `Server error: ${response.status}`);
+                } catch {
+                    showToast(false, `Server error: ${response.status} ${response.statusText}`);
+                }
+                return;
+            }
+
             const result = await response.json();
 
             if (result.success) {
@@ -440,7 +454,7 @@
             const response = await fetch(`/JobManagement/SetEnabled/${jobId}?enabled=${enabled}`, {
                 method: 'POST',
                 headers: {
-                    'RequestVerificationToken': requestToken
+                    'X-XSRF-TOKEN': requestToken
                 }
             });
             const result = await response.json();
