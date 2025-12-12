@@ -29,13 +29,20 @@ builder.Services.AddDataProtection()
     .SetApplicationName(builder.Configuration["DataProtection:ApplicationName"] ?? "RVTools")
     .PersistKeysToFileSystem(new DirectoryInfo(keyStorePath));
 
-// Register shared services
+// Register shared services (from RVToolsShared)
 builder.Services.AddSingleton<ISqlConnectionFactory>(sp =>
     new SqlConnectionFactory(builder.Configuration));
 builder.Services.AddSingleton<ICredentialProtectionService, CredentialProtectionService>();
 
-// Register service-specific services
+// Register service-specific services (Phase 1)
 builder.Services.AddSingleton<IExcelReaderService, ExcelReaderService>();
+
+// Register Phase 2 services
+builder.Services.AddScoped<IBatchService, BatchService>();
+builder.Services.AddScoped<IStagingService, StagingService>();
+builder.Services.AddScoped<IImportJobService, ImportJobService>();
+builder.Services.AddScoped<IJobTriggerService, JobTriggerService>();
+builder.Services.AddScoped<IServiceHealthService, ServiceHealthService>();
 
 // Register hosted service (Worker)
 builder.Services.AddHostedService<Worker>();
