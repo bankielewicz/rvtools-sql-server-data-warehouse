@@ -1,0 +1,172 @@
+@model RVToolsWeb.Models.ViewModels.Admin.JobRunViewModel
+@{
+    ViewData["Title"] = $"Job Run #{Model.JobRunId}";
+}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-action="Index">Import Jobs</a></li>
+                <li class="breadcrumb-item"><a asp-action="History" asp-route-id="@Model.JobId">@Model.JobName</a></li>
+                <li class="breadcrumb-item active">Run #@Model.JobRunId</li>
+            </ol>
+        </nav>
+        <h4 class="mb-0">
+            <i class="bi bi-file-earmark-text me-2"></i>Job Run Details: #@Model.JobRunId
+        </h4>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-info-circle me-2"></i>Run Information
+            </div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <tr>
+                        <th style="width: 40%;">Job Run ID</th>
+                        <td>#@Model.JobRunId</td>
+                    </tr>
+                    <tr>
+                        <th>Job</th>
+                        <td>
+                            <a asp-action="Edit" asp-route-id="@Model.JobId">@Model.JobName</a>
+                        </td>
+                    </tr>
+                    @if (Model.ImportBatchId.HasValue)
+                    {
+                        <tr>
+                            <th>Import Batch</th>
+                            <td>#@Model.ImportBatchId</td>
+                        </tr>
+                    }
+                    <tr>
+                        <th>Trigger Type</th>
+                        <td>
+                            <span class="badge bg-secondary">@Model.TriggerType</span>
+                        </td>
+                    </tr>
+                    @if (!string.IsNullOrEmpty(Model.TriggerUser))
+                    {
+                        <tr>
+                            <th>Triggered By</th>
+                            <td>@Model.TriggerUser</td>
+                        </tr>
+                    }
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-clock me-2"></i>Timing & Status
+            </div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <tr>
+                        <th style="width: 40%;">Status</th>
+                        <td>
+                            <span class="badge @Model.StatusCssClass.Replace("text-", "bg-") fs-6">
+                                @Model.Status
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Start Time</th>
+                        <td>@Model.StartTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                    </tr>
+                    <tr>
+                        <th>End Time</th>
+                        <td>
+                            @if (Model.EndTime.HasValue)
+                            {
+                                @Model.EndTime.Value.ToString("yyyy-MM-dd HH:mm:ss")
+                            }
+                            else
+                            {
+                                <span class="text-muted">Still running...</span>
+                            }
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Duration</th>
+                        <td>@Model.DurationDisplay</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-files me-2"></i>File Processing
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="display-4 text-success">@Model.FilesProcessed</div>
+                        <div class="text-muted">Files Processed</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="display-4 text-danger">@Model.FilesFailed</div>
+                        <div class="text-muted">Files Failed</div>
+                    </div>
+                </div>
+                @{
+                    var total = Model.FilesProcessed + Model.FilesFailed;
+                    var successRate = total > 0 ? (Model.FilesProcessed * 100.0 / total) : 0;
+                }
+                @if (total > 0)
+                {
+                    <div class="progress mt-3" style="height: 20px;">
+                        <div class="progress-bar bg-success" style="width: @successRate%">
+                            @Model.FilesProcessed
+                        </div>
+                        @if (Model.FilesFailed > 0)
+                        {
+                            <div class="progress-bar bg-danger" style="width: @(100 - successRate)%">
+                                @Model.FilesFailed
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="col-lg-6 mb-4">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Error Details
+                </div>
+                <div class="card-body">
+                    <pre class="mb-0 small" style="white-space: pre-wrap;">@Model.ErrorMessage</pre>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <hr />
+        <div class="d-flex justify-content-between">
+            <a asp-action="History" asp-route-id="@Model.JobId" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Back to History
+            </a>
+            <a asp-action="Index" class="btn btn-outline-primary">
+                <i class="bi bi-list-task me-1"></i>All Jobs
+            </a>
+        </div>
+    </div>
+</div>

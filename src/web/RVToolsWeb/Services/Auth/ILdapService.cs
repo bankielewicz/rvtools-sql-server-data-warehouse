@@ -51,4 +51,9 @@ public interface ILdapService
     /// <param name="username">Username to query</param>
     /// <returns>List of group DNs the user is a member of</returns>
     Task<IEnumerable<string>> GetUserGroupsAsync(string username);
+
+    /// <summary>
+    /// Invalidates the cached LDAP settings. Call when settings are updated.
+    /// </summary>
+    void InvalidateSettingsCache();
 }

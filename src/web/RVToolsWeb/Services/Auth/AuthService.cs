@@ -1,6 +1,7 @@
 namespace RVToolsWeb.Services.Auth;
 
 using Dapper;
+using Microsoft.Extensions.Caching.Memory;
 using RVToolsWeb.Data;
 using RVToolsWeb.Models.DTOs;
 
@@ -11,15 +12,24 @@ public class AuthService : IAuthService
 {
     private readonly ISqlConnectionFactory _connectionFactory;
     private readonly ICredentialProtectionService _credentialProtection;
+    private readonly IMemoryCache _cache;
+    private readonly ILdapConnectionPool _connectionPool;
     private readonly ILogger<AuthService> _logger;
+
+    private const string LdapSettingsCacheKey = "LdapSettings";
+    private const string LdapSettingsPoolCacheKey = "LdapSettings_Pool";
 
     public AuthService(
         ISqlConnectionFactory connectionFactory,
         ICredentialProtectionService credentialProtection,
+        IMemoryCache cache,
+        ILdapConnectionPool connectionPool,
         ILogger<AuthService> logger)
     {
         _connectionFactory = connectionFactory;
         _credentialProtection = credentialProtection;
+        _cache = cache;
+        _connectionPool = connectionPool;
         _logger = logger;
     }
 
@@ -183,6 +193,10 @@ public class AuthService : IAuthService
             });
 
             _logger.LogInformation("LDAP settings updated for server: {Server}", ldapServer);
+
+            // Invalidate caches when settings change
+            InvalidateLdapCaches();
+
             return rows > 0;
         }
         catch (Exception ex)
@@ -190,5 +204,16 @@ public class AuthService : IAuthService
             _logger.LogError(ex, "Failed to update LDAP settings");
             return false;
         }
+    }
+
+    /// <summary>
+    /// Invalidates all LDAP-related caches. Called when settings are updated.
+    /// </summary>
+    private void InvalidateLdapCaches()
+    {
+        _cache.Remove(LdapSettingsCacheKey);
+        _cache.Remove(LdapSettingsPoolCacheKey);
+        _connectionPool.InvalidatePool();
+        _logger.LogInformation("LDAP settings caches invalidated");
     }
 }

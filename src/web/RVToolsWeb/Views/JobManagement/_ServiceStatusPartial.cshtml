@@ -1,0 +1,46 @@
+@model RVToolsWeb.Models.ViewModels.Admin.ServiceStatusViewModel
+
+@if (Model != null)
+{
+    <div class="d-flex align-items-center mb-3">
+        <div class="fs-4 me-3">
+            @if (Model.IsHealthy)
+            {
+                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Running</span>
+            }
+            else if (Model.Status == "Stopped")
+            {
+                <span class="badge bg-warning"><i class="bi bi-pause-circle me-1"></i>Stopped</span>
+            }
+            else
+            {
+                <span class="badge bg-danger"><i class="bi bi-exclamation-circle me-1"></i>@Model.StatusDisplay</span>
+            }
+        </div>
+    </div>
+    <table class="table table-sm mb-0">
+        <tr>
+            <th>Machine</th>
+            <td>@Model.MachineName</td>
+        </tr>
+        <tr>
+            <th>Last Heartbeat</th>
+            <td>@Model.TimeSinceHeartbeat</td>
+        </tr>
+        <tr>
+            <th>Active Jobs</th>
+            <td>@Model.ActiveJobs</td>
+        </tr>
+        <tr>
+            <th>Queued</th>
+            <td>@Model.QueuedJobs</td>
+        </tr>
+    </table>
+}
+else
+{
+    <div class="text-muted text-center py-3">
+        <i class="bi bi-question-circle fs-1 d-block mb-2"></i>
+        Service status unknown. The service may not be running or has not reported yet.
+    </div>
+}

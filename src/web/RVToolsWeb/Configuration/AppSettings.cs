@@ -83,4 +83,10 @@ public class AuthenticationConfig
     public int PasswordMinLength { get; set; } = 8;
     public bool RequireUppercase { get; set; } = true;
     public bool RequireDigit { get; set; } = true;
+
+    // LDAP Performance Settings
+    public int LdapConnectionTimeoutSeconds { get; set; } = 10;
+    public int LdapSettingsCacheMinutes { get; set; } = 5;
+    public int LdapConnectionPoolSize { get; set; } = 3;
+    public bool LdapDetailedTimingLogs { get; set; } = false;
 }

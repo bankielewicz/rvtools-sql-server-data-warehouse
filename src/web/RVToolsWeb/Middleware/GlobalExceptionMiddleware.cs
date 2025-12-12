@@ -42,15 +42,21 @@ public class GlobalExceptionMiddleware
 
     private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        // For API requests, return JSON error
-        if (context.Request.Path.StartsWithSegments("/api"))
+        // For API requests or AJAX calls, return JSON error
+        var isAjaxRequest = context.Request.Path.StartsWithSegments("/api")
+            || context.Request.Headers.XRequestedWith == "XMLHttpRequest"
+            || context.Request.Headers.Accept.Any(h => h?.Contains("application/json") == true)
+            || context.Request.ContentType?.Contains("application/json") == true;
+
+        if (isAjaxRequest)
         {
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;
 
             await context.Response.WriteAsJsonAsync(new
             {
-                error = "An error occurred processing your request.",
+                success = false,
+                error = GetUserFriendlyMessage(exception),
                 requestId = context.TraceIdentifier
             });
             return;

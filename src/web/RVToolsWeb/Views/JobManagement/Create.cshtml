@@ -1,0 +1,228 @@
+@model RVToolsWeb.Models.ViewModels.Admin.JobEditViewModel
+@{
+    ViewData["Title"] = "Create Import Job";
+    var timeZones = ViewBag.TimeZones as List<RVToolsWeb.Controllers.Admin.SelectListItem>;
+}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-action="Index">Import Jobs</a></li>
+                <li class="breadcrumb-item active">Create</li>
+            </ol>
+        </nav>
+        <h4 class="mb-0">
+            <i class="bi bi-plus-circle me-2"></i>Create Import Job
+        </h4>
+    </div>
+</div>
+
+<form asp-action="Create" method="post">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Job Details Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-info-circle me-2"></i>Job Details
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label asp-for="JobName" class="form-label"></label>
+                            <input asp-for="JobName" class="form-control" placeholder="e.g., Production vCenter Daily Import" />
+                            <span asp-validation-for="JobName" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="JobType" class="form-label"></label>
+                            <select asp-for="JobType" class="form-select">
+                                <option value="Scheduled">Scheduled</option>
+                                <option value="Manual">Manual Only</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="VIServer" class="form-label"></label>
+                            <input asp-for="VIServer" class="form-control" placeholder="e.g., vcenter01.domain.com" />
+                            <small class="text-muted">Optional: vCenter identifier for this job</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check mt-4">
+                                <input asp-for="IsEnabled" class="form-check-input" type="checkbox" />
+                                <label asp-for="IsEnabled" class="form-check-label">Enable this job</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Folder Configuration Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-folder me-2"></i>Folder Configuration
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label asp-for="IncomingFolder" class="form-label"></label>
+                        <input asp-for="IncomingFolder" class="form-control" placeholder="e.g., C:\RVTools\vcenter01\incoming" />
+                        <span asp-validation-for="IncomingFolder" class="text-danger"></span>
+                        <small class="text-muted">Folder where RVTools exports will be placed</small>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="ProcessedFolder" class="form-label"></label>
+                        <input asp-for="ProcessedFolder" class="form-control" placeholder="e.g., C:\RVTools\vcenter01\processed" />
+                        <small class="text-muted">Successfully imported files are moved here (optional)</small>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="ErrorsFolder" class="form-label"></label>
+                        <input asp-for="ErrorsFolder" class="form-control" placeholder="e.g., C:\RVTools\vcenter01\errors" />
+                        <small class="text-muted">Failed import files are moved here (optional)</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Schedule Configuration Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-calendar-event me-2"></i>Schedule Configuration
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="CronSchedule" class="form-label"></label>
+                            <input asp-for="CronSchedule" class="form-control font-monospace" placeholder="e.g., 0 0 2 * * ?" />
+                            <small class="text-muted">
+                                Quartz cron expression.
+                                <a href="https://www.quartz-scheduler.net/documentation/quartz-3.x/tutorial/crontriggers.html" target="_blank">Reference</a>
+                            </small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="TimeZone" class="form-label"></label>
+                            <select asp-for="TimeZone" class="form-select">
+                                @if (timeZones != null)
+                                {
+                                    @foreach (var tz in timeZones)
+                                    {
+                                        <option value="@tz.Value" selected="@(tz.Value == Model.TimeZone)">@tz.Text</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-lightbulb me-2"></i>
+                        <strong>Common Cron Expressions:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li><code>0 0 2 * * ?</code> - Daily at 2:00 AM</li>
+                            <li><code>0 0 */6 * * ?</code> - Every 6 hours</li>
+                            <li><code>0 0 2 ? * MON-FRI</code> - Weekdays at 2:00 AM</li>
+                            <li><code>0 0 2 ? * SUN</code> - Weekly on Sunday at 2:00 AM</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Database Connection Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-database me-2"></i>Database Connection
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="ServerInstance" class="form-label"></label>
+                            <input asp-for="ServerInstance" class="form-control" />
+                            <span asp-validation-for="ServerInstance" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="DatabaseName" class="form-label"></label>
+                            <input asp-for="DatabaseName" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input asp-for="UseWindowsAuth" class="form-check-input" type="checkbox"
+                                   onchange="toggleSqlAuth(this.checked)" />
+                            <label asp-for="UseWindowsAuth" class="form-check-label">Use Windows Authentication</label>
+                        </div>
+                        <small class="text-muted">Uses the service account credentials when enabled</small>
+                    </div>
+                    <div id="sqlAuthSection" class="@(Model.UseWindowsAuth ? "d-none" : "")">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="SqlUsername" class="form-label"></label>
+                                <input asp-for="SqlUsername" class="form-control" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="SqlPassword" class="form-label"></label>
+                                <input asp-for="SqlPassword" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="alert alert-warning mb-0">
+                            <i class="bi bi-shield-lock me-2"></i>
+                            Credentials are encrypted using Windows Data Protection API before storage.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar with help -->
+        <div class="col-lg-4">
+            <div class="card bg-light">
+                <div class="card-header">
+                    <i class="bi bi-question-circle me-2"></i>Help
+                </div>
+                <div class="card-body">
+                    <h6>Creating an Import Job</h6>
+                    <p class="small">
+                        Import jobs automate the process of importing RVTools Excel exports into the data warehouse.
+                    </p>
+
+                    <h6>Folder Setup</h6>
+                    <p class="small">
+                        Create the folder structure before configuring the job. The service account must have read/write access.
+                    </p>
+
+                    <h6>Scheduling</h6>
+                    <p class="small">
+                        Schedule jobs to run automatically using cron expressions, or set to "Manual Only" to trigger imports via the web UI.
+                    </p>
+
+                    <h6>Database Connection</h6>
+                    <p class="small">
+                        Windows Authentication is recommended. SQL credentials are encrypted but stored in the database.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <hr />
+            <div class="d-flex justify-content-between">
+                <a asp-action="Index" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>Cancel
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle me-1"></i>Create Job
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+<script>
+    function toggleSqlAuth(useWindowsAuth) {
+        const section = document.getElementById('sqlAuthSection');
+        if (useWindowsAuth) {
+            section.classList.add('d-none');
+        } else {
+            section.classList.remove('d-none');
+        }
+    }
+</script>
+}

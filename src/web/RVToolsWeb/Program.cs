@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
 using RVToolsWeb.Configuration;
 using RVToolsWeb.Data;
 using RVToolsWeb.Data.Repositories;
@@ -75,12 +76,25 @@ builder.Services.AddScoped<ISettingsService, SettingsService>();
 builder.Services.AddScoped<ITableRetentionService, TableRetentionService>();
 builder.Services.AddScoped<IAppSettingsService, AppSettingsService>();
 builder.Services.AddScoped<IDatabaseStatusService, DatabaseStatusService>();
+builder.Services.AddScoped<IJobManagementService, JobManagementService>();
+builder.Services.AddSingleton<IWindowsServiceManager, WindowsServiceManager>();
+builder.Services.AddHttpContextAccessor(); // Required for WindowsServiceManager impersonation
 
-// Data Protection - for encrypting sensitive credentials
-builder.Services.AddDataProtection();
+// Data Protection - for encrypting sensitive credentials and antiforgery tokens
+// Configure persistent key storage to survive app restarts
+var keyStorePath = builder.Configuration["DataProtection:KeyStorePath"]
+    ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "RVTools", "keys");
+
+// Ensure directory exists
+Directory.CreateDirectory(keyStorePath);
+
+builder.Services.AddDataProtection()
+    .SetApplicationName(builder.Configuration["DataProtection:ApplicationName"] ?? "RVTools")
+    .PersistKeysToFileSystem(new DirectoryInfo(keyStorePath));
 
 // Authentication Services
 builder.Services.AddSingleton<ICredentialProtectionService, CredentialProtectionService>();
+builder.Services.AddSingleton<ILdapConnectionPool, LdapConnectionPool>(); // Singleton for connection pooling
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ILdapService, LdapService>();
 builder.Services.AddScoped<IUserService, UserService>();
