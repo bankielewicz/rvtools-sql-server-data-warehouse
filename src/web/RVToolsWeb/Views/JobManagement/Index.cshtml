@@ -143,14 +143,6 @@
                             <th>Service Name</th>
                             <td>@Model.WindowsServiceStatus.ServiceName</td>
                         </tr>
-                        <tr>
-                            <th>Executable</th>
-                            <td>
-                                <small class="text-truncate d-block" style="max-width: 200px;" title="@Model.WindowsServiceStatus.ExecutablePath">
-                                    @Model.WindowsServiceStatus.ExecutablePath
-                                </small>
-                            </td>
-                        </tr>
                     </table>
 
                     @if (Model.WindowsServiceStatus.ErrorMessage != null)

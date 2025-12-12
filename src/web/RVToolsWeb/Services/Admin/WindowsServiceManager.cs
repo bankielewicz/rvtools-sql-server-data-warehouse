@@ -14,7 +14,6 @@ public class WindowsServiceManager : IWindowsServiceManager
 {
     private readonly string _serviceName;
     private readonly string _displayName;
-    private readonly string _executablePath;
     private readonly ILogger<WindowsServiceManager> _logger;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
@@ -25,13 +24,9 @@ public class WindowsServiceManager : IWindowsServiceManager
     {
         _serviceName = configuration["WindowsService:ServiceName"] ?? "RVToolsImportService";
         _displayName = configuration["WindowsService:DisplayName"] ?? "RVTools Import Service";
-        _executablePath = configuration["WindowsService:ExecutablePath"]
-            ?? @"C:\Services\RVToolsService\RVToolsService.exe";
         _logger = logger;
         _httpContextAccessor = httpContextAccessor;
     }
-
-    public string GetExecutablePath() => _executablePath;
 
     public WindowsServiceStatus GetServiceStatus()
     {
@@ -44,8 +39,7 @@ public class WindowsServiceManager : IWindowsServiceManager
                 DisplayName = _displayName,
                 State = WindowsServiceState.Unknown,
                 StateDisplay = "Not Available (Non-Windows)",
-                ErrorMessage = "Windows Service management is only available on Windows",
-                ExecutablePath = _executablePath
+                ErrorMessage = "Windows Service management is only available on Windows"
             };
         }
 
@@ -61,8 +55,7 @@ public class WindowsServiceManager : IWindowsServiceManager
                 State = state,
                 StateDisplay = sc.Status.ToString(),
                 CanStart = sc.Status == ServiceControllerStatus.Stopped,
-                CanStop = sc.Status == ServiceControllerStatus.Running,
-                ExecutablePath = _executablePath
+                CanStop = sc.Status == ServiceControllerStatus.Running
             };
         }
         catch (InvalidOperationException)
@@ -75,8 +68,7 @@ public class WindowsServiceManager : IWindowsServiceManager
                 State = WindowsServiceState.NotInstalled,
                 StateDisplay = "Not Installed",
                 CanStart = false,
-                CanStop = false,
-                ExecutablePath = _executablePath
+                CanStop = false
             };
         }
         catch (Exception ex)
@@ -88,8 +80,7 @@ public class WindowsServiceManager : IWindowsServiceManager
                 DisplayName = _displayName,
                 State = WindowsServiceState.Unknown,
                 StateDisplay = "Error",
-                ErrorMessage = ex.Message,
-                ExecutablePath = _executablePath
+                ErrorMessage = ex.Message
             };
         }
     }

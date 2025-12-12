@@ -27,9 +27,4 @@ public interface IWindowsServiceManager
     /// Checks if the current user is a local administrator.
     /// </summary>
     bool IsCurrentUserLocalAdmin();
-
-    /// <summary>
-    /// Gets the configured executable path for the service.
-    /// </summary>
-    string GetExecutablePath();
 }

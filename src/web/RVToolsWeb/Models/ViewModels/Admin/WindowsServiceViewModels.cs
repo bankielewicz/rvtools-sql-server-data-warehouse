@@ -28,7 +28,6 @@ public class WindowsServiceStatus
     public bool CanStart { get; set; }
     public bool CanStop { get; set; }
     public string? ErrorMessage { get; set; }
-    public string? ExecutablePath { get; set; }
 
     public string StateBadgeClass => State switch
     {
