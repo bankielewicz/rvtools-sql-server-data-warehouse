@@ -1,0 +1,364 @@
+@model RVToolsWeb.Models.ViewModels.Admin.JobManagementIndexViewModel
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@{
+    ViewData["Title"] = "Import Jobs";
+    var requestToken = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">
+                <i class="bi bi-gear-fill me-2"></i>Import Jobs
+            </h4>
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>New Job
+            </a>
+        </div>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="bi bi-check-circle me-2"></i>
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Toast for AJAX notifications -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1055;">
+    <div id="jobToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <i class="bi bi-check-circle text-success me-2" id="toastIconSuccess"></i>
+            <i class="bi bi-exclamation-triangle text-danger me-2 d-none" id="toastIconError"></i>
+            <strong class="me-auto" id="toastTitle">Import Jobs</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body" id="toastMessage"></div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Service Status Card -->
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <i class="bi bi-activity me-2"></i>Service Status
+            </div>
+            <div class="card-body" id="serviceStatusContainer">
+                @if (Model.ServiceStatus != null)
+                {
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="fs-4 me-3">
+                            @if (Model.ServiceStatus.IsHealthy)
+                            {
+                                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Running</span>
+                            }
+                            else if (Model.ServiceStatus.Status == "Stopped")
+                            {
+                                <span class="badge bg-warning"><i class="bi bi-pause-circle me-1"></i>Stopped</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger"><i class="bi bi-exclamation-circle me-1"></i>@Model.ServiceStatus.StatusDisplay</span>
+                            }
+                        </div>
+                    </div>
+                    <table class="table table-sm mb-0">
+                        <tr>
+                            <th>Machine</th>
+                            <td>@Model.ServiceStatus.MachineName</td>
+                        </tr>
+                        <tr>
+                            <th>Last Heartbeat</th>
+                            <td>@Model.ServiceStatus.TimeSinceHeartbeat</td>
+                        </tr>
+                        <tr>
+                            <th>Active Jobs</th>
+                            <td>@Model.ServiceStatus.ActiveJobs</td>
+                        </tr>
+                        <tr>
+                            <th>Queued</th>
+                            <td>@Model.ServiceStatus.QueuedJobs</td>
+                        </tr>
+                    </table>
+                }
+                else
+                {
+                    <div class="text-muted text-center py-3">
+                        <i class="bi bi-question-circle fs-1 d-block mb-2"></i>
+                        Service status unknown. The service may not be running or has not reported yet.
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Recent Runs Card -->
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <i class="bi bi-clock-history me-2"></i>Recent Runs
+            </div>
+            <div class="card-body p-0">
+                @if (Model.RecentRuns.Any())
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var run in Model.RecentRuns.Take(5))
+                        {
+                            <a asp-action="RunDetails" asp-route-id="@run.JobRunId" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>@run.JobName</strong>
+                                    <small class="d-block text-muted">@run.StartTime.ToString("g")</small>
+                                </div>
+                                <span class="badge @(run.Status == "Success" ? "bg-success" : run.Status == "Running" ? "bg-info" : run.Status == "PartialSuccess" ? "bg-warning" : "bg-danger")">
+                                    @run.Status
+                                </span>
+                            </a>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-muted text-center py-3">No recent runs</div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Jobs List -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-list-task me-2"></i>Configured Jobs
+            </div>
+            <div class="card-body p-0">
+                @if (Model.Jobs.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Schedule</th>
+                                    <th>Folder</th>
+                                    <th>Status</th>
+                                    <th>Last Run</th>
+                                    <th class="text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var job in Model.Jobs)
+                                {
+                                    <tr class="@(!job.IsEnabled ? "table-secondary" : "")">
+                                        <td>
+                                            <a asp-action="Edit" asp-route-id="@job.JobId" class="text-decoration-none">
+                                                <strong>@job.JobName</strong>
+                                            </a>
+                                            @if (!string.IsNullOrEmpty(job.VIServer))
+                                            {
+                                                <small class="d-block text-muted">vCenter: @job.VIServer</small>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(job.CronSchedule))
+                                            {
+                                                <code class="small">@job.CronSchedule</code>
+                                                <small class="d-block text-muted">@job.TimeZone</small>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">Manual only</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <small class="text-truncate d-block" style="max-width: 200px;" title="@job.IncomingFolder">
+                                                @job.IncomingFolder
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" role="switch"
+                                                       id="enable-@job.JobId" @(job.IsEnabled ? "checked" : "")
+                                                       onchange="toggleJobEnabled(@job.JobId, this.checked)">
+                                                <label class="form-check-label small" for="enable-@job.JobId">
+                                                    @(job.IsEnabled ? "Enabled" : "Disabled")
+                                                </label>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            @if (job.LastRunTime.HasValue)
+                                            {
+                                                <span class="@job.LastRunStatus switch { "Success" => "text-success", "Failed" => "text-danger", "PartialSuccess" => "text-warning", _ => "" }">
+                                                    @job.LastRunTime.Value.ToString("g")
+                                                </span>
+                                                <small class="d-block text-muted">@job.LastRunStatus</small>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">Never</span>
+                                            }
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="btn-group btn-group-sm">
+                                                <button type="button" class="btn btn-success" title="Run Now"
+                                                        onclick="triggerJobNow(@job.JobId)" @(!job.IsEnabled ? "disabled" : "")>
+                                                    <i class="bi bi-play-fill"></i>
+                                                </button>
+                                                <a asp-action="History" asp-route-id="@job.JobId" class="btn btn-outline-secondary" title="History">
+                                                    <i class="bi bi-clock-history"></i>
+                                                </a>
+                                                <a asp-action="Edit" asp-route-id="@job.JobId" class="btn btn-outline-primary" title="Edit">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-outline-danger" title="Delete"
+                                                        onclick="confirmDelete(@job.JobId, '@job.JobName.Replace("'", "\\'")">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox fs-1 text-muted d-block mb-2"></i>
+                        <p class="text-muted mb-3">No import jobs configured yet.</p>
+                        <a asp-action="Create" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-1"></i>Create Your First Job
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Job</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete job <strong id="deleteJobName"></strong>?
+                <p class="text-danger mt-2 small">This will also delete all job run history.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const requestToken = '@requestToken';
+
+    function showToast(success, message) {
+        const toast = document.getElementById('jobToast');
+        const toastTitle = document.getElementById('toastTitle');
+        const toastMessage = document.getElementById('toastMessage');
+        const iconSuccess = document.getElementById('toastIconSuccess');
+        const iconError = document.getElementById('toastIconError');
+
+        if (success) {
+            iconSuccess.classList.remove('d-none');
+            iconError.classList.add('d-none');
+            toastTitle.textContent = 'Success';
+        } else {
+            iconSuccess.classList.add('d-none');
+            iconError.classList.remove('d-none');
+            toastTitle.textContent = 'Error';
+        }
+
+        toastMessage.textContent = message;
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+    }
+
+    async function triggerJobNow(jobId) {
+        try {
+            const response = await fetch(`/JobManagement/TriggerNow/${jobId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': requestToken
+                }
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                showToast(true, result.message || 'Job triggered successfully');
+            } else {
+                showToast(false, result.error || 'Failed to trigger job');
+            }
+        } catch (error) {
+            showToast(false, 'Failed to trigger job: ' + error.message);
+        }
+    }
+
+    async function toggleJobEnabled(jobId, enabled) {
+        try {
+            const response = await fetch(`/JobManagement/SetEnabled/${jobId}?enabled=${enabled}`, {
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': requestToken
+                }
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                showToast(true, `Job ${enabled ? 'enabled' : 'disabled'}`);
+                // Refresh the page to update UI
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast(false, result.error || 'Failed to update job');
+                // Revert the toggle
+                document.getElementById(`enable-${jobId}`).checked = !enabled;
+            }
+        } catch (error) {
+            showToast(false, 'Failed to update job: ' + error.message);
+            document.getElementById(`enable-${jobId}`).checked = !enabled;
+        }
+    }
+
+    function confirmDelete(jobId, jobName) {
+        document.getElementById('deleteJobName').textContent = jobName;
+        document.getElementById('deleteForm').action = `/JobManagement/Delete/${jobId}`;
+        new bootstrap.Modal(document.getElementById('deleteModal')).show();
+    }
+
+    // Auto-refresh service status every 30 seconds
+    setInterval(async () => {
+        try {
+            const response = await fetch('/JobManagement/ServiceStatus');
+            if (response.ok) {
+                const html = await response.text();
+                // Could update serviceStatusContainer here if partial view is implemented
+            }
+        } catch (e) {
+            console.log('Failed to refresh service status');
+        }
+    }, 30000);
+</script>
+}

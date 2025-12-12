@@ -1,0 +1,142 @@
+@model RVToolsWeb.Models.ViewModels.Admin.JobRunHistoryViewModel
+@{
+    ViewData["Title"] = $"Job History - {Model.JobName}";
+}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-action="Index">Import Jobs</a></li>
+                <li class="breadcrumb-item active">History</li>
+            </ol>
+        </nav>
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">
+                <i class="bi bi-clock-history me-2"></i>Job History: @Model.JobName
+            </h4>
+            <a asp-action="Edit" asp-route-id="@Model.JobId" class="btn btn-outline-primary">
+                <i class="bi bi-pencil me-1"></i>Edit Job
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        @if (Model.Runs.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="historyTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Run ID</th>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                            <th>Duration</th>
+                            <th>Trigger</th>
+                            <th>Status</th>
+                            <th>Files</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var run in Model.Runs)
+                        {
+                            <tr>
+                                <td>
+                                    <a asp-action="RunDetails" asp-route-id="@run.JobRunId">
+                                        #@run.JobRunId
+                                    </a>
+                                    @if (run.ImportBatchId.HasValue)
+                                    {
+                                        <small class="d-block text-muted">Batch #@run.ImportBatchId</small>
+                                    }
+                                </td>
+                                <td>@run.StartTime.ToString("g")</td>
+                                <td>
+                                    @if (run.EndTime.HasValue)
+                                    {
+                                        @run.EndTime.Value.ToString("g")
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>@run.DurationDisplay</td>
+                                <td>
+                                    <span class="badge bg-secondary">@run.TriggerType</span>
+                                    @if (!string.IsNullOrEmpty(run.TriggerUser))
+                                    {
+                                        <small class="d-block text-muted">@run.TriggerUser</small>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge @run.StatusCssClass.Replace("text-", "bg-")">
+                                        @run.Status
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (run.FilesProcessed > 0 || run.FilesFailed > 0)
+                                    {
+                                        <span class="text-success">@run.FilesProcessed</span>
+                                        @if (run.FilesFailed > 0)
+                                        {
+                                            <span class="text-muted">/</span>
+                                            <span class="text-danger">@run.FilesFailed</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(run.ErrorMessage))
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                                data-bs-toggle="popover" data-bs-trigger="focus"
+                                                title="Error" data-bs-content="@run.ErrorMessage">
+                                            <i class="bi bi-exclamation-circle"></i>
+                                        </button>
+                                    }
+                                    <a asp-action="RunDetails" asp-route-id="@run.JobRunId" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-inbox fs-1 text-muted d-block mb-2"></i>
+                <p class="text-muted">No job runs recorded yet.</p>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // Initialize Bootstrap popovers for error messages
+    document.addEventListener('DOMContentLoaded', function() {
+        var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+        popoverTriggerList.forEach(function(popoverTriggerEl) {
+            new bootstrap.Popover(popoverTriggerEl);
+        });
+
+        // Initialize DataTables if available
+        if (typeof $.fn.DataTable !== 'undefined') {
+            $('#historyTable').DataTable({
+                order: [[1, 'desc']],
+                pageLength: 25
+            });
+        }
+    });
+</script>
+}

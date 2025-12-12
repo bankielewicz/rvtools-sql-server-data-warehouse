@@ -1,4 +1,6 @@
+using Quartz;
 using RVToolsService;
+using RVToolsService.Jobs;
 using RVToolsService.Services;
 using RVToolsShared.Data;
 using RVToolsShared.Security;
@@ -43,6 +45,18 @@ builder.Services.AddScoped<IStagingService, StagingService>();
 builder.Services.AddScoped<IImportJobService, ImportJobService>();
 builder.Services.AddScoped<IJobTriggerService, JobTriggerService>();
 builder.Services.AddScoped<IServiceHealthService, ServiceHealthService>();
+
+// Register Phase 3 Quartz.NET services
+builder.Services.AddQuartz();
+
+// Quartz hosted service runs the scheduler
+builder.Services.AddQuartzHostedService(options =>
+{
+    options.WaitForJobsToComplete = true;
+});
+
+// Custom scheduler service that loads jobs from database
+builder.Services.AddSingleton<ISchedulerService, SchedulerService>();
 
 // Register hosted service (Worker)
 builder.Services.AddHostedService<Worker>();

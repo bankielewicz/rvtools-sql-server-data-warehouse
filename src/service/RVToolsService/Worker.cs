@@ -15,20 +15,35 @@ public class Worker : BackgroundService
     private readonly ILogger<Worker> _logger;
     private readonly IConfiguration _configuration;
     private readonly IServiceProvider _serviceProvider;
+    private readonly ISchedulerService _schedulerService;
 
     public Worker(
         ILogger<Worker> logger,
         IConfiguration configuration,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider,
+        ISchedulerService schedulerService)
     {
         _logger = logger;
         _configuration = configuration;
         _serviceProvider = serviceProvider;
+        _schedulerService = schedulerService;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation("RVTools Import Service starting at: {time}", DateTimeOffset.Now);
+
+        // Start Quartz.NET scheduler and load jobs from database
+        try
+        {
+            await _schedulerService.StartAsync(stoppingToken);
+            _logger.LogInformation("Quartz.NET scheduler started - scheduled jobs are now active");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to start Quartz.NET scheduler: {Error}", ex.Message);
+            // Continue running - manual triggers will still work
+        }
 
         // Read intervals from configuration
         var heartbeatInterval = _configuration.GetValue("ServiceSettings:HeartbeatIntervalSeconds", 30);
@@ -57,6 +72,17 @@ public class Worker : BackgroundService
             }
 
             await Task.Delay(TimeSpan.FromSeconds(triggerPollInterval), stoppingToken);
+        }
+
+        // Stop Quartz.NET scheduler
+        try
+        {
+            await _schedulerService.StopAsync(stoppingToken);
+            _logger.LogInformation("Quartz.NET scheduler stopped");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error stopping Quartz.NET scheduler: {Error}", ex.Message);
         }
 
         _logger.LogInformation("RVTools Import Service stopping at: {time}", DateTimeOffset.Now);
