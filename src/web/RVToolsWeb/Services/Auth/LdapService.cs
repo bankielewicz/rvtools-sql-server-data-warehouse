@@ -1,39 +1,60 @@
 namespace RVToolsWeb.Services.Auth;
 
+using System.Diagnostics;
 using System.DirectoryServices.Protocols;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
-using RVToolsWeb.Data;
 using Dapper;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
+using RVToolsWeb.Configuration;
+using RVToolsWeb.Data;
 
 /// <summary>
 /// Service for LDAP/Active Directory authentication using System.DirectoryServices.Protocols
-/// for cross-platform support (Windows, Linux, macOS)
+/// for cross-platform support (Windows, Linux, macOS).
+/// Optimized with settings caching and connection pooling for improved performance.
 /// </summary>
 public class LdapService : ILdapService
 {
     private readonly ISqlConnectionFactory _connectionFactory;
     private readonly ICredentialProtectionService _credentialProtection;
+    private readonly IMemoryCache _cache;
+    private readonly ILdapConnectionPool _connectionPool;
     private readonly ILogger<LdapService> _logger;
+    private readonly AuthenticationConfig _authConfig;
+
+    private const string LdapSettingsCacheKey = "LdapSettings";
 
     public LdapService(
         ISqlConnectionFactory connectionFactory,
         ICredentialProtectionService credentialProtection,
+        IMemoryCache cache,
+        ILdapConnectionPool connectionPool,
+        IOptions<AppSettings> settings,
         ILogger<LdapService> logger)
     {
         _connectionFactory = connectionFactory;
         _credentialProtection = credentialProtection;
+        _cache = cache;
+        _connectionPool = connectionPool;
         _logger = logger;
+        _authConfig = settings.Value.Authentication;
     }
 
     public async Task<LdapAuthResult> AuthenticateAsync(string username, string password)
     {
         var result = new LdapAuthResult { Username = username };
+        var totalStopwatch = Stopwatch.StartNew();
+        var stepStopwatch = new Stopwatch();
 
         try
         {
-            // Get LDAP settings from database
+            // Get LDAP settings from cache or database
+            stepStopwatch.Start();
             var settings = await GetLdapSettingsAsync();
+            LogTiming("Settings retrieval", stepStopwatch);
+
             if (settings == null || string.IsNullOrEmpty(settings.LdapServer))
             {
                 result.ErrorMessage = "LDAP is not configured";
@@ -41,23 +62,27 @@ public class LdapService : ILdapService
             }
 
             // Build the user DN for binding
-            // For AD, we can bind with domain\username or username@domain format
             var bindUsername = BuildBindUsername(username, settings.LdapDomain);
 
-            // Attempt to bind with user credentials
+            // Attempt to bind with user credentials (NEVER pooled - must verify credentials)
+            stepStopwatch.Restart();
             using var connection = CreateConnection(
                 settings.LdapServer,
                 settings.LdapPort,
                 settings.LdapUseSsl,
                 settings.LdapValidateCertificate,
                 settings.LdapCertificateThumbprint);
+            LogTiming("Connection creation", stepStopwatch);
+
             var credential = new NetworkCredential(bindUsername, password);
             connection.Credential = credential;
             connection.AuthType = AuthType.Basic;
 
             try
             {
+                stepStopwatch.Restart();
                 connection.Bind();
+                LogTiming("User bind (authentication)", stepStopwatch);
                 _logger.LogInformation("LDAP authentication successful for user: {Username}", username);
             }
             catch (LdapException ex)
@@ -67,8 +92,11 @@ public class LdapService : ILdapService
                 return result;
             }
 
-            // Get user attributes and group memberships
-            var userInfo = await GetUserInfoAsync(connection, username, settings.LdapBaseDN);
+            // Get user attributes and group memberships using pooled connection if available
+            stepStopwatch.Restart();
+            var userInfo = await GetUserInfoWithPoolAsync(username, settings);
+            LogTiming("User info retrieval", stepStopwatch);
+
             if (userInfo != null)
             {
                 result.Email = userInfo.Email;
@@ -79,6 +107,11 @@ public class LdapService : ILdapService
             // Determine role based on group membership
             result.Role = DetermineRole(result.Groups, settings.LdapAdminGroup, settings.LdapUserGroup);
             result.Success = true;
+
+            totalStopwatch.Stop();
+            _logger.LogInformation(
+                "LDAP authentication completed for {Username} in {TotalMs}ms (Role: {Role})",
+                username, totalStopwatch.ElapsedMilliseconds, result.Role);
 
             return result;
         }
@@ -102,7 +135,6 @@ public class LdapService : ILdapService
         {
             using var connection = CreateConnection(server, port, useSsl);
 
-            // If bind credentials provided, use them; otherwise attempt anonymous bind
             if (!string.IsNullOrEmpty(bindDn) && !string.IsNullOrEmpty(bindPassword))
             {
                 connection.Credential = new NetworkCredential(bindDn, bindPassword);
@@ -113,10 +145,8 @@ public class LdapService : ILdapService
                 connection.AuthType = AuthType.Anonymous;
             }
 
-            // Try to bind
             connection.Bind();
 
-            // Try a simple search to verify base DN is valid
             var searchRequest = new SearchRequest(
                 baseDn,
                 "(objectClass=*)",
@@ -155,13 +185,28 @@ public class LdapService : ILdapService
                 return Enumerable.Empty<string>();
             }
 
-            // Need service account credentials to query groups
             if (string.IsNullOrEmpty(settings.LdapBindDN) || string.IsNullOrEmpty(settings.LdapBindPassword))
             {
                 _logger.LogWarning("Cannot query groups without service account credentials");
                 return Enumerable.Empty<string>();
             }
 
+            // Try to use pooled connection
+            var pooledConnection = await _connectionPool.GetConnectionAsync();
+            if (pooledConnection != null)
+            {
+                try
+                {
+                    var userInfo = await GetUserInfoAsync(pooledConnection, username, settings.LdapBaseDN);
+                    return userInfo?.Groups ?? Enumerable.Empty<string>();
+                }
+                finally
+                {
+                    _connectionPool.ReturnConnection(pooledConnection);
+                }
+            }
+
+            // Fallback to creating a new connection
             using var connection = CreateConnection(
                 settings.LdapServer,
                 settings.LdapPort,
@@ -172,8 +217,8 @@ public class LdapService : ILdapService
             connection.AuthType = AuthType.Basic;
             connection.Bind();
 
-            var userInfo = await GetUserInfoAsync(connection, username, settings.LdapBaseDN);
-            return userInfo?.Groups ?? Enumerable.Empty<string>();
+            var info = await GetUserInfoAsync(connection, username, settings.LdapBaseDN);
+            return info?.Groups ?? Enumerable.Empty<string>();
         }
         catch (Exception ex)
         {
@@ -182,16 +227,66 @@ public class LdapService : ILdapService
         }
     }
 
+    /// <summary>
+    /// Invalidates the cached LDAP settings. Call when settings are updated.
+    /// </summary>
+    public void InvalidateSettingsCache()
+    {
+        _cache.Remove(LdapSettingsCacheKey);
+        _connectionPool.InvalidatePool();
+        _logger.LogInformation("LDAP settings cache invalidated");
+    }
+
+    private async Task<UserInfo?> GetUserInfoWithPoolAsync(string username, LdapSettings settings)
+    {
+        // Try pooled connection first (service account)
+        if (_connectionPool.IsAvailable)
+        {
+            var pooledConnection = await _connectionPool.GetConnectionAsync();
+            if (pooledConnection != null)
+            {
+                try
+                {
+                    _logger.LogDebug("Using pooled connection for user info lookup");
+                    return await GetUserInfoAsync(pooledConnection, username, settings.LdapBaseDN);
+                }
+                finally
+                {
+                    _connectionPool.ReturnConnection(pooledConnection);
+                }
+            }
+        }
+
+        // Fallback: use service account with new connection
+        if (!string.IsNullOrEmpty(settings.LdapBindDN) && !string.IsNullOrEmpty(settings.LdapBindPassword))
+        {
+            _logger.LogDebug("Using new service account connection for user info lookup");
+            using var serviceConnection = CreateConnection(
+                settings.LdapServer!,
+                settings.LdapPort,
+                settings.LdapUseSsl,
+                settings.LdapValidateCertificate,
+                settings.LdapCertificateThumbprint);
+            serviceConnection.Credential = new NetworkCredential(settings.LdapBindDN, settings.LdapBindPassword);
+            serviceConnection.AuthType = AuthType.Basic;
+            serviceConnection.Bind();
+
+            return await GetUserInfoAsync(serviceConnection, username, settings.LdapBaseDN);
+        }
+
+        _logger.LogWarning("No service account available for user info lookup");
+        return null;
+    }
+
     private LdapConnection CreateConnection(string server, int port, bool useSsl,
         bool validateCertificate = true, string? certificateThumbprint = null)
     {
         var identifier = new LdapDirectoryIdentifier(server, port);
         var connection = new LdapConnection(identifier)
         {
-            Timeout = TimeSpan.FromSeconds(30)
+            Timeout = TimeSpan.FromSeconds(_authConfig.LdapConnectionTimeoutSeconds)
         };
 
-        // Set session options
         connection.SessionOptions.ProtocolVersion = 3;
         connection.SessionOptions.ReferralChasing = ReferralChasingOptions.None;
 
@@ -201,18 +296,14 @@ public class LdapService : ILdapService
 
             if (validateCertificate)
             {
-                // If thumbprint provided, use certificate pinning for self-signed certs
                 if (!string.IsNullOrEmpty(certificateThumbprint))
                 {
                     connection.SessionOptions.VerifyServerCertificate = (conn, cert) =>
                         ValidateCertificateByThumbprint(cert, certificateThumbprint, server);
                 }
-                // Otherwise use default system certificate validation
-                // (no custom callback = uses default chain validation)
             }
             else
             {
-                // Explicitly disabled validation - log warning
                 _logger.LogWarning(
                     "LDAP certificate validation is DISABLED for server {Server}. " +
                     "This is insecure and should only be used for testing.",
@@ -231,7 +322,6 @@ public class LdapService : ILdapService
             using var x509Cert = new X509Certificate2(certificate);
             var actualThumbprint = x509Cert.Thumbprint;
 
-            // Normalize both thumbprints for comparison (uppercase, no spaces/colons)
             var normalizedExpected = expectedThumbprint
                 .Replace(" ", "")
                 .Replace(":", "")
@@ -260,13 +350,11 @@ public class LdapService : ILdapService
 
     private string BuildBindUsername(string username, string? domain)
     {
-        // If username already contains domain prefix or @ suffix, use as-is
         if (username.Contains('\\') || username.Contains('@'))
         {
             return username;
         }
 
-        // If domain is provided, use UPN format (user@domain)
         if (!string.IsNullOrEmpty(domain))
         {
             return $"{username}@{domain}";
@@ -284,20 +372,16 @@ public class LdapService : ILdapService
 
         try
         {
-            // Strip domain prefix if present (domain\user or user@domain)
             var searchUsername = username;
             if (username.Contains('\\'))
             {
-                // domain\user format - extract username after backslash
                 searchUsername = username.Split('\\')[1];
             }
             else if (username.Contains('@'))
             {
-                // user@domain format - extract username before @
                 searchUsername = username.Split('@')[0];
             }
 
-            // Search for user by sAMAccountName (AD) or uid (generic LDAP)
             var searchFilter = $"(|(sAMAccountName={EscapeLdapFilter(searchUsername)})(uid={EscapeLdapFilter(searchUsername)}))";
             var searchRequest = new SearchRequest(
                 baseDn,
@@ -334,13 +418,14 @@ public class LdapService : ILdapService
     {
         var groupList = groups.ToList();
 
-        // Debug logging to diagnose group matching issues
-        _logger.LogInformation("DetermineRole called with {GroupCount} groups", groupList.Count);
-        _logger.LogInformation("User's groups: {Groups}", string.Join(" | ", groupList));
-        _logger.LogInformation("Configured AdminGroup: {AdminGroup}", adminGroup ?? "(null)");
-        _logger.LogInformation("Configured UserGroup: {UserGroup}", userGroup ?? "(null)");
+        _logger.LogDebug("DetermineRole called with {GroupCount} groups", groupList.Count);
+        if (_authConfig.LdapDetailedTimingLogs)
+        {
+            _logger.LogDebug("User's groups: {Groups}", string.Join(" | ", groupList));
+            _logger.LogDebug("Configured AdminGroup: {AdminGroup}", adminGroup ?? "(null)");
+            _logger.LogDebug("Configured UserGroup: {UserGroup}", userGroup ?? "(null)");
+        }
 
-        // Check if user is in admin group
         if (!string.IsNullOrEmpty(adminGroup))
         {
             var matchedAdmin = groupList.FirstOrDefault(g =>
@@ -349,16 +434,11 @@ public class LdapService : ILdapService
 
             if (matchedAdmin != null)
             {
-                _logger.LogInformation("User matched Admin group: {MatchedGroup}", matchedAdmin);
+                _logger.LogDebug("User matched Admin group: {MatchedGroup}", matchedAdmin);
                 return "Admin";
-            }
-            else
-            {
-                _logger.LogWarning("User not in Admin group (no match found)");
             }
         }
 
-        // Check if user is in user group (or if no user group specified, default to User)
         if (string.IsNullOrEmpty(userGroup))
         {
             return "User";
@@ -370,7 +450,6 @@ public class LdapService : ILdapService
             return "User";
         }
 
-        // If user group is specified but user is not a member, deny access
         return "None";
     }
 
@@ -397,7 +476,6 @@ public class LdapService : ILdapService
             {
                 if (value != null)
                 {
-                    // LDAP attributes are returned as byte arrays - convert to string
                     if (value is byte[] byteArray)
                     {
                         values.Add(System.Text.Encoding.UTF8.GetString(byteArray));
@@ -414,7 +492,6 @@ public class LdapService : ILdapService
 
     private string EscapeLdapFilter(string input)
     {
-        // Escape special LDAP filter characters
         return input
             .Replace("\\", "\\5c")
             .Replace("*", "\\2a")
@@ -424,6 +501,15 @@ public class LdapService : ILdapService
     }
 
     private async Task<LdapSettings?> GetLdapSettingsAsync()
+    {
+        return await _cache.GetOrCreateAsync(LdapSettingsCacheKey, async entry =>
+        {
+            entry.SlidingExpiration = TimeSpan.FromMinutes(_authConfig.LdapSettingsCacheMinutes);
+            return await LoadLdapSettingsFromDbAsync();
+        });
+    }
+
+    private async Task<LdapSettings?> LoadLdapSettingsFromDbAsync()
     {
         const string sql = @"
             SELECT
@@ -446,7 +532,6 @@ public class LdapService : ILdapService
             using var connection = _connectionFactory.CreateConnection();
             var settings = await connection.QuerySingleOrDefaultAsync<LdapSettings>(sql);
 
-            // Decrypt the bind password if present
             if (settings != null && !string.IsNullOrEmpty(settings.LdapBindPassword))
             {
                 settings.LdapBindPassword = _credentialProtection.Decrypt(settings.LdapBindPassword);
@@ -458,6 +543,15 @@ public class LdapService : ILdapService
         {
             _logger.LogError(ex, "Failed to get LDAP settings");
             return null;
+        }
+    }
+
+    private void LogTiming(string operation, Stopwatch stopwatch)
+    {
+        stopwatch.Stop();
+        if (_authConfig.LdapDetailedTimingLogs)
+        {
+            _logger.LogDebug("LDAP timing - {Operation}: {ElapsedMs}ms", operation, stopwatch.ElapsedMilliseconds);
         }
     }
 

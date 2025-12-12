@@ -81,6 +81,7 @@ builder.Services.AddDataProtection();
 
 // Authentication Services
 builder.Services.AddSingleton<ICredentialProtectionService, CredentialProtectionService>();
+builder.Services.AddSingleton<ILdapConnectionPool, LdapConnectionPool>(); // Singleton for connection pooling
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ILdapService, LdapService>();
 builder.Services.AddScoped<IUserService, UserService>();
