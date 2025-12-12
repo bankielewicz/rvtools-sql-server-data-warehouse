@@ -376,7 +376,7 @@
                                         <td>
                                             @if (job.LastRunTime.HasValue)
                                             {
-                                                <span class="@job.LastRunStatus switch { "Success" => "text-success", "Failed" => "text-danger", "PartialSuccess" => "text-warning", _ => "" }">
+                                                <span class="@(job.LastRunStatus switch { "Success" => "text-success", "Failed" => "text-danger", "PartialSuccess" => "text-warning", _ => "" })">
                                                     @job.LastRunTime.Value.ToString("g")
                                                 </span>
                                                 <small class="d-block text-muted">@job.LastRunStatus</small>
