@@ -70,6 +70,7 @@ LEFT JOIN [Current].[vMemory] m
 WHERE i.Template = 0  -- Exclude templates
   AND i.Powerstate = 'poweredOn'  -- Only running VMs
   AND ISNULL(i.IsDeleted, 0) = 0  -- Exclude soft-deleted records
+  AND i.VI_SDK_Server IN (SELECT VI_SDK_Server FROM [Config].[vw_ActiveVCenterList])
 GO
 
 PRINT 'Created [Reporting].[vw_Capacity_VM_RightSizing]'

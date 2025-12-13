@@ -1,0 +1,57 @@
+@{
+    var currentFilter = ViewContext.HttpContext.Items["GlobalTimeFilter"]?.ToString() ?? "30d";
+    var currentLabel = ViewContext.HttpContext.Items["GlobalTimeFilterLabel"]?.ToString() ?? "Last 30 Days";
+}
+
+<div class="dropdown me-3" id="globalTimeFilterDropdown">
+    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
+            data-bs-toggle="dropdown" aria-expanded="false" title="Global Data Filter">
+        <i class="bi bi-calendar-range me-1"></i>
+        <span id="globalFilterLabel">@currentLabel</span>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end">
+        <li><h6 class="dropdown-header">Data Time Range</h6></li>
+        <li><a class="dropdown-item @(currentFilter == "latest" ? "active" : "")" href="#" data-filter="latest">
+            <i class="bi bi-clock me-2"></i>Latest Import</a></li>
+        <li><a class="dropdown-item @(currentFilter == "7d" ? "active" : "")" href="#" data-filter="7d">
+            <i class="bi bi-calendar me-2"></i>Last 7 Days</a></li>
+        <li><a class="dropdown-item @(currentFilter == "30d" ? "active" : "")" href="#" data-filter="30d">
+            <i class="bi bi-calendar me-2"></i>Last 30 Days</a></li>
+        <li><a class="dropdown-item @(currentFilter == "90d" ? "active" : "")" href="#" data-filter="90d">
+            <i class="bi bi-calendar me-2"></i>Last 90 Days</a></li>
+        <li><a class="dropdown-item @(currentFilter == "1y" ? "active" : "")" href="#" data-filter="1y">
+            <i class="bi bi-calendar me-2"></i>Last Year</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item @(currentFilter == "all" ? "active" : "")" href="#" data-filter="all">
+            <i class="bi bi-infinity me-2"></i>All Time</a></li>
+    </ul>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('#globalTimeFilterDropdown .dropdown-item').forEach(item => {
+        item.addEventListener('click', async function(e) {
+            e.preventDefault();
+            const filter = this.dataset.filter;
+
+            try {
+                const response = await fetch('/api/timefilter', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                    },
+                    body: JSON.stringify({ filter: filter })
+                });
+
+                if (response.ok) {
+                    // Reload page to apply new filter
+                    window.location.reload();
+                }
+            } catch (error) {
+                console.error('Failed to update time filter:', error);
+            }
+        });
+    });
+});
+</script>

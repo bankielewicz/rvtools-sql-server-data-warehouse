@@ -70,6 +70,10 @@ builder.Services.AddScoped<DatastoreCapacityTrendService>();
 builder.Services.AddScoped<HostUtilizationService>();
 builder.Services.AddScoped<VMConfigChangesService>();
 builder.Services.AddScoped<VMLifecycleService>();
+builder.Services.AddScoped<IChangeSummaryService, ChangeSummaryService>();
+
+// User Preferences
+builder.Services.AddScoped<IUserPreferencesService, UserPreferencesService>();
 
 // Admin Services
 builder.Services.AddScoped<ISettingsService, SettingsService>();
@@ -77,6 +81,7 @@ builder.Services.AddScoped<ITableRetentionService, TableRetentionService>();
 builder.Services.AddScoped<IAppSettingsService, AppSettingsService>();
 builder.Services.AddScoped<IDatabaseStatusService, DatabaseStatusService>();
 builder.Services.AddScoped<IJobManagementService, JobManagementService>();
+builder.Services.AddScoped<IActiveVCentersService, ActiveVCentersService>();
 builder.Services.AddSingleton<IWindowsServiceManager, WindowsServiceManager>();
 builder.Services.AddHttpContextAccessor(); // Required for WindowsServiceManager impersonation
 
@@ -142,6 +147,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseGlobalTimeFilter();
 app.UseFirstTimeSetup();
 
 app.MapControllerRoute(

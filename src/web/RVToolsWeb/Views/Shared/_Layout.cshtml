@@ -39,6 +39,7 @@
                     <div class="ms-auto d-flex align-items-center">
                         @if (User.Identity?.IsAuthenticated == true)
                         {
+                            <partial name="_GlobalTimeFilterPartial" />
                             @if (User.IsInRole("Admin"))
                             {
                                 <a asp-controller="Settings" asp-action="Index"

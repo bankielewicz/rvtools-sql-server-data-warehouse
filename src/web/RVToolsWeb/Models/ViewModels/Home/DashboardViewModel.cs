@@ -1,3 +1,5 @@
+using RVToolsWeb.Models.ViewModels.Trends;
+
 namespace RVToolsWeb.Models.ViewModels.Home;
 
 /// <summary>
@@ -39,4 +41,7 @@ public class DashboardViewModel
     // Calculated properties
     public decimal PoweredOnPercent => TotalVMs > 0 ? Math.Round((decimal)VMsPoweredOn / TotalVMs * 100, 1) : 0;
     public decimal StorageUsedPercent => TotalStorageTiB > 0 ? Math.Round((decimal)UsedStorageTiB / TotalStorageTiB * 100, 1) : 0;
+
+    // Change Summary Widget
+    public DashboardChangeWidget? ChangeWidget { get; set; }
 }

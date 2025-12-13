@@ -97,6 +97,7 @@ public class ImportJobService : IImportJobService
             // Process sheets in order
             var sheetResults = new List<SheetImportResult>();
             var sheetsInFile = sheets.Select(s => s.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var vInfoProcessed = false;
 
             foreach (var sheetName in SheetProcessingOrder)
             {
@@ -117,6 +118,13 @@ public class ImportJobService : IImportJobService
                     result.TotalSourceRows += sheetResult.SourceRows;
                     result.TotalStagedRows += sheetResult.StagedRows;
                     result.TotalFailedRows += sheetResult.FailedRows;
+
+                    // After staging vInfo, extract VIServer for the batch record
+                    if (string.Equals(sheetName, "vInfo", StringComparison.OrdinalIgnoreCase) && !vInfoProcessed)
+                    {
+                        vInfoProcessed = true;
+                        await _batchService.UpdateVIServerFromStagingAsync(importBatchId.Value);
+                    }
                 }
                 catch (Exception ex)
                 {

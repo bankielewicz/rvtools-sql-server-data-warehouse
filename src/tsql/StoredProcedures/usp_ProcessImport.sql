@@ -165,6 +165,19 @@ BEGIN
         ', Rows=' + CAST(@TotalMerged AS VARCHAR(10)),
         DATEDIFF(MILLISECOND, @StartTime, GETUTCDATE()));
 
+    -- ================================================================
+    -- Auto-sync vCenters to Config.ActiveVCenters
+    -- This ensures new vCenters are automatically discovered
+    -- ================================================================
+    BEGIN TRY
+        EXEC [dbo].[usp_SyncActiveVCenters];
+    END TRY
+    BEGIN CATCH
+        -- Non-critical, just log and continue
+        INSERT INTO [Audit].[ImportLog] (ImportBatchId, LogLevel, Message)
+        VALUES (@ImportBatchId, 'Warning', 'Failed to sync active vCenters: ' + ERROR_MESSAGE());
+    END CATCH
+
     -- Return summary
     SELECT
         @ImportBatchId AS ImportBatchId,

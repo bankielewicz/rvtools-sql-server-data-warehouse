@@ -163,6 +163,8 @@ Triggered on-demand from the web UI.
 
 Navigate to **Administration > Import Jobs** in the web application.
 
+![Job Management Dashboard](images/settings/job-management-dashboard.png)
+
 ### Features
 
 1. **Dashboard**
@@ -170,6 +172,8 @@ Navigate to **Administration > Import Jobs** in the web application.
    - Last heartbeat time
    - 24-hour statistics (runs, success rate, files processed)
    - Job type breakdown
+
+![Service Status Panel](images/settings/service-status-panel.png)
 
 2. **Job List**
    - Create, edit, delete jobs
@@ -185,6 +189,16 @@ Navigate to **Administration > Import Jobs** in the web application.
    - View execution history per job
    - Status, duration, files processed
    - Error details if failed
+
+![Job History Dashboard](images/settings/job-history-dashboard.png)
+
+### Creating a Job
+
+![Job Create Form](images/settings/job-create-form.png)
+
+### Editing a Job
+
+![Edit Job Form](images/settings/edit-job-form.png)
 
 ## Service Account Permissions
 

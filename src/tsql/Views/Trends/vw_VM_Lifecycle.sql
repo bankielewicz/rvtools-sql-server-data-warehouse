@@ -53,6 +53,7 @@ SELECT
 
 FROM [History].[vInfo]
 WHERE Template = 0  -- Exclude templates
+  AND VI_SDK_Server IN (SELECT VI_SDK_Server FROM [Config].[vw_ActiveVCenterList])
 GO
 
 PRINT 'Created [Reporting].[vw_Trends_VM_Lifecycle]'

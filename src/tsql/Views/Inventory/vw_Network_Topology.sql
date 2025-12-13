@@ -98,6 +98,7 @@ SELECT
 
 FROM [Current].[vPort] p
 WHERE ISNULL(p.IsDeleted, 0) = 0  -- Exclude soft-deleted records
+  AND p.VI_SDK_Server IN (SELECT VI_SDK_Server FROM [Config].[vw_ActiveVCenterList])
 GO
 
 PRINT 'Created [Reporting].[vw_Inventory_Network_Topology]'

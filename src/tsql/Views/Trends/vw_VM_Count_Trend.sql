@@ -25,8 +25,9 @@ SELECT
     MIN(ImportBatchId) AS ImportBatchId
 
 FROM [History].[vInfo]
-WHERE ValidTo IS NULL  -- Current records only (latest snapshot per day)
-   OR ValidTo > ValidFrom  -- Include historical records
+WHERE (ValidTo IS NULL  -- Current records only (latest snapshot per day)
+   OR ValidTo > ValidFrom)  -- Include historical records
+  AND VI_SDK_Server IN (SELECT VI_SDK_Server FROM [Config].[vw_ActiveVCenterList])
 GROUP BY CAST(ValidFrom AS DATE), VI_SDK_Server
 GO
 

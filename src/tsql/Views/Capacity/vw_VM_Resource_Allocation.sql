@@ -64,6 +64,7 @@ LEFT JOIN [Current].[vMemory] m
     ON i.VM_UUID = m.VM_UUID
     AND i.VI_SDK_Server = m.VI_SDK_Server
 WHERE ISNULL(i.IsDeleted, 0) = 0  -- Exclude soft-deleted records
+  AND i.VI_SDK_Server IN (SELECT VI_SDK_Server FROM [Config].[vw_ActiveVCenterList])
 GO
 
 PRINT 'Created [Reporting].[vw_VM_Resource_Allocation]'

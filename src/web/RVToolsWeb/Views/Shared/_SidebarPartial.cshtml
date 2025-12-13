@@ -5,8 +5,8 @@
     var inventoryControllers = new[] { "VMInventory", "HostInventory", "ClusterSummary", "DatastoreInventory", "EnterpriseSummary", "NetworkTopology", "LicenseCompliance", "ResourcePool" };
     var healthControllers = new[] { "HealthIssues", "CertificateExpiration", "SnapshotAging", "ConfigurationCompliance", "OrphanedFiles", "ToolsStatus" };
     var capacityControllers = new[] { "DatastoreCapacity", "HostCapacity", "VMResourceAllocation", "VMRightSizing" };
-    var trendsControllers = new[] { "VMCountTrend", "StorageGrowth", "DatastoreCapacityTrend", "HostUtilization", "VMConfigChanges", "VMLifecycle" };
-    var adminControllers = new[] { "Settings", "JobManagement" };
+    var trendsControllers = new[] { "VMCountTrend", "StorageGrowth", "DatastoreCapacityTrend", "HostUtilization", "VMConfigChanges", "VMLifecycle", "ChangeSummary" };
+    var adminControllers = new[] { "Settings", "JobManagement", "VCenterManagement" };
 
     // Determine which section is active
     var isInventoryActive = inventoryControllers.Contains(controller);
@@ -101,6 +101,7 @@
                 <a asp-controller="HostUtilization" asp-action="Index" class="nav-link @(controller == "HostUtilization" ? "active text-white" : "text-white-50")">Host Utilization</a>
                 <a asp-controller="VMConfigChanges" asp-action="Index" class="nav-link @(controller == "VMConfigChanges" ? "active text-white" : "text-white-50")">VM Config Changes</a>
                 <a asp-controller="VMLifecycle" asp-action="Index" class="nav-link @(controller == "VMLifecycle" ? "active text-white" : "text-white-50")">VM Lifecycle</a>
+                <a asp-controller="ChangeSummary" asp-action="Index" class="nav-link @(controller == "ChangeSummary" ? "active text-white" : "text-white-50")">Change Summary</a>
             </div>
         </div>
     </div>
@@ -118,6 +119,7 @@
             <div class="collapse @(isAdminActive ? "show" : "")" id="adminMenu">
                 <div class="nav-submenu">
                     <a asp-controller="JobManagement" asp-action="Index" class="nav-link @(controller == "JobManagement" ? "active text-white" : "text-white-50")">Import Jobs</a>
+                    <a asp-controller="VCenterManagement" asp-action="Index" class="nav-link @(controller == "VCenterManagement" ? "active text-white" : "text-white-50")">vCenter Management</a>
                     <a asp-controller="Settings" asp-action="Index" class="nav-link @(controller == "Settings" ? "active text-white" : "text-white-50")">Settings</a>
                 </div>
             </div>

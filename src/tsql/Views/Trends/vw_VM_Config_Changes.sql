@@ -50,6 +50,7 @@ SELECT
 
 FROM [History].[vInfo]
 WHERE ValidTo IS NOT NULL  -- Only superseded records (changed or deleted)
+  AND VI_SDK_Server IN (SELECT VI_SDK_Server FROM [Config].[vw_ActiveVCenterList])
 GO
 
 PRINT 'Created [Reporting].[vw_VM_Config_Changes]'
