@@ -5,6 +5,20 @@
     var requestToken = Antiforgery.GetAndStoreTokens(Context).RequestToken;
 }
 
+<style>
+    /* Job trigger button states */
+    .btn-trigger-job .spinner-border {
+        width: 0.875rem;
+        height: 0.875rem;
+        border-width: 0.15em;
+    }
+
+    /* Row highlight animation when job completes */
+    tr.table-active {
+        transition: background-color 0.5s ease-out;
+    }
+</style>
+
 <div class="row mb-4">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center">
@@ -314,7 +328,7 @@
                             <tbody>
                                 @foreach (var job in Model.Jobs)
                                 {
-                                    <tr class="@(!job.IsEnabled ? "table-secondary" : "")">
+                                    <tr class="@(!job.IsEnabled ? "table-secondary" : "")" data-job-id="@job.JobId">
                                         <td>
                                             <div class="d-flex align-items-start">
                                                 <span class="me-2 mt-1" title="@job.JobType">
@@ -373,24 +387,26 @@
                                                 </label>
                                             </div>
                                         </td>
-                                        <td>
+                                        <td class="last-run-cell">
                                             @if (job.LastRunTime.HasValue)
                                             {
-                                                <span class="@(job.LastRunStatus switch { "Success" => "text-success", "Failed" => "text-danger", "PartialSuccess" => "text-warning", _ => "" })">
+                                                <span class="last-run-time @(job.LastRunStatus switch { "Success" => "text-success", "Failed" => "text-danger", "PartialSuccess" => "text-warning", _ => "" })">
                                                     @job.LastRunTime.Value.ToString("g")
                                                 </span>
-                                                <small class="d-block text-muted">@job.LastRunStatus</small>
+                                                <small class="d-block last-run-status @(job.LastRunStatus switch { "Success" => "text-success", "Failed" => "text-danger", "PartialSuccess" => "text-warning", _ => "text-muted" })">@job.LastRunStatus</small>
                                             }
                                             else
                                             {
-                                                <span class="text-muted">Never</span>
+                                                <span class="last-run-time text-muted">Never</span>
+                                                <small class="d-block last-run-status text-muted"></small>
                                             }
                                         </td>
                                         <td class="text-center">
                                             <div class="btn-group btn-group-sm">
-                                                <button type="button" class="btn btn-success" title="Run Now"
-                                                        onclick="triggerJobNow(@job.JobId)" @(!job.IsEnabled ? "disabled" : "")>
-                                                    <i class="bi bi-play-fill"></i>
+                                                <button type="button" class="btn btn-success btn-trigger-job" title="Run Now"
+                                                        data-job-id="@job.JobId"
+                                                        onclick="triggerJobNow(@job.JobId, this)" @(!job.IsEnabled ? "disabled" : "")>
+                                                    <span class="btn-content"><i class="bi bi-play-fill"></i></span>
                                                 </button>
                                                 <a asp-action="History" asp-route-id="@job.JobId" class="btn btn-outline-secondary" title="History">
                                                     <i class="bi bi-clock-history"></i>
@@ -474,7 +490,32 @@
         bsToast.show();
     }
 
-    async function triggerJobNow(jobId) {
+    // Track active polling intervals per job
+    const jobPollers = {};
+
+    async function triggerJobNow(jobId, button) {
+        const btnContent = button.querySelector('.btn-content');
+        const originalHtml = btnContent.innerHTML;
+
+        // Capture initial run ID before triggering (to detect when new run starts)
+        let initialRunId = null;
+        try {
+            const statusResp = await fetch(`/JobManagement/GetJobStatus/${jobId}`);
+            if (statusResp.ok) {
+                const statusData = await statusResp.json();
+                initialRunId = statusData.latestRun?.jobRunId || null;
+            }
+        } catch (e) {
+            // Continue even if we can't get initial status
+        }
+
+        // Immediate feedback: show spinner + "Queued"
+        btnContent.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        button.disabled = true;
+        button.classList.remove('btn-success');
+        button.classList.add('btn-warning');
+        button.title = 'Queued...';
+
         try {
             const response = await fetch(`/JobManagement/TriggerNow/${jobId}`, {
                 method: 'POST',
@@ -484,9 +525,7 @@
                 }
             });
 
-            // Check if response is OK before parsing JSON
             if (!response.ok) {
-                // Try to parse error response
                 const text = await response.text();
                 try {
                     const errorData = JSON.parse(text);
@@ -494,6 +533,7 @@
                 } catch {
                     showToast(false, `Server error: ${response.status} ${response.statusText}`);
                 }
+                resetButton(button, originalHtml);
                 return;
             }
 
@@ -501,12 +541,128 @@
 
             if (result.success) {
                 showToast(true, result.message || 'Job triggered successfully');
+                // Start polling for status
+                startJobPolling(jobId, button, originalHtml, initialRunId);
             } else {
                 showToast(false, result.error || 'Failed to trigger job');
+                resetButton(button, originalHtml);
             }
         } catch (error) {
             showToast(false, 'Failed to trigger job: ' + error.message);
+            resetButton(button, originalHtml);
         }
+    }
+
+    function startJobPolling(jobId, button, originalHtml, initialRunId) {
+        const btnContent = button.querySelector('.btn-content');
+        let pollCount = 0;
+        const maxPolls = 24;  // 2 minutes at 5-second intervals
+
+        // Clear any existing poller for this job
+        if (jobPollers[jobId]) {
+            clearInterval(jobPollers[jobId]);
+        }
+
+        jobPollers[jobId] = setInterval(async () => {
+            pollCount++;
+
+            try {
+                const response = await fetch(`/JobManagement/GetJobStatus/${jobId}`);
+                if (!response.ok) {
+                    return; // Continue polling on error
+                }
+
+                const data = await response.json();
+
+                // Check if a new run has started (different from initial)
+                const currentRunId = data.latestRun?.jobRunId;
+                const isNewRun = currentRunId && currentRunId !== initialRunId;
+
+                if (data.hasPendingTrigger && !isNewRun) {
+                    // Still queued, waiting for service to pick up
+                    btnContent.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+                    button.title = 'Queued - waiting for service...';
+                }
+                else if (isNewRun && data.latestRun?.status === 'Running') {
+                    // Job is running
+                    btnContent.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+                    button.classList.remove('btn-warning');
+                    button.classList.add('btn-info');
+                    button.title = `Running... (${data.latestRun.durationSeconds}s)`;
+                }
+                else if (isNewRun && data.latestRun?.status === 'Success') {
+                    // Job completed successfully
+                    stopJobPolling(jobId);
+                    updateJobRow(jobId, data.latestRun);
+                    resetButton(button, originalHtml);
+                    showToast(true, `Job completed successfully (${data.latestRun.filesProcessed || 0} files processed)`);
+                }
+                else if (isNewRun && (data.latestRun?.status === 'Failed' || data.latestRun?.status === 'PartialSuccess')) {
+                    // Job failed or partial success
+                    stopJobPolling(jobId);
+                    updateJobRow(jobId, data.latestRun);
+                    resetButton(button, originalHtml);
+                    const statusMsg = data.latestRun.status === 'Failed' ? 'Job failed' : 'Job completed with errors';
+                    showToast(false, data.latestRun.errorMessage || statusMsg);
+                }
+                else if (pollCount >= maxPolls) {
+                    // Timeout
+                    stopJobPolling(jobId);
+                    resetButton(button, originalHtml);
+                    showToast(false, 'Polling timeout - check Recent Runs for status');
+                }
+            } catch (e) {
+                // Continue polling on network error
+                console.log('Polling error:', e);
+            }
+        }, 5000);
+    }
+
+    function stopJobPolling(jobId) {
+        if (jobPollers[jobId]) {
+            clearInterval(jobPollers[jobId]);
+            delete jobPollers[jobId];
+        }
+    }
+
+    function resetButton(button, originalHtml) {
+        const btnContent = button.querySelector('.btn-content');
+        btnContent.innerHTML = originalHtml;
+        button.disabled = false;
+        button.classList.remove('btn-warning', 'btn-info');
+        button.classList.add('btn-success');
+        button.title = 'Run Now';
+    }
+
+    function updateJobRow(jobId, runData) {
+        const row = document.querySelector(`tr[data-job-id="${jobId}"]`);
+        if (!row) return;
+
+        const lastRunTime = row.querySelector('.last-run-time');
+        const lastRunStatus = row.querySelector('.last-run-status');
+
+        if (lastRunTime && runData.startTime) {
+            lastRunTime.textContent = runData.startTime;
+            // Update color classes
+            lastRunTime.classList.remove('text-success', 'text-danger', 'text-warning', 'text-muted');
+            if (runData.status === 'Success') lastRunTime.classList.add('text-success');
+            else if (runData.status === 'Failed') lastRunTime.classList.add('text-danger');
+            else if (runData.status === 'PartialSuccess') lastRunTime.classList.add('text-warning');
+        }
+
+        if (lastRunStatus) {
+            lastRunStatus.textContent = runData.status;
+            // Update color classes
+            lastRunStatus.classList.remove('text-success', 'text-danger', 'text-warning', 'text-muted');
+            if (runData.status === 'Success') lastRunStatus.classList.add('text-success');
+            else if (runData.status === 'Failed') lastRunStatus.classList.add('text-danger');
+            else if (runData.status === 'PartialSuccess') lastRunStatus.classList.add('text-warning');
+            else lastRunStatus.classList.add('text-muted');
+        }
+
+        // Highlight the row briefly
+        row.classList.add('table-active');
+        setTimeout(() => row.classList.remove('table-active'), 3000);
     }
 
     async function toggleJobEnabled(jobId, enabled) {

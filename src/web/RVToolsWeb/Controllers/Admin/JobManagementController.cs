@@ -205,6 +205,17 @@ public class JobManagementController : Controller
     {
         try
         {
+            // Pre-flight check: Is the service running?
+            var serviceStatus = await _jobService.GetServiceStatusAsync();
+            if (serviceStatus == null || !serviceStatus.IsHealthy)
+            {
+                var reason = serviceStatus == null
+                    ? "No heartbeat received from the Windows Service."
+                    : $"Service heartbeat is stale ({serviceStatus.TimeSinceHeartbeat}).";
+                _logger.LogWarning("Cannot trigger job {JobId}: {Reason}", id, reason);
+                return Json(new { success = false, error = $"Import Service is not running. {reason}" });
+            }
+
             var job = await _jobService.GetJobByIdAsync(id);
             if (job == null)
             {
@@ -257,6 +268,40 @@ public class JobManagementController : Controller
         {
             _logger.LogError(ex, "Failed to set job {JobId} enabled state: {Error}", id, ex.Message);
             return Json(new { success = false, error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Get job status for AJAX polling (used to track progress after triggering a job).
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> GetJobStatus(int id)
+    {
+        try
+        {
+            var hasPendingTrigger = await _jobService.HasPendingTriggerAsync(id);
+            var latestRun = await _jobService.GetLatestJobRunAsync(id);
+
+            return Json(new
+            {
+                hasPendingTrigger,
+                latestRun = latestRun == null ? null : new
+                {
+                    jobRunId = latestRun.JobRunId,
+                    status = latestRun.Status,
+                    startTime = latestRun.StartTime?.ToString("g"),
+                    endTime = latestRun.EndTime?.ToString("g"),
+                    durationSeconds = latestRun.DurationSeconds,
+                    filesProcessed = latestRun.FilesProcessed,
+                    filesFailed = latestRun.FilesFailed,
+                    errorMessage = latestRun.ErrorMessage
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get job status for {JobId}: {Error}", id, ex.Message);
+            return Json(new { error = ex.Message });
         }
     }
 

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Dapper;
 using RVToolsWeb.Data;
+using RVToolsWeb.Models.DTOs;
 using RVToolsWeb.Models.ViewModels.Admin;
 using RVToolsWeb.Services.Auth;
 
@@ -373,6 +374,38 @@ public class JobManagementService : IJobManagementService
 
         using var connection = _connectionFactory.CreateConnection();
         return await connection.QueryAsync<JobTriggerViewModel>(sql, new { JobId = jobId });
+    }
+
+    public async Task<bool> HasPendingTriggerAsync(int jobId)
+    {
+        const string sql = @"
+            SELECT CASE WHEN EXISTS (
+                SELECT 1 FROM [Service].[JobTriggers]
+                WHERE JobId = @JobId AND ProcessedDate IS NULL
+            ) THEN 1 ELSE 0 END";
+
+        using var connection = _connectionFactory.CreateConnection();
+        return await connection.ExecuteScalarAsync<bool>(sql, new { JobId = jobId });
+    }
+
+    public async Task<JobRunStatusDto?> GetLatestJobRunAsync(int jobId)
+    {
+        const string sql = @"
+            SELECT TOP 1
+                r.JobRunId,
+                r.Status,
+                r.StartTime,
+                r.EndTime,
+                DATEDIFF(SECOND, r.StartTime, ISNULL(r.EndTime, GETUTCDATE())) AS DurationSeconds,
+                r.FilesProcessed,
+                r.FilesFailed,
+                r.ErrorMessage
+            FROM [Service].[JobRuns] r
+            WHERE r.JobId = @JobId
+            ORDER BY r.StartTime DESC";
+
+        using var connection = _connectionFactory.CreateConnection();
+        return await connection.QueryFirstOrDefaultAsync<JobRunStatusDto>(sql, new { JobId = jobId });
     }
 
     #endregion

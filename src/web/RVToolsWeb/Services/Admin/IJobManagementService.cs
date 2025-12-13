@@ -65,6 +65,17 @@ public interface IJobManagementService
     /// </summary>
     Task<IEnumerable<JobTriggerViewModel>> GetPendingTriggersAsync(int jobId);
 
+    /// <summary>
+    /// Check if a job has pending (unprocessed) triggers.
+    /// </summary>
+    Task<bool> HasPendingTriggerAsync(int jobId);
+
+    // ===== Job Status (for AJAX polling) =====
+    /// <summary>
+    /// Get the latest job run for polling job progress.
+    /// </summary>
+    Task<Models.DTOs.JobRunStatusDto?> GetLatestJobRunAsync(int jobId);
+
     // ===== Service Status =====
     /// <summary>
     /// Get the current service status.
