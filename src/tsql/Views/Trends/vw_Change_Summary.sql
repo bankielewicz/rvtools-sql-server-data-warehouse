@@ -61,7 +61,6 @@ VMDeletions AS (
         h.Provisioned_MiB
     FROM [History].[vInfo] h
     WHERE h.ValidTo IS NOT NULL
-      AND h.IsCurrent = 0
       AND NOT EXISTS (
           SELECT 1 FROM [History].[vInfo] h2
           WHERE h2.VM_UUID = h.VM_UUID
