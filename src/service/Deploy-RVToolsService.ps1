@@ -135,20 +135,6 @@ Write-Host "Recovery: Restart after 60 seconds on failure." -ForegroundColor Gra
 Write-Host ""
 Write-Host "Configuring service permissions for IIS AppPool..." -ForegroundColor Cyan
 
-# Get the service's security descriptor
-$sddl = sc.exe sdshow $ServiceName | Where-Object { $_ -match "^D:" }
-
-if ([string]::IsNullOrEmpty($sddl)) {
-    Write-Host "ERROR: Could not retrieve service security descriptor." -ForegroundColor Red
-    exit 1
-}
-
-Write-Host "Current SDDL: $sddl" -ForegroundColor Gray
-
-# We need to get the SID of the AppPool identity
-# For virtual accounts like "IIS AppPool\AppPoolName", we use a well-known pattern
-# Format: S-1-5-82-<hash of app pool name>
-
 # Function to get AppPool SID
 function Get-AppPoolSid {
     param([string]$AppPoolName)
@@ -163,7 +149,7 @@ function Get-AppPoolSid {
         return $sid.Value
     }
     catch {
-        Write-Host "Could not resolve AppPool SID directly. Using alternative method..." -ForegroundColor Yellow
+        Write-Host "Could not resolve AppPool SID directly. Computing from pool name..." -ForegroundColor Yellow
 
         # For IIS AppPool virtual accounts, compute the SID
         # The SID is S-1-5-82 followed by SHA1 hash of lowercase pool name
@@ -185,6 +171,17 @@ function Get-AppPoolSid {
 $appPoolSid = Get-AppPoolSid -AppPoolName $AppPoolIdentity
 Write-Host "AppPool SID: $appPoolSid" -ForegroundColor Gray
 
+# Get the service's security descriptor
+$sddlOutput = sc.exe sdshow $ServiceName 2>&1
+$sddl = ($sddlOutput | Where-Object { $_ -match "^[DS]:" }) -join ""
+
+if ([string]::IsNullOrEmpty($sddl)) {
+    Write-Host "ERROR: Could not retrieve service security descriptor." -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "Current SDDL: $sddl" -ForegroundColor Gray
+
 # Build ACE for start/stop permission
 # Service permissions:
 #   RP = SERVICE_START (0x0010)
@@ -194,12 +191,12 @@ Write-Host "AppPool SID: $appPoolSid" -ForegroundColor Gray
 
 $ace = "(A;;LCRPWP;;;$appPoolSid)"
 
-# Insert the new ACE into the DACL (D: section), not after the SACL (S: section)
+# Parse SDDL and insert ACE into DACL section
 # SDDL format: D:(ace1)(ace2)...S:(sacl)
-# We need to insert before the S: section if it exists
+# The DACL ends where S: begins (if present)
 
-if ($sddl -match "^(D:.*?)(S:.*)$") {
-    # Has both DACL and SACL
+if ($sddl -match "^(D:[^S]*)(S:.*)$") {
+    # Has both DACL and SACL - insert ACE at end of DACL
     $dacl = $Matches[1]
     $sacl = $Matches[2]
     $newSddl = $dacl + $ace + $sacl
@@ -209,25 +206,54 @@ elseif ($sddl -match "^(D:.*)$") {
     $newSddl = $sddl + $ace
 }
 else {
-    Write-Host "ERROR: Unexpected SDDL format." -ForegroundColor Red
+    Write-Host "ERROR: Unexpected SDDL format: $sddl" -ForegroundColor Red
     exit 1
 }
 
 Write-Host "New SDDL: $newSddl" -ForegroundColor Gray
 
 # Apply the new security descriptor
-$result = sc.exe sdset $ServiceName $newSddl
+$result = sc.exe sdset $ServiceName $newSddl 2>&1
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "ERROR: Failed to set service permissions. Exit code: $LASTEXITCODE" -ForegroundColor Red
-    Write-Host $result -ForegroundColor Red
-    Write-Host ""
-    Write-Host "You may need to manually grant permissions using:" -ForegroundColor Yellow
-    Write-Host "  subinacl /service $ServiceName /grant=$AppPoolIdentity=STOP+START+QUERY" -ForegroundColor Yellow
-    exit 1
-}
+    Write-Host "WARNING: sc.exe sdset failed. Trying alternative method..." -ForegroundColor Yellow
 
-Write-Host "Service permissions granted successfully." -ForegroundColor Green
-Write-Host "  - $AppPoolIdentity can now start/stop the service" -ForegroundColor Gray
+    # Alternative: Use PowerShell's Set-Service with SecurityDescriptorSddl (requires PS 7+)
+    # Or use WMI/CIM
+    try {
+        $service = Get-CimInstance -ClassName Win32_Service -Filter "Name='$ServiceName'"
+        $result = Invoke-CimMethod -InputObject $service -MethodName SetSecurityDescriptor -Arguments @{
+            Descriptor = ([wmiclass]"Win32_SecurityDescriptor").CreateInstance()
+        }
+
+        # If CIM doesn't work, provide manual instructions
+        throw "CIM method not fully supported for service ACLs"
+    }
+    catch {
+        Write-Host ""
+        Write-Host "Automatic permission configuration failed." -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host "To manually grant IIS AppPool permission to start/stop the service:" -ForegroundColor Cyan
+        Write-Host ""
+        Write-Host "Option 1: Use sc.exe with the correct SDDL (copy/paste this command):" -ForegroundColor White
+        Write-Host ""
+
+        # Build a simpler DACL without the SACL
+        $simpleDacl = "D:(A;;CCLCSWRPWPDTLOCRRC;;;SY)(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;BA)(A;;CCLCSWLOCRRC;;;IU)(A;;CCLCSWLOCRRC;;;SU)$ace"
+        Write-Host "  sc.exe sdset $ServiceName `"$simpleDacl`"" -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host "Option 2: Grant permissions via Group Policy or Local Security Policy" -ForegroundColor White
+        Write-Host ""
+        Write-Host "Option 3: Add the IIS AppPool account to the 'Power Users' group (less secure)" -ForegroundColor White
+        Write-Host ""
+
+        # Don't exit - continue with the rest of the script
+        Write-Host "Continuing with remaining configuration..." -ForegroundColor Gray
+    }
+}
+else {
+    Write-Host "Service permissions granted successfully." -ForegroundColor Green
+    Write-Host "  - $AppPoolIdentity can now start/stop the service" -ForegroundColor Gray
+}
 
 # Grant service account permissions to incoming folder
 Write-Host ""
