@@ -70,6 +70,7 @@ SELECT
 
 FROM [Current].[vInfo]
 WHERE ISNULL(IsDeleted, 0) = 0  -- Exclude soft-deleted records
+  AND VI_SDK_Server IN (SELECT VI_SDK_Server FROM [Config].[vw_ActiveVCenterList])
 GO
 
 PRINT 'Created [Reporting].[vw_VM_Inventory]'

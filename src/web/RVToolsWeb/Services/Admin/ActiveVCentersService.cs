@@ -43,10 +43,16 @@ public class ActiveVCentersService : IActiveVCentersService
 
     public async Task SetVCenterActiveAsync(string viServer, bool isActive)
     {
+        // Use MERGE to handle vCenters that exist in import history but not yet in Config table
         const string sql = @"
-            UPDATE [Config].[ActiveVCenters]
-            SET IsActive = @IsActive, ModifiedDate = SYSUTCDATETIME()
-            WHERE VIServer = @VIServer";
+            MERGE [Config].[ActiveVCenters] AS target
+            USING (SELECT @VIServer AS VIServer) AS source
+            ON target.VIServer = source.VIServer
+            WHEN MATCHED THEN
+                UPDATE SET IsActive = @IsActive, ModifiedDate = SYSUTCDATETIME()
+            WHEN NOT MATCHED THEN
+                INSERT (VIServer, IsActive, Notes, CreatedDate, ModifiedDate)
+                VALUES (@VIServer, @IsActive, NULL, SYSUTCDATETIME(), SYSUTCDATETIME());";
 
         using var connection = _connectionFactory.CreateConnection();
         await connection.ExecuteAsync(sql, new { VIServer = viServer, IsActive = isActive });
@@ -54,10 +60,16 @@ public class ActiveVCentersService : IActiveVCentersService
 
     public async Task UpdateNotesAsync(string viServer, string? notes)
     {
+        // Use MERGE to handle vCenters that exist in import history but not yet in Config table
         const string sql = @"
-            UPDATE [Config].[ActiveVCenters]
-            SET Notes = @Notes, ModifiedDate = SYSUTCDATETIME()
-            WHERE VIServer = @VIServer";
+            MERGE [Config].[ActiveVCenters] AS target
+            USING (SELECT @VIServer AS VIServer) AS source
+            ON target.VIServer = source.VIServer
+            WHEN MATCHED THEN
+                UPDATE SET Notes = @Notes, ModifiedDate = SYSUTCDATETIME()
+            WHEN NOT MATCHED THEN
+                INSERT (VIServer, IsActive, Notes, CreatedDate, ModifiedDate)
+                VALUES (@VIServer, 1, @Notes, SYSUTCDATETIME(), SYSUTCDATETIME());";
 
         using var connection = _connectionFactory.CreateConnection();
         await connection.ExecuteAsync(sql, new { VIServer = viServer, Notes = notes });

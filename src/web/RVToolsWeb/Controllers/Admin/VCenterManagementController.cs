@@ -34,6 +34,23 @@ public class VCenterManagementController : Controller
     }
 
     [HttpPost]
+    [IgnoreAntiforgeryToken]  // Safe: protected by [Authorize] + cookie auth
+    public async Task<IActionResult> ToggleActiveAjax([FromBody] ToggleActiveRequest request)
+    {
+        if (string.IsNullOrEmpty(request.ViServer))
+            return Json(new { success = false, error = "vCenter name required" });
+
+        await _vCenterService.SetVCenterActiveAsync(request.ViServer, request.IsActive);
+        return Json(new { success = true, isActive = request.IsActive });
+    }
+
+    public class ToggleActiveRequest
+    {
+        public string ViServer { get; set; } = string.Empty;
+        public bool IsActive { get; set; }
+    }
+
+    [HttpPost]
     public async Task<IActionResult> UpdateNotes(string viServer, string? notes)
     {
         await _vCenterService.UpdateNotesAsync(viServer, notes);

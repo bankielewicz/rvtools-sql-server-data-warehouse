@@ -13,7 +13,7 @@ The Settings section provides administrative control over the RVTools Data Wareh
 
 ![Settings Overview](images/settings/settings.png)
 
-The Settings page has 7 tabs:
+The Settings page has 8 tabs:
 1. **General** - Database configuration settings
 2. **Table Retention** - Per-table history retention overrides
 3. **Application** - Application-level settings (UI, logging, caching)
@@ -21,6 +21,7 @@ The Settings page has 7 tabs:
 5. **Database Status** - Database health, statistics, and monitoring
 6. **Metadata** - View table/column mappings (read-only)
 7. **Security** - User management and authentication provider configuration
+8. **Import Jobs** - Windows Service job management (if Service schema deployed)
 
 ---
 
@@ -323,6 +324,94 @@ The user will be logged out (if currently active) and required to change passwor
 - Cannot delete the `admin` user
 - Cannot delete yourself (the currently logged-in user)
 - Deleted users cannot be recovered (permanent)
+
+---
+
+## Import Jobs Tab
+
+![Import Jobs Tab](images/settings/job-management-dashboard.png)
+
+Manage automated imports via the Windows Service. This tab appears only when the Service schema is deployed.
+
+### Service Status Panel
+
+Displays the Windows Service health:
+
+- **Status**: Running, Stopped, or Unknown
+- **Last Heartbeat**: Most recent health check from service
+- **Machine Name**: Server running the service
+- **Service Version**: Installed service version
+
+**Controls** (Admin only):
+- **Start Service** - Start the Windows Service
+- **Stop Service** - Stop the Windows Service
+
+![Service Status Panel](images/settings/service-status-panel.png)
+
+### 24-Hour Statistics
+
+Quick overview of recent import activity:
+- **Total Runs**: Number of job executions in last 24 hours
+- **Success Rate**: Percentage of successful runs
+- **Files Processed**: Total files imported
+- **Files Failed**: Files that encountered errors
+
+### Job List
+
+Table showing all configured import jobs:
+
+| Column | Description |
+|--------|-------------|
+| **Name** | Job name (unique identifier) |
+| **Type** | Scheduled, FileWatcher, or Manual |
+| **Schedule** | Cron expression (for Scheduled jobs) |
+| **Incoming Folder** | Path being monitored |
+| **Status** | Enabled or Disabled |
+| **Last Run** | Most recent execution time and status |
+| **Actions** | Edit, Delete, Run Now buttons |
+
+### Creating a Job
+
+1. Click **+ Create Job** button
+2. Fill in job configuration:
+   - **Job Name**: Unique name for the job
+   - **Job Type**: Scheduled, FileWatcher, or Manual
+   - **Cron Schedule**: For Scheduled type (e.g., `0 0 2 * * ?` for daily at 2 AM)
+   - **Time Zone**: For scheduled execution
+   - **Incoming Folder**: Path to monitor for .xlsx files
+   - **Processed Folder**: Where to move successful files
+   - **Errors Folder**: Where to move failed files
+   - **SQL Server**: Server instance for this job
+   - **Database**: Target database (default: RVToolsDW)
+   - **Use Windows Auth**: Or provide SQL credentials
+3. Click **Save**
+
+![Job Create Form](images/settings/job-create-form.png)
+
+### Editing a Job
+
+![Edit Job Form](images/settings/edit-job-form.png)
+
+### Viewing Job History
+
+1. Click the job name or History button
+2. View execution history:
+   - Start/End time
+   - Duration
+   - Status (Success, Failed, PartialSuccess)
+   - Files processed
+   - Error messages (if failed)
+3. Click a run for detailed information
+
+![Job History Dashboard](images/settings/job-history-dashboard.png)
+
+### Related Documentation
+
+See [Windows Service Guide](windows-service.md) for:
+- Installation and deployment
+- Service configuration
+- Troubleshooting
+- Cron expression reference
 
 ---
 

@@ -40,8 +40,9 @@ SELECT
     ImportBatchId
 
 FROM [History].[vDatastore]
-WHERE ValidTo IS NULL  -- Current record for each snapshot
-   OR ValidTo > ValidFrom
+WHERE (ValidTo IS NULL  -- Current record for each snapshot
+   OR ValidTo > ValidFrom)
+  AND VI_SDK_Server IN (SELECT VI_SDK_Server FROM [Config].[vw_ActiveVCenterList])
 GO
 
 PRINT 'Created [Reporting].[vw_Trends_Storage_Growth]'

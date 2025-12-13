@@ -92,16 +92,11 @@
                         <td>@vc.HostCount.ToString("N0")</td>
                         <td>@vc.TotalImports</td>
                         <td>
-                            <form method="post" asp-action="ToggleActive" class="d-inline">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="viServer" value="@vc.VI_SDK_Server" />
-                                <input type="hidden" name="isActive" value="@(!vc.IsActive)" />
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox"
-                                           @(vc.IsActive ? "checked" : "")
-                                           onchange="this.form.submit()">
-                                </div>
-                            </form>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input vcenter-toggle" type="checkbox"
+                                       data-viserver="@vc.VI_SDK_Server"
+                                       @(vc.IsActive ? "checked" : "")>
+                            </div>
                         </td>
                         <td>
                             <button class="btn btn-sm btn-outline-secondary"
@@ -156,6 +151,49 @@
                 order: [[2, 'desc']],
                 pageLength: 25
             });
+
+            // Handle toggle via AJAX
+            $('.vcenter-toggle').on('change', function() {
+                var checkbox = $(this);
+                var viServer = checkbox.data('viserver');
+                var isActive = checkbox.is(':checked');
+
+                // Disable while processing
+                checkbox.prop('disabled', true);
+
+                $.ajax({
+                    url: '@Url.Action("ToggleActiveAjax", "VCenterManagement")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ viServer: viServer, isActive: isActive }),
+                    success: function(response) {
+                        if (response.success) {
+                            // Update summary cards
+                            updateSummaryCounts();
+                        } else {
+                            // Revert checkbox on failure
+                            checkbox.prop('checked', !isActive);
+                            alert('Failed to update vCenter status');
+                        }
+                    },
+                    error: function() {
+                        // Revert checkbox on error
+                        checkbox.prop('checked', !isActive);
+                        alert('Error updating vCenter status');
+                    },
+                    complete: function() {
+                        checkbox.prop('disabled', false);
+                    }
+                });
+            });
+
+            function updateSummaryCounts() {
+                var activeCount = $('.vcenter-toggle:checked').length;
+                var totalCount = $('.vcenter-toggle').length;
+                var inactiveCount = totalCount - activeCount;
+                $('.text-success').closest('.card-body').find('h2').text(activeCount);
+                $('.text-secondary').closest('.card-body').find('h2').text(inactiveCount);
+            }
 
             // Populate notes modal
             var notesModal = document.getElementById('notesModal');

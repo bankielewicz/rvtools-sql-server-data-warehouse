@@ -63,6 +63,7 @@ LEFT JOIN [Current].[vMemory] m
     AND i.VI_SDK_Server = m.VI_SDK_Server
 WHERE i.Template = 0
   AND ISNULL(i.IsDeleted, 0) = 0  -- Exclude soft-deleted records
+  AND i.VI_SDK_Server IN (SELECT VI_SDK_Server FROM [Config].[vw_ActiveVCenterList])
 GROUP BY i.Resource_pool, i.VI_SDK_Server, i.Datacenter, i.Cluster
 GO
 

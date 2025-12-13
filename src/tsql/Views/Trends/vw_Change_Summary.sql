@@ -43,6 +43,7 @@ WITH VMCreations AS (
           AND h2.ValidFrom < h.ValidFrom
     )
     AND h.Template = 0  -- Exclude templates
+    AND h.VI_SDK_Server IN (SELECT VI_SDK_Server FROM [Config].[vw_ActiveVCenterList])
 ),
 VMDeletions AS (
     -- VMs that were deleted (have ValidTo and no newer record)
@@ -68,6 +69,7 @@ VMDeletions AS (
             AND h2.ValidFrom > h.ValidTo
       )
       AND h.Template = 0  -- Exclude templates
+      AND h.VI_SDK_Server IN (SELECT VI_SDK_Server FROM [Config].[vw_ActiveVCenterList])
 )
 SELECT * FROM VMCreations
 UNION ALL

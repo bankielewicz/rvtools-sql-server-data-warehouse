@@ -121,6 +121,7 @@ LEFT JOIN [Current].[vTools] t
     AND i.VI_SDK_Server = t.VI_SDK_Server
 WHERE i.Template = 0
   AND ISNULL(i.IsDeleted, 0) = 0  -- Exclude soft-deleted records
+  AND i.VI_SDK_Server IN (SELECT VI_SDK_Server FROM [Config].[vw_ActiveVCenterList])
 GO
 
 PRINT 'Created [Reporting].[vw_Health_Configuration_Compliance]'
