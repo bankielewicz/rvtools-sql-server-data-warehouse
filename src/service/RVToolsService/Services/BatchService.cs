@@ -96,4 +96,33 @@ public class BatchService : IBatchService
 
         _logger.LogWarning("Marked import batch {BatchId} as failed: {Error}", importBatchId, errorMessage);
     }
+
+    /// <inheritdoc/>
+    public async Task UpdateVIServerFromStagingAsync(int importBatchId)
+    {
+        // Extract VIServer from staged vInfo data and update ImportBatch
+        const string sql = @"
+            UPDATE b
+            SET b.VIServer = s.VI_SDK_Server
+            FROM [Audit].[ImportBatch] b
+            CROSS APPLY (
+                SELECT TOP 1 VI_SDK_Server
+                FROM [Staging].[vInfo]
+                WHERE ImportBatchId = b.ImportBatchId
+                  AND VI_SDK_Server IS NOT NULL
+                  AND VI_SDK_Server <> ''
+            ) s
+            WHERE b.ImportBatchId = @ImportBatchId
+              AND b.VIServer IS NULL";
+
+        using var connection = _connectionFactory.CreateConnection();
+        await connection.OpenAsync();
+
+        var rowsAffected = await connection.ExecuteAsync(sql, new { ImportBatchId = importBatchId });
+
+        if (rowsAffected > 0)
+        {
+            _logger.LogDebug("Updated VIServer for batch {BatchId} from staging data", importBatchId);
+        }
+    }
 }

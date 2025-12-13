@@ -25,4 +25,10 @@ public interface IBatchService
     /// Marks a batch as failed with an error message.
     /// </summary>
     Task FailBatchAsync(int importBatchId, string errorMessage);
+
+    /// <summary>
+    /// Updates the VIServer for a batch by extracting it from staged vInfo data.
+    /// Call this after staging vInfo sheet.
+    /// </summary>
+    Task UpdateVIServerFromStagingAsync(int importBatchId);
 }
