@@ -1,0 +1,79 @@
+@model RVToolsWeb.Models.ViewModels.Trends.DashboardChangeWidget
+
+<div class="card h-100">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-arrow-left-right me-2"></i>Infrastructure Changes</span>
+        <small class="text-muted">@ViewBag.TimeFilterLabel</small>
+    </div>
+    <div class="card-body">
+        <div class="row text-center mb-3">
+            <div class="col-4">
+                <div class="h3 text-success mb-0">+@Model.VMsCreated</div>
+                <small class="text-muted">Created</small>
+            </div>
+            <div class="col-4">
+                <div class="h3 text-danger mb-0">-@Model.VMsDeleted</div>
+                <small class="text-muted">Deleted</small>
+            </div>
+            <div class="col-4">
+                <div class="h3 @(Model.NetChange >= 0 ? "text-success" : "text-danger") mb-0">
+                    @(Model.NetChange >= 0 ? "+" : "")@Model.NetChange
+                </div>
+                <small class="text-muted">Net</small>
+            </div>
+        </div>
+
+        @if (Model.WeeklyData.Any())
+        {
+            <canvas id="changeChart" height="150"></canvas>
+        }
+        else
+        {
+            <p class="text-muted text-center mb-0">No change data available for this period.</p>
+        }
+    </div>
+    <div class="card-footer bg-transparent">
+        <a href="@Url.Action("Index", "ChangeSummary")" class="btn btn-sm btn-outline-primary">
+            View Full Report <i class="bi bi-arrow-right"></i>
+        </a>
+    </div>
+</div>
+
+@if (Model.WeeklyData.Any())
+{
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('changeChart');
+        if (ctx) {
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: @Html.Raw(Json.Serialize(Model.WeeklyData.Select(w => w.WeekStart.ToString("MMM d")))),
+                    datasets: [
+                        {
+                            label: 'Created',
+                            data: @Html.Raw(Json.Serialize(Model.WeeklyData.Select(w => w.Created))),
+                            backgroundColor: 'rgba(25, 135, 84, 0.8)',
+                        },
+                        {
+                            label: 'Deleted',
+                            data: @Html.Raw(Json.Serialize(Model.WeeklyData.Select(w => w.Deleted))),
+                            backgroundColor: 'rgba(220, 53, 69, 0.8)',
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: { stacked: false },
+                        y: { beginAtZero: true }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+    });
+    </script>
+}

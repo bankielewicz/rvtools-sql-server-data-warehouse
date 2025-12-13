@@ -1,5 +1,8 @@
 using RVToolsWeb.Data;
+using RVToolsWeb.Models;
 using RVToolsWeb.Models.ViewModels.Home;
+using RVToolsWeb.Models.ViewModels.Trends;
+using RVToolsWeb.Services.Trends;
 using Dapper;
 
 namespace RVToolsWeb.Services.Home;
@@ -11,13 +14,15 @@ namespace RVToolsWeb.Services.Home;
 public class DashboardService
 {
     private readonly ISqlConnectionFactory _connectionFactory;
+    private readonly IChangeSummaryService _changeSummaryService;
 
-    public DashboardService(ISqlConnectionFactory connectionFactory)
+    public DashboardService(ISqlConnectionFactory connectionFactory, IChangeSummaryService changeSummaryService)
     {
         _connectionFactory = connectionFactory;
+        _changeSummaryService = changeSummaryService;
     }
 
-    public async Task<DashboardViewModel> GetDashboardDataAsync()
+    public async Task<DashboardViewModel> GetDashboardDataAsync(string timeFilter = "30d")
     {
         var dashboard = new DashboardViewModel();
 
@@ -117,6 +122,17 @@ public class DashboardService
 
         var orphanedCount = await connection.QuerySingleOrDefaultAsync<int?>(orphanedSql);
         dashboard.OrphanedFiles = orphanedCount ?? 0;
+
+        // Get change summary widget data
+        try
+        {
+            dashboard.ChangeWidget = await _changeSummaryService.GetDashboardWidgetDataAsync(timeFilter);
+        }
+        catch
+        {
+            // If the view doesn't exist yet, return empty widget
+            dashboard.ChangeWidget = new DashboardChangeWidget();
+        }
 
         return dashboard;
     }

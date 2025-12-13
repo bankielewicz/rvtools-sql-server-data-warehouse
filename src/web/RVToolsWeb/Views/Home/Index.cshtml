@@ -245,6 +245,19 @@
     </div>
 </div>
 
+<!-- Infrastructure Changes Row -->
+@if (Model.ChangeWidget != null)
+{
+    <div class="row mb-4">
+        <div class="col-12">
+            <h5 class="text-muted mb-3"><i class="bi bi-arrow-left-right me-2"></i>Infrastructure Changes (@ViewBag.TimeFilterLabel)</h5>
+        </div>
+        <div class="col-md-6 col-lg-4 mb-4">
+            <partial name="_DashboardChangeWidgetPartial" model="Model.ChangeWidget" />
+        </div>
+    </div>
+}
+
 <!-- Quick Access Reports Row -->
 <div class="row">
     <div class="col-12">

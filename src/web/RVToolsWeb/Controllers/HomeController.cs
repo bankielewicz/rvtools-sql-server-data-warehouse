@@ -28,7 +28,11 @@ public class HomeController : Controller
     {
         try
         {
-            var viewModel = await _dashboardService.GetDashboardDataAsync();
+            // Get global time filter from middleware
+            var timeFilter = HttpContext.Items["GlobalTimeFilter"]?.ToString() ?? "30d";
+            ViewBag.TimeFilterLabel = HttpContext.Items["GlobalTimeFilterLabel"]?.ToString() ?? "Last 30 Days";
+
+            var viewModel = await _dashboardService.GetDashboardDataAsync(timeFilter);
             return View(viewModel);
         }
         catch (Exception ex)
