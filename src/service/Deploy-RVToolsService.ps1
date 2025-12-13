@@ -194,9 +194,18 @@ Write-Host "AppPool SID: $appPoolSid" -ForegroundColor Gray
 
 $ace = "(A;;LCRPWP;;;$appPoolSid)"
 
-# Insert the new ACE before the final closing paren of the DACL
-# SDDL format: D:(ace1)(ace2)...
-if ($sddl -match "^(D:.*)$") {
+# Insert the new ACE into the DACL (D: section), not after the SACL (S: section)
+# SDDL format: D:(ace1)(ace2)...S:(sacl)
+# We need to insert before the S: section if it exists
+
+if ($sddl -match "^(D:.*?)(S:.*)$") {
+    # Has both DACL and SACL
+    $dacl = $Matches[1]
+    $sacl = $Matches[2]
+    $newSddl = $dacl + $ace + $sacl
+}
+elseif ($sddl -match "^(D:.*)$") {
+    # Only DACL, no SACL
     $newSddl = $sddl + $ace
 }
 else {
