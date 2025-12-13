@@ -23,6 +23,13 @@ builder.Services.AddWindowsService(options =>
     options.ServiceName = "RVToolsImportService";
 });
 
+// Add Event Log logging for Windows Service
+builder.Logging.AddEventLog(settings =>
+{
+    settings.SourceName = builder.Configuration["Logging:EventLog:SourceName"] ?? "RVToolsService";
+    settings.LogName = builder.Configuration["Logging:EventLog:LogName"] ?? "Application";
+});
+
 // Configure Data Protection (shared key store with web app)
 var keyStorePath = builder.Configuration["DataProtection:KeyStorePath"]
     ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "RVTools", "keys");
