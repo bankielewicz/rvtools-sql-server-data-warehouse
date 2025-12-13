@@ -31,11 +31,9 @@ SELECT
     a.Notes,
     -- VM counts from Current schema
     (SELECT COUNT(*) FROM [Current].[vInfo] v
-     WHERE v.VI_SDK_Server = COALESCE(a.VIServer, b.VIServer)
-       AND ISNULL(v.IsDeleted, 0) = 0) AS VMCount,
+     WHERE v.VI_SDK_Server = COALESCE(a.VIServer, b.VIServer)) AS VMCount,
     (SELECT COUNT(*) FROM [Current].[vHost] h
-     WHERE h.VI_SDK_Server = COALESCE(a.VIServer, b.VIServer)
-       AND ISNULL(h.IsDeleted, 0) = 0) AS HostCount
+     WHERE h.VI_SDK_Server = COALESCE(a.VIServer, b.VIServer)) AS HostCount
 FROM [Config].[ActiveVCenters] a
 FULL OUTER JOIN (
     SELECT
