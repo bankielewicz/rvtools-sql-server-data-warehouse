@@ -42,7 +42,7 @@ FULL OUTER JOIN (
         MIN(ImportStartTime) AS FirstImportDate,
         COUNT(*) AS TotalImports
     FROM [Audit].[ImportBatch]
-    WHERE Status = 'Completed'
+    WHERE Status IN ('Success', 'Completed', 'Partial', 'PartialSuccess')
     GROUP BY VIServer
 ) b ON a.VIServer = b.VIServer;
 GO

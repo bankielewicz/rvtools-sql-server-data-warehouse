@@ -58,11 +58,4 @@ public class VCenterManagementController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    [HttpPost]
-    public async Task<IActionResult> SyncFromImports()
-    {
-        await _vCenterService.SyncFromImportsAsync();
-        TempData["Success"] = "vCenter list synchronized from import history.";
-        return RedirectToAction(nameof(Index));
-    }
 }

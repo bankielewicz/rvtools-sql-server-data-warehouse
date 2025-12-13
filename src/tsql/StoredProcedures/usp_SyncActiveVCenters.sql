@@ -14,6 +14,7 @@ BEGIN
     SET NOCOUNT ON;
 
     -- Insert new vCenters discovered in imports
+    -- Status can be 'Success', 'Completed', or 'Partial' depending on import method
     INSERT INTO [Config].[ActiveVCenters] (VIServer, IsActive, LastImportDate, TotalImports)
     SELECT
         VIServer,
@@ -21,7 +22,7 @@ BEGIN
         MAX(ImportStartTime),
         COUNT(*)
     FROM [Audit].[ImportBatch]
-    WHERE Status = 'Completed'
+    WHERE Status IN ('Success', 'Completed', 'Partial', 'PartialSuccess')
       AND VIServer IS NOT NULL
       AND VIServer NOT IN (SELECT VIServer FROM [Config].[ActiveVCenters])
     GROUP BY VIServer;
@@ -36,7 +37,7 @@ BEGIN
     INNER JOIN (
         SELECT VIServer, MAX(ImportStartTime) AS LastImportDate, COUNT(*) AS TotalImports
         FROM [Audit].[ImportBatch]
-        WHERE Status = 'Completed'
+        WHERE Status IN ('Success', 'Completed', 'Partial', 'PartialSuccess')
         GROUP BY VIServer
     ) b ON a.VIServer = b.VIServer;
 
